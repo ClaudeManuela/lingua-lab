@@ -6,10 +6,19 @@
   <title>Lingua Lab — 90-Day Korean Experiment</title>
   <link rel="stylesheet" href="css/pixel-theme.css">
   <link rel="stylesheet" href="css/book.css">
+  <link rel="stylesheet" href="css/log-form.css">
 </head>
 <body>
 
-  <!-- EDIT MODE TOGGLE (hidden, activated via ?admin=true) -->
+  <!-- TOP BAR -->
+  <div class="top-bar">
+    <div class="top-bar-title">🧪 Lingua Lab</div>
+<div style="display: flex; gap: 0.5rem;">
+  <button class="mode-toggle-btn" onclick="openSettings()" title="Settings">⚙️</button>
+  <button class="mode-toggle-btn" id="mode-toggle" onclick="toggleMode()">☀️ DAY</button>
+</div>  </div>
+
+  <!-- EDIT BANNER -->
   <div id="edit-banner" class="edit-banner hidden">
     <span>✏️ EDIT MODE ACTIVE</span>
     <button onclick="exitEditMode()">EXIT</button>
@@ -17,87 +26,91 @@
 
   <!-- PAGE 1: COVER -->
   <div id="cover-page" class="page active">
-    <div class="cover-container">
+    <div class="book-cover-wrap">
 
+      <!-- AVATAR -->
       <div class="avatar-section">
         <div class="pixel-avatar" id="avatar">
-          <!-- Pixel avatar drawn by CSS -->
           <div class="avatar-head"></div>
           <div class="avatar-body"></div>
-          <div class="avatar-status">
-            <div>Day <span id="day-counter">1</span>/90</div>
-            <div>Energy: <span id="cover-energy">—</span>/10</div>
-            <div>Streak: <span id="cover-streak">0</span> days</div>
+        </div>
+        <div class="avatar-status">
+          <div>Day <span id="day-counter">1</span>/90</div>
+          <div>Energy: <span id="cover-energy">—</span>/10</div>
+          <div>Streak: <span id="cover-streak">0</span> days</div>
+        </div>
+      </div>
+
+      <!-- BOOK COVER -->
+      <div class="book-cover" id="notebook" onclick="openNotebook()">
+        <div class="cover-inner">
+
+          <div class="cover-title">90-DAY KOREAN EXPERIMENT</div>
+          <div class="cover-subtitle">A LIVING SCIENTIFIC PAPER</div>
+          <div class="cover-owner" id="cover-name">[YOUR NAME]</div>
+          <div class="cover-day">DAY <span id="cover-day">1</span> / 90</div>
+          <div class="cover-open-hint">[ TAP TO OPEN ]</div>
+
+          <div class="cover-divider"></div>
+
+          <div class="cover-section-title">⏰ Korean Hours Logged</div>
+
+          <div class="hours-row">
+            <span class="hours-label">STUDY:</span>
+            <div class="hours-bar-bg">
+              <div class="hours-bar-fill study" id="bar-study"></div>
+            </div>
+            <span class="hours-value" id="val-study">0.0h</span>
           </div>
-        </div>
-      </div>
 
-      <div class="notebook-section">
-        <div class="notebook-closed" id="notebook" onclick="openNotebook()">
-          <div class="notebook-cover">
-            <div class="notebook-title">90-DAY KOREAN EXPERIMENT</div>
-            <div class="notebook-subtitle" id="cover-name">[YOUR NAME]</div>
-            <div class="notebook-day">DAY <span id="cover-day">1</span>/90</div>
-            <div class="notebook-hint">[ TAP TO OPEN ]</div>
+          <div class="hours-row">
+            <span class="hours-label">MEDIA:</span>
+            <div class="hours-bar-bg">
+              <div class="hours-bar-fill media" id="bar-media"></div>
+            </div>
+            <span class="hours-value" id="val-media">0.0h</span>
           </div>
+
+          <div class="hours-row">
+            <span class="hours-label">TOTAL:</span>
+            <div class="hours-bar-bg">
+              <div class="hours-bar-fill total" id="bar-total"></div>
+            </div>
+            <span class="hours-value" id="val-total">0.0h</span>
+          </div>
+
+          <div class="cover-divider"></div>
+
+          <div class="cover-section-title">📊 Quick Glance</div>
+          <div class="glance-grid">
+            <div>Korean: <strong id="glance-korean">0.0h</strong></div>
+            <div>Maint: <strong id="glance-maint">0.0h</strong></div>
+            <div>Intrusions: <strong id="glance-intrusions">0</strong></div>
+            <div>Headache: <strong id="glance-headache">—</strong></div>
+            <div>Words: <strong id="glance-words">0</strong></div>
+            <div>Vocab: <strong id="glance-vocab">—</strong></div>
+          </div>
+
+          <div class="cover-divider"></div>
+
+          <div class="cover-section-title">❤️ Favourite Word This Week</div>
+          <div class="fav-word-box">
+            <div class="fav-word-korean" id="fav-word-kr">—</div>
+            <div class="fav-word-meaning" id="fav-word-meaning">Add one from the notes section</div>
+          </div>
+
         </div>
       </div>
 
-    </div>
-
-    <!-- KOREAN HOURS BAR -->
-    <div class="hours-panel">
-      <h3>⏰ KOREAN HOURS LOGGED</h3>
-
-      <div class="hours-row">
-        <span class="hours-label">Study:</span>
-        <div class="hours-bar-bg">
-          <div class="hours-bar-fill study" id="bar-study"></div>
-        </div>
-        <span class="hours-value" id="val-study">0.0h</span>
-      </div>
-
-      <div class="hours-row">
-        <span class="hours-label">Media:</span>
-        <div class="hours-bar-bg">
-          <div class="hours-bar-fill media" id="bar-media"></div>
-        </div>
-        <span class="hours-value" id="val-media">0.0h</span>
-      </div>
-
-      <div class="hours-row">
-        <span class="hours-label">Total:</span>
-        <div class="hours-bar-bg">
-          <div class="hours-bar-fill total" id="bar-total"></div>
-        </div>
-        <span class="hours-value" id="val-total">0.0h</span>
-      </div>
-
-      <div class="hours-target">
-        Target: 60h study + 90h media = 150h total
-      </div>
-    </div>
-
-    <!-- QUICK GLANCE -->
-    <div class="glance-panel">
-      <h3>📊 QUICK GLANCE</h3>
-      <div class="glance-grid">
-        <div>Korean total: <strong id="glance-korean">0.0h</strong></div>
-        <div>Maintenance total: <strong id="glance-maint">0.0h</strong></div>
-        <div>Intrusions (week): <strong id="glance-intrusions">0</strong></div>
-        <div>Headache avg: <strong id="glance-headache">—</strong></div>
-        <div>New words: <strong id="glance-words">0</strong></div>
-        <div>Vocabulary: <strong id="glance-vocab">—</strong></div>
-      </div>
     </div>
   </div>
 
-  <!-- PAGE 2: NOTEBOOK OPEN (Table of Contents) -->
+  <!-- PAGE 2: TOC -->
   <div id="notebook-page" class="page">
     <div class="book-spread">
 
-      <div class="book-page left-page">
-        <h2>📓 TABLE OF CONTENTS</h2>
+      <div class="book-page">
+        <h2>📓 Table of Contents</h2>
         <ul class="toc">
           <li onclick="goToSection('logs')">→ 1. LOGS <small>Daily Entries, Weekly Summaries, Media</small></li>
           <li onclick="goToSection('results')">→ 2. RESULTS <small>Test Scores, Typing, Words</small></li>
@@ -109,41 +122,37 @@
         <button class="back-btn" onclick="closeNotebook()">← CLOSE BOOK</button>
       </div>
 
-      <div class="book-page right-page">
-        <h2>📊 QUICK STATS</h2>
+      <div class="book-page">
+        <h2>📊 Quick Stats</h2>
         <div class="stats-list">
-          <div>Day: <strong id="toc-day">1</strong> / 90</div>
-          <div>Korean hours: <strong id="toc-korean">0.0</strong></div>
-          <div>Maintenance hours: <strong id="toc-maint">0.0</strong></div>
-          <div>Current streak: <strong id="toc-streak">0</strong> days</div>
-          <div>Entries logged: <strong id="toc-entries">0</strong></div>
-          <div>Backlog entries: <strong id="toc-backlog">0</strong></div>
+          <div><span>Day:</span> <strong id="toc-day">1</strong></div>
+          <div><span>Korean hours:</span> <strong id="toc-korean">0.0</strong></div>
+          <div><span>Maintenance hours:</span> <strong id="toc-maint">0.0</strong></div>
+          <div><span>Current streak:</span> <strong id="toc-streak">0</strong></div>
+          <div><span>Entries logged:</span> <strong id="toc-entries">0</strong></div>
+          <div><span>Backlog entries:</span> <strong id="toc-backlog">0</strong></div>
         </div>
 
-        <h2 style="margin-top: 2rem;">🌍 LANGUAGE LEVELS</h2>
+        <h2 style="margin-top: 2rem;">🌍 Language Levels</h2>
         <div class="levels-list">
-          <div>🇰🇷 Korean: <strong id="toc-lv-korean">A0</strong></div>
-          <div>🇵🇹 Portuguese: <strong id="toc-lv-portuguese">B1</strong></div>
-          <div>🇮🇹 Italian: <strong id="toc-lv-italian">B1</strong></div>
-          <div>🇸🇦 Arabic: <strong id="toc-lv-arabic">A2</strong></div>
-          <div>🇯🇵 Japanese: <strong id="toc-lv-japanese">A1</strong></div>
+          <div><span>🇰🇷 Korean:</span> <strong id="toc-lv-korean">A0</strong></div>
+          <div><span>🇵🇹 Portuguese:</span> <strong id="toc-lv-portuguese">B1</strong></div>
+          <div><span>🇮🇹 Italian:</span> <strong id="toc-lv-italian">B1</strong></div>
+          <div><span>🇸🇦 Arabic:</span> <strong id="toc-lv-arabic">A2</strong></div>
+          <div><span>🇯🇵 Japanese:</span> <strong id="toc-lv-japanese">A1</strong></div>
+          <div><span>🇪🇸 Spanish:</span> <strong id="toc-lv-spanish">—</strong></div>
+          <div><span>🇫🇷 French:</span> <strong id="toc-lv-french">—</strong></div>
+          <div><span>🇬🇧 English:</span> <strong id="toc-lv-english">—</strong></div>
         </div>
       </div>
 
     </div>
   </div>
 
-  <!-- PAGE 3: DAILY LOG (placeholder for Phase 2) -->
-  <div id="logs-page" class="page">
-    <div class="placeholder-page">
-      <h2>📓 DAILY LOG</h2>
-      <p>Phase 2 will build the full log form here.</p>
-      <p>Backlog mode, sessions, media, physiological, headache map, Korean output.</p>
-      <button class="back-btn" onclick="goToSection('toc')">← BACK TO CONTENTS</button>
-    </div>
-  </div>
+  <!-- PAGE 3: LOGS -->
+  <div id="logs-page" class="page"></div>
 
-  <!-- PAGE 4: RESULTS (placeholder) -->
+  <!-- PAGE 4: RESULTS -->
   <div id="results-page" class="page">
     <div class="placeholder-page">
       <h2>📊 RESULTS</h2>
@@ -152,7 +161,7 @@
     </div>
   </div>
 
-  <!-- PAGE 5: NOTES (placeholder) -->
+  <!-- PAGE 5: NOTES -->
   <div id="notes-page" class="page">
     <div class="placeholder-page">
       <h2>📝 NOTES</h2>
@@ -161,7 +170,7 @@
     </div>
   </div>
 
-  <!-- PAGE 6: LEVELS (placeholder) -->
+  <!-- PAGE 6: LEVELS -->
   <div id="levels-page" class="page">
     <div class="placeholder-page">
       <h2>📈 LEVELS & STATS</h2>
@@ -170,7 +179,7 @@
     </div>
   </div>
 
-  <!-- PAGE 7: GRAPHS (placeholder) -->
+  <!-- PAGE 7: GRAPHS -->
   <div id="graphs-page" class="page">
     <div class="placeholder-page">
       <h2>📉 GRAPHS</h2>
@@ -179,9 +188,72 @@
     </div>
   </div>
 
-  <!-- SCRIPTS -->
-  <script src="js/data.js"></script>
-  <script src="js/auth.js"></script>
-  <script src="js/app.js"></script>
+  <!-- SETTINGS MODAL -->
+<div id="settings-modal" class="modal-overlay hidden">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h2>⚙️ SETTINGS</h2>
+      <button onclick="closeSettings()" class="remove-btn">✕</button>
+    </div>
+
+    <div class="modal-body">
+      <section class="settings-section">
+        <h3>📚 Custom App Names</h3>
+        <label>
+          Hangul App Name:
+          <input type="text" id="setting-hangul-app" placeholder="e.g., Write It! Korean">
+        </label>
+        <p class="settings-hint">This appears in the activity dropdown instead of "Hangul App".</p>
+      </section>
+
+      <section class="settings-section">
+        <h3>🎯 Targets</h3>
+        <label>
+          Korean Study Target (hours):
+          <input type="number" id="setting-study-target">
+        </label>
+        <label>
+          Korean Media Target (hours):
+          <input type="number" id="setting-media-target">
+        </label>
+      </section>
+
+      <section class="settings-section">
+        <h3>👤 Your Info</h3>
+        <label>
+          Display Name:
+          <input type="text" id="setting-name" placeholder="Your name">
+        </label>
+        <label>
+          Experiment Start Date:
+          <input type="date" id="setting-start-date">
+        </label>
+      </section>
+
+      <section class="settings-section">
+        <h3>🔧 Custom Activities</h3>
+        <div id="custom-activities-list"></div>
+        <p class="settings-hint">Custom activities you've added appear here. Delete any you no longer use.</p>
+      </section>
+
+      <section class="settings-section">
+        <h3>💾 Data Management</h3>
+        <button class="add-btn" onclick="exportData()">📥 EXPORT DATA (JSON)</button>
+        <button class="delete-btn" onclick="confirmReset()">🗑 RESET ALL DATA</button>
+        <p class="settings-hint">Export regularly to back up your 90-day experiment.</p>
+      </section>
+    </div>
+
+    <div class="modal-footer">
+      <button class="save-btn" onclick="saveSettings()">💾 SAVE SETTINGS</button>
+      <button class="cancel-btn" onclick="closeSettings()">CANCEL</button>
+    </div>
+  </div>
+</div>
+<script src="js/data.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/settings.js"></script>
+<script src="js/log-form.js"></script>
+<script src="js/app.js"></script>
 </body>
 </html>

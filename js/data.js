@@ -18,19 +18,27 @@ function getDefaultData() {
     weeklySummaries: [],
     testResults: [],
     labNotes: [],
+    favouriteWords: [],
     researchFindings: [],
     languageLevels: {
-      korean:     { reading: 'A0', writing: 'A0', spelling: 'A0', listening: 'A0', speaking: 'A0', official: 'A0', lastStudied: null },
-      portuguese: { reading: 'B1', writing: 'B1', spelling: 'B1', listening: 'B2', speaking: 'B1', official: 'B1', lastStudied: null },
-      italian:    { reading: 'B1', writing: 'B1', spelling: 'B1', listening: 'B1', speaking: 'B1', official: 'B1', lastStudied: null },
-      arabic:     { reading: 'A2', writing: 'A2', spelling: 'A2', listening: 'A2', speaking: 'A2', official: 'A2', lastStudied: null },
-      japanese:   { reading: 'A1', writing: 'A1', spelling: 'A1', listening: 'A1', speaking: 'A1', official: 'A1', lastStudied: null }
+      
+        korean:     { reading: 'A0', writing: 'A0', spelling: 'A0', listening: 'A0', speaking: 'A0', official: 'A0', lastStudied: null },
+  portuguese: { reading: 'B1', writing: 'B1', spelling: 'B1', listening: 'B2', speaking: 'B1', official: 'B1', lastStudied: null },
+  italian:    { reading: 'B1', writing: 'B1', spelling: 'B1', listening: 'B1', speaking: 'B1', official: 'B1', lastStudied: null },
+  arabic:     { reading: 'A2', writing: 'A2', spelling: 'A2', listening: 'A2', speaking: 'A2', official: 'A2', lastStudied: null },
+  japanese:   { reading: 'A1', writing: 'A1', spelling: 'A1', listening: 'A1', speaking: 'A1', official: 'A1', lastStudied: null },
+  spanish:    { reading: '—', writing: '—', spelling: '—', listening: '—', speaking: '—', official: '—', lastStudied: null },
+  french:     { reading: '—', writing: '—', spelling: '—', listening: '—', speaking: '—', official: '—', lastStudied: null },
+  english:    { reading: '—', writing: '—', spelling: '—', listening: '—', speaking: '—', official: '—', lastStudied: null }
     },
+    
     settings: {
-      koreanStudyTargetHours: 60,
-      koreanMediaTargetHours: 90,
-      editMode: false
-    }
+  koreanStudyTargetHours: 60,
+  koreanMediaTargetHours: 90,
+  editMode: false,
+  hangulAppName: 'Hangul App',       
+  customActivities: []                 // ← Stores any custom "Other" methods you've used
+}
   };
 }
 

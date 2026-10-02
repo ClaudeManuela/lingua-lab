@@ -1,6 +1,5 @@
 /* ============================================
    APP CONTROLLER — Lingua Lab
-   Page routing + UI updates
    ============================================ */
 
 let DATA = null;
@@ -9,9 +8,34 @@ let DATA = null;
 function init() {
   DATA = recalculateAll();
   checkEditMode();
+  initMode();
   updateCoverPage();
   updateTOCPage();
   console.log('✅ Lingua Lab loaded.', DATA);
+}
+
+// ─── LIGHT / DARK MODE ───────────────────────
+function initMode() {
+  const saved = localStorage.getItem('linguaLabMode') || 'light';
+  applyMode(saved);
+}
+
+function applyMode(mode) {
+  const btn = document.getElementById('mode-toggle');
+  if (mode === 'dark') {
+    document.body.classList.add('dark-mode');
+    if (btn) btn.textContent = '🌙 NIGHT';
+  } else {
+    document.body.classList.remove('dark-mode');
+    if (btn) btn.textContent = '☀️ DAY';
+  }
+}
+
+function toggleMode() {
+  const isDark = document.body.classList.contains('dark-mode');
+  const newMode = isDark ? 'light' : 'dark';
+  localStorage.setItem('linguaLabMode', newMode);
+  applyMode(newMode);
 }
 
 // ─── PAGE ROUTING ────────────────────────────
@@ -24,10 +48,10 @@ function showPage(pageId) {
 
 function openNotebook() {
   const notebook = document.getElementById('notebook');
-  notebook.classList.add('notebook-opening');
+  notebook.classList.add('book-opening');
   setTimeout(() => {
     showPage('notebook-page');
-    notebook.classList.remove('notebook-opening');
+    notebook.classList.remove('book-opening');
   }, 500);
 }
 
@@ -39,6 +63,12 @@ function goToSection(section) {
   if (section === 'toc') {
     showPage('notebook-page');
     return;
+  }
+  if (section === 'logs') {
+    if (typeof openLogForm === 'function') {
+      openLogForm();
+      return;
+    }
   }
   showPage(section + '-page');
 }
@@ -52,18 +82,15 @@ function updateCoverPage() {
   const maintHours = getMaintenanceHours(DATA);
   const streak = calculateStreak(DATA);
 
-  // Avatar status
   setText('day-counter', day);
   setText('cover-day', day);
   setText('cover-streak', streak);
-  setText('cover-name', DATA.metadata.userName);
+  setText('cover-name', DATA.metadata.userName || '[YOUR NAME]');
 
-  // Latest energy
   const latest = DATA.dailyLogs[DATA.dailyLogs.length - 1];
   const energy = latest?.physiological?.eveningEnergy || '—';
   setText('cover-energy', energy);
 
-  // Hours bars
   setText('val-study', studyHours.toFixed(1) + 'h');
   setText('val-media', mediaHours.toFixed(1) + 'h');
   setText('val-total', totalHours.toFixed(1) + 'h');
@@ -73,13 +100,27 @@ function updateCoverPage() {
   setBarWidth('bar-total', totalHours, 
     DATA.settings.koreanStudyTargetHours + DATA.settings.koreanMediaTargetHours);
 
-  // Glance panel
   setText('glance-korean', totalHours.toFixed(1) + 'h');
   setText('glance-maint', maintHours.toFixed(1) + 'h');
   setText('glance-intrusions', getWeeklyIntrusions(DATA));
   setText('glance-headache', getAverageHeadache(DATA) || '—');
   setText('glance-words', getTotalNewWords(DATA));
   setText('glance-vocab', '—');
+
+  // Favourite word (latest lab note with word, or fallback)
+  const favWord = getFavouriteWord(DATA);
+  setText('fav-word-kr', favWord.korean);
+  setText('fav-word-meaning', favWord.meaning);
+}
+
+function getFavouriteWord(data) {
+  // Look for most recent lab note with a favourite word marker
+  // For now: check data.favouriteWords array if exists
+  if (data.favouriteWords && data.favouriteWords.length) {
+    const latest = data.favouriteWords[data.favouriteWords.length - 1];
+    return { korean: latest.korean, meaning: latest.meaning };
+  }
+  return { korean: '—', meaning: 'Add one from the notes section' };
 }
 
 // ─── TOC PAGE UPDATE ─────────────────────────
@@ -97,7 +138,7 @@ function updateTOCPage() {
   setText('toc-entries', DATA.dailyLogs.length);
   setText('toc-backlog', getBacklogCount(DATA));
 
-  // Language levels
+  // Language levels (including new languages)
   Object.keys(DATA.languageLevels).forEach(lang => {
     setText(`toc-lv-${lang}`, DATA.languageLevels[lang].official);
   });
