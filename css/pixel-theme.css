@@ -28,9 +28,27 @@
   --warning: #d99b3d;
   --danger: #c73e5c;
   
+  /* ═══ COVER (Kokuyo Purple) ═══ */
+  --cover-base: #d8b8d8;
+  --cover-binding: #a888a8;
+  --cover-ink: #3a2a3a;
+  
+  /* ═══ WHITE LABEL ═══ */
+  --label-bg: #fafafa;
+  --label-border: #c0a0c0;
+  --label-ruling: rgba(180, 180, 180, 0.4);
+  --label-ink: #3a2a3a;
+  --label-ink-soft: #6a5a6a;
+  
+  /* ═══ INTERIOR PAPER ═══ */
+  --paper-bg: #faf8f2;
+  --paper-ruling: rgba(180, 180, 180, 0.35);
+  --paper-margin: #e0a0a0;
+  --paper-ink: #2a2520;
+  --paper-ink-soft: #6a6560;
+  
   --font-pixel: 'Courier New', monospace;
-  --book-binding: #2c3e5c;
-  --book-binding-accent: #b8954a;
+  --font-hand: 'Courier New', monospace;
 }
 
 /* ═══ DARK MODE (Night Lab) ═══ */
@@ -58,8 +76,24 @@ body.dark-mode {
   --warning: #d99b3d;
   --danger: #c73e5c;
   
-  --book-binding: #0a0f1c;
-  --book-binding-accent: #7a6238;
+  /* ═══ COVER (Dark Plum) ═══ */
+  --cover-base: #3a2a45;
+  --cover-binding: #2a1a35;
+  --cover-ink: #e8d8e8;
+  
+  /* ═══ WHITE LABEL (dark) ═══ */
+  --label-bg: #2a2530;
+  --label-border: #5a4a65;
+  --label-ruling: rgba(90, 74, 101, 0.4);
+  --label-ink: #e8d8e8;
+  --label-ink-soft: #a898b0;
+  
+  /* ═══ INTERIOR PAPER (dark) ═══ */
+  --paper-bg: #1a1820;
+  --paper-ruling: rgba(42, 40, 53, 0.6);
+  --paper-margin: #5a3a3a;
+  --paper-ink: #d8d0c8;
+  --paper-ink-soft: #8a8078;
 }
 
 * {

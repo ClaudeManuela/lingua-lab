@@ -29,12 +29,19 @@
   <!-- PAGE 1: COVER -->
 <div id="cover-page" class="page active">
   <div class="book-cover" id="notebook" onclick="openNotebook()">
-    <div class="cover-inner">
 
-      <!-- TOP ROW: AVATAR + TITLE -->
-      <div class="cover-top-row">
+    <!-- WHITE LABEL SECTION -->
+    <div class="cover-label">
+      <div class="cover-label-row">
 
-        <div class="cover-avatar">
+        <div class="cover-label-info">
+          <div class="cover-title-main">90-DAY KOREAN<br>EXPERIMENT</div>
+          <div class="cover-name-line" id="cover-name">[YOUR NAME]</div>
+          <div class="cover-day-line">DAY <span id="cover-day">1</span> / 90</div>
+          <div class="cover-open-hint">[ TAP TO OPEN ]</div>
+        </div>
+
+        <div class="cover-label-avatar">
           <div class="pixel-avatar" id="avatar" data-state="idle">
             <div class="avatar-headache-halo"></div>
             <div class="css-head"></div>
@@ -48,65 +55,67 @@
           </div>
         </div>
 
-        <div class="cover-title-block">
-          <div class="cover-title">90-DAY KOREAN EXPERIMENT</div>
-          <div class="cover-subtitle">A LIVING SCIENTIFIC PAPER</div>
-          <div class="cover-owner" id="cover-name">[YOUR NAME]</div>
-          <div class="cover-day">DAY <span id="cover-day">1</span> / 90</div>
-          <div class="cover-open-hint">[ TAP TO OPEN ]</div>
-        </div>
-
       </div>
-
-      <div class="cover-divider"></div>
-
-      <div class="cover-section-title">⏰ Korean Hours Logged</div>
-
-      <div class="hours-row">
-        <span class="hours-label">STUDY:</span>
-        <div class="hours-bar-bg">
-          <div class="hours-bar-fill study" id="bar-study"></div>
-        </div>
-        <span class="hours-value" id="val-study">0.0h</span>
-      </div>
-
-      <div class="hours-row">
-        <span class="hours-label">MEDIA:</span>
-        <div class="hours-bar-bg">
-          <div class="hours-bar-fill media" id="bar-media"></div>
-        </div>
-        <span class="hours-value" id="val-media">0.0h</span>
-      </div>
-
-      <div class="hours-row">
-        <span class="hours-label">TOTAL:</span>
-        <div class="hours-bar-bg">
-          <div class="hours-bar-fill total" id="bar-total"></div>
-        </div>
-        <span class="hours-value" id="val-total">0.0h</span>
-      </div>
-
-      <div class="cover-divider"></div>
-
-      <div class="cover-section-title">📊 Quick Glance</div>
-      <div class="glance-grid">
-        <div>Korean: <strong id="glance-korean">0.0h</strong></div>
-        <div>Maint: <strong id="glance-maint">0.0h</strong></div>
-        <div>Intrusions: <strong id="glance-intrusions">0</strong></div>
-        <div>Headache: <strong id="glance-headache">—</strong></div>
-        <div>Words: <strong id="glance-words">0</strong></div>
-        <div>Vocab: <strong id="glance-vocab">—</strong></div>
-      </div>
-
-      <div class="cover-divider"></div>
-
-      <div class="cover-section-title">❤️ Favourite Word This Week</div>
-      <div class="fav-word-box">
-        <div class="fav-word-korean" id="fav-word-kr">—</div>
-        <div class="fav-word-meaning" id="fav-word-meaning">Add one from the notes section</div>
-      </div>
-
     </div>
+
+    <!-- DATA SECTIONS BELOW LABEL -->
+    <div class="cover-divider"></div>
+
+    <div class="cover-section-title">⏰ Korean Hours Logged</div>
+
+    <div class="hours-row">
+      <span class="hours-label">STUDY:</span>
+      <div class="hours-bar-bg">
+        <div class="hours-bar-fill study" id="bar-study"></div>
+      </div>
+      <span class="hours-value" id="val-study">0.0h</span>
+    </div>
+
+    <div class="hours-row">
+      <span class="hours-label">MEDIA:</span>
+      <div class="hours-bar-bg">
+        <div class="hours-bar-fill media" id="bar-media"></div>
+      </div>
+      <span class="hours-value" id="val-media">0.0h</span>
+    </div>
+
+    <div class="hours-row">
+      <span class="hours-label">TOTAL:</span>
+      <div class="hours-bar-bg">
+        <div class="hours-bar-fill total" id="bar-total"></div>
+      </div>
+      <span class="hours-value" id="val-total">0.0h</span>
+    </div>
+
+    <div class="cover-divider"></div>
+
+    <div class="cover-section-title">📊 Quick Glance</div>
+    <div class="glance-grid">
+      <div>Korean: <strong id="glance-korean">0.0h</strong></div>
+      <div>Maint: <strong id="glance-maint">0.0h</strong></div>
+      <div>Intrusions: <strong id="glance-intrusions">0</strong></div>
+      <div>Headache: <strong id="glance-headache">—</strong></div>
+      <div>Words: <strong id="glance-words">0</strong></div>
+      <div>Vocab: <strong id="glance-vocab">—</strong></div>
+    </div>
+
+    <div class="cover-divider"></div>
+
+    <div class="cover-section-title">❤️ Favourite Word This Week</div>
+    <div class="fav-word-box">
+      <div class="fav-word-korean" id="fav-word-kr">—</div>
+      <div class="fav-word-meaning" id="fav-word-meaning">Add one from the notes section</div>
+    </div>
+
+    <!-- BRAND CHIP -->
+    <div class="cover-brand">
+      <div class="brand-chip">LL</div>
+      <div class="brand-text">
+        <div class="brand-name">Claude's Language Lab</div>
+        <div class="brand-sub">A5 • 7mm ruled • No. 3</div>
+      </div>
+    </div>
+
   </div>
 </div>
   <!-- PAGE 2: TOC -->
