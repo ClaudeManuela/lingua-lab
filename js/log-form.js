@@ -23,6 +23,25 @@ function openLogForm(dateStr = null) {
 
 // ─── RENDER FORM ─────────────────────────────
 function renderLogForm() {
+    if (!isEditable()) {
+    const container = document.getElementById('logs-page');
+    container.innerHTML = `
+      <div class="log-form-container">
+        <div class="log-header">
+          <h2>DAILY LOG — Read Only</h2>
+        </div>
+        <p style="text-align:center; padding: 2rem; color: var(--paper-ink-soft);">
+          You are viewing in read-only mode.<br>
+          Add <code>?admin=true</code> to the URL to edit.
+        </p>
+        <div class="form-actions">
+          <button class="cancel-btn" onclick="closeLogForm()">CLOSE</button>
+        </div>
+      </div>
+    `;
+    showPage('logs-page');
+    return;
+  }
   const existing = findLogByDate(DATA, currentFormDate);
   const dayNumber = daysBetween(DATA.metadata.experimentStartDate, currentFormDate) + 1;
 
@@ -55,20 +74,8 @@ function renderLogForm() {
         <div class="backlog-notice">🕐 BACKLOG MODE — This entry counts toward all totals.</div>
       ` : ''}
 
-      <section class="form-section">
-        <h3>⏱ STUDY SESSIONS</h3>
-        <div id="sessions-container"></div>
-        <button class="add-btn" onclick="addSession()">+ ADD SESSION</button>
-      </section>
-
-      <section class="form-section">
-        <h3>📺 MEDIA CONSUMED</h3>
-        <div id="media-container"></div>
-        <button class="add-btn" onclick="addMedia()">+ ADD MEDIA</button>
-      </section>
-
-      <section class="form-section">
-        <h3>🌙 PHYSIOLOGICAL</h3>
+    <section class="form-section">
+        <h3> PHYSIOLOGICAL</h3>
         <div class="field-grid">
           <label>Sleep (hrs): <input type="number" step="0.5" id="phys-sleep" value="${existing?.physiological?.sleepHours || ''}"></label>
           <label>Sleep Quality (1-5): <input type="number" min="1" max="5" id="phys-sleepq" value="${existing?.physiological?.sleepQuality || ''}"></label>
@@ -85,8 +92,22 @@ function renderLogForm() {
   <input type="hidden" id="phys-hloc" value="${existing?.physiological?.headacheLocation || ''}">
   <input type="hidden" id="phys-hak" value="${existing?.physiological?.headacheAfterKorean || 0}">
   <div id="brain-map-slot"></div>
-</div>
+    </div>
       </section>
+
+      <section class="form-section">
+        <h3>⏱ STUDY SESSIONS</h3>
+        <div id="sessions-container"></div>
+        <button class="add-btn" onclick="addSession()">+ ADD SESSION</button>
+      </section>
+
+      <section class="form-section">
+        <h3>📺 MEDIA CONSUMED</h3>
+        <div id="media-container"></div>
+        <button class="add-btn" onclick="addMedia()">+ ADD MEDIA</button>
+      </section>
+
+     
 
       <section class="form-section">
         <h3>🇰🇷 KOREAN OUTPUT</h3>
@@ -102,18 +123,21 @@ function renderLogForm() {
               <option value="Italian" ${existing?.koreanOutput?.dominantIntruder === 'Italian' ? 'selected' : ''}>Italian</option>
               <option value="Arabic" ${existing?.koreanOutput?.dominantIntruder === 'Arabic' ? 'selected' : ''}>Arabic</option>
               <option value="Japanese" ${existing?.koreanOutput?.dominantIntruder === 'Japanese' ? 'selected' : ''}>Japanese</option>
+            <option value="Spanish" ${existing?.koreanOutput?.dominantIntruder === 'Spanish' ? 'selected' : ''}>Spanish</option>
+            <option value="French" ${existing?.koreanOutput?.dominantIntruder === 'French' ? 'selected' : ''}>French</option>
+            <option value="English" ${existing?.koreanOutput?.dominantIntruder === 'English' ? 'selected' : ''}>English</option>
             </select>
           </label>
         </div>
       </section>
 
       <section class="form-section">
-        <h3>📝 LAB NOTE</h3>
+        <h3> LAB NOTE</h3>
         <textarea id="lab-note" rows="4" placeholder="What did you learn? What clicked? What struggled?">${existing?.labNote || ''}</textarea>
       </section>
 
       <div class="form-actions">
-        <button class="save-btn" onclick="saveLog()">💾 SAVE ENTRY</button>
+        <button class="save-btn" onclick="saveLog()"> Save entry</button>
         ${existing ? `<button class="delete-btn" onclick="deleteLog()">🗑 DELETE</button>` : ''}
         <button class="cancel-btn" onclick="closeLogForm()">CANCEL</button>
       </div>
@@ -425,9 +449,9 @@ function saveLog() {
 
 function buildModeCode(audio, sub) {
   const codeMap = { 
-    Korean: 'K', Portuguese: 'P', Italian: 'I', Arabic: 'A', 
-    Japanese: 'J', Spanish: 'S', French: 'F', English: 'E', None: 'N' 
-  };
+  Korean: 'K', Portuguese: 'P', Italian: 'I', Arabic: 'A', 
+  Japanese: 'J', Spanish: 'S', French: 'F', English: 'E', None: 'N' 
+};
   return `${codeMap[audio] || '?'}+${codeMap[sub] || '?'}`;
 }
 

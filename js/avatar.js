@@ -1,9 +1,8 @@
 /* ============================================
    AVATAR STATE MACHINE
-   Decides which state to render based on data
+   Persists last state until new entry saved
    ============================================ */
 
-// Sprite sheet config (frames per state)
 const SPRITE_FRAMES = {
   idle: 4,
   slouch: 4,
@@ -15,7 +14,6 @@ const SPRITE_FRAMES = {
   focused: 4
 };
 
-// Check if sprite sheets exist (cached results)
 const spriteCache = {};
 
 function spriteExists(state) {
@@ -33,14 +31,12 @@ function spriteExists(state) {
   });
 }
 
-// ─── DECIDE STATE FROM DATA ───
 function decideAvatarState(latestLog) {
   if (!latestLog) return 'idle';
 
   const phys = latestLog.physiological || {};
   const output = latestLog.koreanOutput || {};
 
-  // Priority order (highest first)
   if ((phys.headacheAfterKorean || 0) >= 7) return 'headache';
   if ((output.intrusions || 0) >= 15) return 'frustrated';
   if ((phys.sleepHours || 8) < 5) return 'sleepy';
@@ -52,53 +48,40 @@ function decideAvatarState(latestLog) {
   return 'idle';
 }
 
-// ─── RENDER AVATAR ───
 async function renderAvatar(latestLog) {
   const avatar = document.getElementById('avatar');
   if (!avatar) return;
 
   const state = decideAvatarState(latestLog);
-  const headacheIntensity = latestLog?.physiological?.headacheAfterKorean || 0;
 
-  // Check for sprite
   const hasSprite = await spriteExists(state);
-if (hasSprite) {
-  // Sprite mode — JS slicer handles the frames
-  avatar.dataset.state = state;
-  if (typeof playSprite === 'function') {
-    playSprite(state, SPRITE_FRAMES[state] || 4);
-  }
-} else {
-  // CSS placeholder mode
-  if (typeof spriteInterval !== 'undefined' && spriteInterval) {
-    clearInterval(spriteInterval);
-    spriteInterval = null;
-  }
-  avatar.dataset.sprite = 'false';
-  avatar.dataset.state = state;
-  avatar.style.backgroundImage = '';
-  avatar.innerHTML = `
-    <div class="avatar-headache-halo" style="--halo-intensity: ${Math.max(0.2, headacheIntensity / 10)}"></div>
-    <div class="css-head"></div>
-    <div class="css-body"></div>
-  `;
-}
 
-  // Set headache attribute for halo
-  if (headacheIntensity > 0) {
-    avatar.dataset.headache = 'active';
+  if (hasSprite) {
+    avatar.dataset.state = state;
+    if (typeof playSprite === 'function') {
+      playSprite(state, SPRITE_FRAMES[state] || 4);
+    }
   } else {
-    avatar.dataset.headache = 'inactive';
+    if (typeof spriteInterval !== 'undefined' && spriteInterval) {
+      clearInterval(spriteInterval);
+      spriteInterval = null;
+    }
+    avatar.dataset.sprite = 'false';
+    avatar.dataset.state = state;
+    avatar.style.backgroundImage = '';
+    avatar.innerHTML = `
+      <div class="css-head"></div>
+      <div class="css-body"></div>
+    `;
+    avatar.classList.add('ready');
   }
 
-  // Update state label
   const label = document.getElementById('avatar-state-label');
   if (label) {
-    label.textContent = `state: ${state}`;
+    label.textContent = state;
   }
 }
 
-// ─── RENDER AVATAR TO COVER ───
 function refreshCoverAvatar() {
   const latest = DATA.dailyLogs[DATA.dailyLogs.length - 1];
   renderAvatar(latest);

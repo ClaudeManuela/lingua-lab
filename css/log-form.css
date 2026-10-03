@@ -378,3 +378,53 @@ body.dark-mode .custom-activity-row {
   font-family: var(--font-pixel);
   font-size: 0.85rem;
 }
+/* ═══ MOBILE OVERFLOW FIX ═══ */
+@media (max-width: 700px) {
+  .session-grid,
+  .media-grid,
+  .field-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .session-grid label,
+  .media-grid label,
+  .field-grid label {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .session-grid input,
+  .session-grid select,
+  .media-grid input,
+  .media-grid select,
+  .field-grid input,
+  .field-grid select {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+  }
+
+  .form-actions {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .form-actions button {
+    max-width: fit-content;
+    width: auto;
+  }
+
+  .save-btn,
+  .delete-btn,
+  .cancel-btn {
+    max-width: fit-content;
+    width: auto;
+    padding: 0.6rem 1.25rem;
+  }
+
+  .mode-toggle button {
+    padding: 0.35rem 0.65rem;
+    font-size: 0.7rem;
+  }
+}

@@ -13,7 +13,7 @@ let entryFilter = {
 // Language metadata for consistent ordering and colors
 const LANGUAGE_META = {
   'Korean':     { order: 1,  css: 'korean',     flag: '🇰🇷' },
-  'Portuguese': { order: 2,  css: 'portuguese', flag: '🇵🇹' },
+  'Portuguese': { order: 2,  css: 'portuguese', flag: '🇧🇷' },
   'Italian':    { order: 3,  css: 'italian',    flag: '🇮🇹' },
   'Arabic':     { order: 4,  css: 'arabic',     flag: '🇸🇦' },
   'Japanese':   { order: 5,  css: 'japanese',   flag: '🇯🇵' },
@@ -22,20 +22,24 @@ const LANGUAGE_META = {
   'English':    { order: 8,  css: 'english',    flag: '🇬🇧' }
 };
 
-// ─── RENDER LOGS LANDING PAGE ────────────────
+// ─── RENDER LOGS LANDING ─────────────────────
 function renderLogsLanding() {
   const container = document.getElementById('logs-page');
+  const admin = isEditable();
+
   container.innerHTML = `
     <div class="logs-landing">
       <div class="logs-tabs">
-        <button class="logs-tab active" onclick="renderEntryList()">📋 ALL ENTRIES</button>
-        <button class="logs-tab" onclick="openLogForm()">📝 TODAY'S LOG</button>
+        <button class="logs-tab active" onclick="renderEntryList()">ALL ENTRIES</button>
+        ${admin ? `<button class="logs-tab" onclick="openLogForm()">TODAY'S LOG</button>` : ''}
       </div>
 
-      <div class="logs-actions">
-        <button onclick="openLogForm()">+ NEW ENTRY</button>
-        <button onclick="openLogForm(getBacklogSuggestionDate())">+ BACKFILL PREVIOUS DAY</button>
-      </div>
+      ${admin ? `
+        <div class="logs-actions">
+          <button onclick="openLogForm()">+ NEW ENTRY</button>
+          <button onclick="openLogForm(getBacklogSuggestionDate())">+ BACKFILL PREVIOUS DAY</button>
+        </div>
+      ` : ''}
 
       <div id="entry-list-target"></div>
     </div>
@@ -66,7 +70,7 @@ function renderEntryList() {
 
   target.innerHTML = `
     <div class="entry-list-header">
-      <h2>📖 Entry Archive</h2>
+      <h2> Entry Archive</h2>
       <div class="entry-summary-strip">
         <div><span>Total entries:</span> <strong>${filtered.length}</strong></div>
         <div><span>Backlog:</span> <strong>${filtered.filter(l => l.backlog).length}</strong></div>
@@ -86,14 +90,14 @@ function renderEntryList() {
 // ─── FILTER BAR ──────────────────────────────
 function renderFilterBar() {
   const types = [
-    { key: 'korean',         label: '🇰🇷 Korean Days' },
-    { key: 'all',            label: '📚 All Entries' },
-    { key: 'maintenance',    label: '🔧 Maintenance Only' },
-    { key: 'multilang',      label: '🌍 Multi-language' },
-    { key: 'backlog',        label: '🕐 Backlog' },
-    { key: 'highconfidence', label: '✅ High Confidence' },
-    { key: 'last7',          label: '📅 Last 7 days' },
-    { key: 'last30',         label: '📅 Last 30 days' }
+    { key: 'korean',         label: ' Korean Days' },
+    { key: 'all',            label: ' All Entries' },
+    { key: 'maintenance',    label: ' Maintenance Only' },
+    { key: 'multilang',      label: ' Multi-language' },
+    { key: 'backlog',        label: ' Backlog' },
+    { key: 'highconfidence', label: ' High Confidence' },
+    { key: 'last7',          label: ' Last 7 days' },
+    { key: 'last30',         label: ' Last 30 days' }
   ];
 
   const languages = ['Korean', 'Portuguese', 'Italian', 'Arabic', 'Japanese', 'Spanish', 'French', 'English'];
@@ -119,7 +123,7 @@ function renderFilterBar() {
       </div>
 
       <div class="filter-row">
-        <input type="text" class="filter-search" placeholder="🔍 Search dates, notes, media, languages..." 
+        <input type="text" class="filter-search" placeholder=" Search dates, notes, media, languages..." 
                value="${entryFilter.search}" oninput="setSearch(this.value)">
         <select class="filter-sort" onchange="setSort(this.value)">
           <option value="newest" ${entryFilter.sort === 'newest' ? 'selected' : ''}>Newest first</option>
@@ -219,9 +223,12 @@ function renderEntryCard(log) {
           ${confidenceMarker}
         </div>
         <div class="entry-card-actions">
-          <button class="entry-btn edit" onclick="editEntry('${log.date}')">✏️ EDIT</button>
-          <button class="entry-btn delete" onclick="deleteEntry('${log.date}')">🗑 DELETE</button>
+        ${isEditable() ? `
+            <button class="entry-btn edit" onclick="editEntry('${log.date}')">EDIT</button>
+            <button class="entry-btn delete" onclick="deleteEntry('${log.date}')">DELETE</button>
+        ` : ''}
         </div>
+        
       </div>
 
       <div class="entry-languages">${langRows || '<div style="padding-left:20px;color:var(--paper-ink-soft);font-size:0.75rem;">No sessions logged</div>'}</div>

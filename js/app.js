@@ -4,15 +4,13 @@
 
 let DATA = null;
 
-// I'm talking about innniiiiiiit
-
+// ─── INIT ──────────im talking about inniiiiiiiit──────────────────────────
 async function init() {
-  console.log('🧪 Lingua Lab booting...');
-  
-  // Try to load from cloud first
+  console.log('Lingua Lab booting...');
+
   DATA = await loadFromCloud();
-  console.log('📦 Loaded', DATA.dailyLogs?.length || 0, 'entries');
-  
+  console.log('Loaded', DATA.dailyLogs?.length || 0, 'entries');
+
   checkEditMode();
   initMode();
   updateCoverPage();
@@ -20,7 +18,7 @@ async function init() {
   if (typeof refreshCoverAvatar === 'function') {
     refreshCoverAvatar();
   }
-  console.log('✅ Lingua Lab ready.');
+  console.log('Lingua Lab ready.');
 }
 
 // ─── LIGHT / DARK MODE ───────────────────────
@@ -33,10 +31,10 @@ function applyMode(mode) {
   const btn = document.getElementById('mode-toggle');
   if (mode === 'dark') {
     document.body.classList.add('dark-mode');
-    if (btn) btn.textContent = '🌙 NIGHT';
+    if (btn) btn.textContent = 'NIGHT';
   } else {
     document.body.classList.remove('dark-mode');
-    if (btn) btn.textContent = '☀️ DAY';
+    if (btn) btn.textContent = 'DAY';
   }
 }
 
@@ -52,21 +50,33 @@ function showPage(pageId) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   const page = document.getElementById(pageId);
   if (page) page.classList.add('active');
+
+  // Nav bar visible only on interior pages
+  const navBar = document.getElementById('nav-bar');
+  if (navBar) {
+    if (pageId === 'cover-page') {
+      navBar.classList.add('hidden');
+      document.body.classList.remove('has-nav');
+    } else {
+      navBar.classList.remove('hidden');
+      document.body.classList.add('has-nav');
+    }
+  }
+
   window.scrollTo(0, 0);
 }
 
 function openNotebook() {
-  console.log('📖 openNotebook() triggered');
   const notebook = document.getElementById('notebook');
-  if (!notebook) {
-    console.error('❌ #notebook element not found');
-    return;
-  }
   notebook.classList.add('book-opening');
   setTimeout(() => {
     showPage('notebook-page');
     notebook.classList.remove('book-opening');
   }, 500);
+}
+
+function closeBook() {
+  showPage('cover-page');
 }
 
 function closeNotebook() {
@@ -99,11 +109,10 @@ function updateCoverPage() {
 
   setText('cover-day', day);
   setText('cover-streak', streak);
-  setText('cover-name', DATA.metadata.userName || '[YOUR NAME]');
+  setText('cover-name', DATA.metadata.userName || 'Claude Manuela');
 
-  // Set data-day attribute for mobile two-column Day display
-const miniStatus = document.getElementById('avatar-mini-status');
-if (miniStatus) miniStatus.setAttribute('data-day', day);
+  const miniStatus = document.getElementById('avatar-mini-status');
+  if (miniStatus) miniStatus.setAttribute('data-day', day);
 
   const latest = DATA.dailyLogs[DATA.dailyLogs.length - 1];
   const energy = latest?.physiological?.eveningEnergy || '—';
@@ -125,20 +134,12 @@ if (miniStatus) miniStatus.setAttribute('data-day', day);
   setText('glance-words', getTotalNewWords(DATA));
   setText('glance-vocab', '—');
 
-  // Favourite word (latest lab note with word, or fallback)
   const favWord = getFavouriteWord(DATA);
   setText('fav-word-kr', favWord.korean);
   setText('fav-word-meaning', favWord.meaning);
-
-  // Refresh avatar based on latest data
-if (typeof refreshCoverAvatar === 'function') {
-  refreshCoverAvatar();
-}
 }
 
 function getFavouriteWord(data) {
-  // Look for most recent lab note with a favourite word marker
-  // For now: check data.favouriteWords array if exists
   if (data.favouriteWords && data.favouriteWords.length) {
     const latest = data.favouriteWords[data.favouriteWords.length - 1];
     return { korean: latest.korean, meaning: latest.meaning };
@@ -161,7 +162,6 @@ function updateTOCPage() {
   setText('toc-entries', DATA.dailyLogs.length);
   setText('toc-backlog', getBacklogCount(DATA));
 
-  // Language levels (including new languages)
   Object.keys(DATA.languageLevels).forEach(lang => {
     setText(`toc-lv-${lang}`, DATA.languageLevels[lang].official);
   });

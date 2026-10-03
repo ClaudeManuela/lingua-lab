@@ -217,6 +217,60 @@ body {
 .hidden {
   display: none !important;
 }
+/* ═══ NAV BAR (interior pages) ═══ */
+.nav-bar {
+  position: fixed;
+  top: 48px;
+  left: 0;
+  right: 0;
+  height: 44px;
+  background: var(--bg-panel);
+  border-bottom: 3px solid var(--border-main);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 1rem;
+  z-index: 998;
+  box-shadow: 0 3px 0 rgba(0,0,0,0.08);
+}
+
+.nav-bar.hidden {
+  display: none;
+}
+
+.nav-btn {
+  background: var(--accent-blue);
+  color: var(--text-inverse);
+  border: 2px solid var(--border-main);
+  padding: 0.35rem 0.75rem;
+  font-family: var(--font-pixel);
+  font-size: 0.7rem;
+  font-weight: bold;
+  letter-spacing: 1px;
+  cursor: pointer;
+  box-shadow: 2px 2px 0 var(--border-main);
+  max-width: fit-content;
+  white-space: normal;
+  word-break: normal;
+}
+
+.nav-btn:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 3px 3px 0 var(--border-main);
+}
+
+.nav-title {
+  font-size: 0.75rem;
+  font-weight: bold;
+  letter-spacing: 2px;
+  color: var(--accent-ink);
+  text-transform: uppercase;
+}
+
+/* Body padding when nav is visible */
+body.has-nav {
+  padding-top: 92px;
+}
 
 /* ═══ PAGE SYSTEM ═══ */
 .page {
@@ -261,6 +315,11 @@ body.dark-mode .pixel-border {
   box-shadow: 4px 4px 0 var(--border-main);
   transition: transform 0.1s, box-shadow 0.1s;
   text-transform: uppercase;
+  max-width: fit-content;
+  white-space: normal;
+  word-break: normal;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .back-btn:hover,
@@ -300,6 +359,21 @@ body.dark-mode .pixel-border {
   }
   .page {
     padding: 1rem;
+  }
+  .nav-bar {
+    padding: 0 0.5rem;
+  }
+  .nav-btn {
+    font-size: 0.6rem;
+    padding: 0.3rem 0.5rem;
+    letter-spacing: 0.5px;
+  }
+  .nav-title {
+    font-size: 0.65rem;
+    letter-spacing: 1px;
+  }
+  body.has-nav {
+    padding-top: 88px;
   }
 }
 /* ═══ MODAL SYSTEM ═══ */
