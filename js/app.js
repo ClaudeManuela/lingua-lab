@@ -91,7 +91,6 @@ function updateCoverPage() {
   const maintHours = getMaintenanceHours(DATA);
   const streak = calculateStreak(DATA);
 
-  setText('day-counter', day);
   setText('cover-day', day);
   setText('cover-streak', streak);
   setText('cover-name', DATA.metadata.userName || '[YOUR NAME]');
