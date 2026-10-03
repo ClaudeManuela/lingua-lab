@@ -7,6 +7,8 @@
   <link rel="stylesheet" href="css/pixel-theme.css">
   <link rel="stylesheet" href="css/book.css">
   <link rel="stylesheet" href="css/log-form.css">
+  <link rel="stylesheet" href="css/brain-map.css">
+<link rel="stylesheet" href="css/avatar.css">
 </head>
 <body>
 
@@ -25,86 +27,88 @@
   </div>
 
   <!-- PAGE 1: COVER -->
-  <div id="cover-page" class="page active">
-    <div class="book-cover-wrap">
+<div id="cover-page" class="page active">
+  <div class="book-cover" id="notebook" onclick="openNotebook()">
+    <div class="cover-inner">
 
-      <!-- AVATAR -->
-      <div class="avatar-section">
-        <div class="pixel-avatar" id="avatar">
-          <div class="avatar-head"></div>
-          <div class="avatar-body"></div>
+      <!-- TOP ROW: AVATAR + TITLE -->
+      <div class="cover-top-row">
+
+        <div class="cover-avatar">
+          <div class="pixel-avatar" id="avatar" data-state="idle">
+            <div class="avatar-headache-halo"></div>
+            <div class="css-head"></div>
+            <div class="css-body"></div>
+          </div>
+          <div class="avatar-mini-status">
+            <div>D <span id="day-counter">1</span>/90</div>
+            <div>E <span id="cover-energy">—</span></div>
+            <div>S <span id="cover-streak">0</span>d</div>
+            <div class="avatar-state-label" id="avatar-state-label">idle</div>
+          </div>
         </div>
-        <div class="avatar-status">
-          <div>Day <span id="day-counter">1</span>/90</div>
-          <div>Energy: <span id="cover-energy">—</span>/10</div>
-          <div>Streak: <span id="cover-streak">0</span> days</div>
-        </div>
-      </div>
 
-      <!-- BOOK COVER -->
-      <div class="book-cover" id="notebook" onclick="openNotebook()">
-        <div class="cover-inner">
-
+        <div class="cover-title-block">
           <div class="cover-title">90-DAY KOREAN EXPERIMENT</div>
           <div class="cover-subtitle">A LIVING SCIENTIFIC PAPER</div>
           <div class="cover-owner" id="cover-name">[YOUR NAME]</div>
           <div class="cover-day">DAY <span id="cover-day">1</span> / 90</div>
           <div class="cover-open-hint">[ TAP TO OPEN ]</div>
-
-          <div class="cover-divider"></div>
-
-          <div class="cover-section-title">⏰ Korean Hours Logged</div>
-
-          <div class="hours-row">
-            <span class="hours-label">STUDY:</span>
-            <div class="hours-bar-bg">
-              <div class="hours-bar-fill study" id="bar-study"></div>
-            </div>
-            <span class="hours-value" id="val-study">0.0h</span>
-          </div>
-
-          <div class="hours-row">
-            <span class="hours-label">MEDIA:</span>
-            <div class="hours-bar-bg">
-              <div class="hours-bar-fill media" id="bar-media"></div>
-            </div>
-            <span class="hours-value" id="val-media">0.0h</span>
-          </div>
-
-          <div class="hours-row">
-            <span class="hours-label">TOTAL:</span>
-            <div class="hours-bar-bg">
-              <div class="hours-bar-fill total" id="bar-total"></div>
-            </div>
-            <span class="hours-value" id="val-total">0.0h</span>
-          </div>
-
-          <div class="cover-divider"></div>
-
-          <div class="cover-section-title">📊 Quick Glance</div>
-          <div class="glance-grid">
-            <div>Korean: <strong id="glance-korean">0.0h</strong></div>
-            <div>Maint: <strong id="glance-maint">0.0h</strong></div>
-            <div>Intrusions: <strong id="glance-intrusions">0</strong></div>
-            <div>Headache: <strong id="glance-headache">—</strong></div>
-            <div>Words: <strong id="glance-words">0</strong></div>
-            <div>Vocab: <strong id="glance-vocab">—</strong></div>
-          </div>
-
-          <div class="cover-divider"></div>
-
-          <div class="cover-section-title">❤️ Favourite Word This Week</div>
-          <div class="fav-word-box">
-            <div class="fav-word-korean" id="fav-word-kr">—</div>
-            <div class="fav-word-meaning" id="fav-word-meaning">Add one from the notes section</div>
-          </div>
-
         </div>
+
+      </div>
+
+      <div class="cover-divider"></div>
+
+      <div class="cover-section-title">⏰ Korean Hours Logged</div>
+
+      <div class="hours-row">
+        <span class="hours-label">STUDY:</span>
+        <div class="hours-bar-bg">
+          <div class="hours-bar-fill study" id="bar-study"></div>
+        </div>
+        <span class="hours-value" id="val-study">0.0h</span>
+      </div>
+
+      <div class="hours-row">
+        <span class="hours-label">MEDIA:</span>
+        <div class="hours-bar-bg">
+          <div class="hours-bar-fill media" id="bar-media"></div>
+        </div>
+        <span class="hours-value" id="val-media">0.0h</span>
+      </div>
+
+      <div class="hours-row">
+        <span class="hours-label">TOTAL:</span>
+        <div class="hours-bar-bg">
+          <div class="hours-bar-fill total" id="bar-total"></div>
+        </div>
+        <span class="hours-value" id="val-total">0.0h</span>
+      </div>
+
+      <div class="cover-divider"></div>
+
+      <div class="cover-section-title">📊 Quick Glance</div>
+      <div class="glance-grid">
+        <div>Korean: <strong id="glance-korean">0.0h</strong></div>
+        <div>Maint: <strong id="glance-maint">0.0h</strong></div>
+        <div>Intrusions: <strong id="glance-intrusions">0</strong></div>
+        <div>Headache: <strong id="glance-headache">—</strong></div>
+        <div>Words: <strong id="glance-words">0</strong></div>
+        <div>Vocab: <strong id="glance-vocab">—</strong></div>
+      </div>
+
+      <div class="cover-divider"></div>
+
+      <div class="cover-section-title">❤️ Favourite Word This Week</div>
+      <div class="fav-word-box">
+        <div class="fav-word-korean" id="fav-word-kr">—</div>
+        <div class="fav-word-meaning" id="fav-word-meaning">Add one from the notes section</div>
       </div>
 
     </div>
   </div>
-
+</div>
   <!-- PAGE 2: TOC -->
   <div id="notebook-page" class="page">
     <div class="book-spread">
@@ -253,6 +257,9 @@
 <script src="js/data.js"></script>
 <script src="js/auth.js"></script>
 <script src="js/settings.js"></script>
+<script src="js/brain-map.js"></script>
+<script src="js/sprite-slicer.js"></script>
+<script src="js/avatar.js"></script>
 <script src="js/log-form.js"></script>
 <script src="js/app.js"></script>
 </body>

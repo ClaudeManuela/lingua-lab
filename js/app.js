@@ -11,6 +11,9 @@ function init() {
   initMode();
   updateCoverPage();
   updateTOCPage();
+  if (typeof refreshCoverAvatar === 'function') {
+    refreshCoverAvatar();
+  }
   console.log('✅ Lingua Lab loaded.', DATA);
 }
 
@@ -47,7 +50,12 @@ function showPage(pageId) {
 }
 
 function openNotebook() {
+  console.log('📖 openNotebook() triggered');
   const notebook = document.getElementById('notebook');
+  if (!notebook) {
+    console.error('❌ #notebook element not found');
+    return;
+  }
   notebook.classList.add('book-opening');
   setTimeout(() => {
     showPage('notebook-page');
@@ -111,6 +119,11 @@ function updateCoverPage() {
   const favWord = getFavouriteWord(DATA);
   setText('fav-word-kr', favWord.korean);
   setText('fav-word-meaning', favWord.meaning);
+
+  // Refresh avatar based on latest data
+if (typeof refreshCoverAvatar === 'function') {
+  refreshCoverAvatar();
+}
 }
 
 function getFavouriteWord(data) {

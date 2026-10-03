@@ -1,8 +1,7 @@
 /* ============================================
    BOOK STYLING — Classic Notebook Aesthetic
    ============================================ */
-
-/* ═══ COVER PAGE ═══ */
+/* ═══ COVER PAGE WRAPPER ═══ */
 #cover-page {
   display: none;
   min-height: calc(100vh - 48px);
@@ -15,92 +14,10 @@
   display: flex;
 }
 
-.book-cover-wrap {
-  width: 100%;
-  max-width: 1200px;
-  margin: 0 auto;
-  display: flex;
-  gap: 3rem;
-  align-items: flex-start;
-  justify-content: center;
-  flex-wrap: wrap;
-}
-
-/* ═══ PIXEL AVATAR ═══ */
-.avatar-section {
-  flex: 0 0 240px;
-  text-align: center;
-  padding-top: 2rem;
-}
-
-.pixel-avatar {
-  width: 200px;
-  height: 260px;
-  margin: 0 auto;
-  position: relative;
-  image-rendering: pixelated;
-}
-
-/* Placeholder pixel character */
-.avatar-head {
-  width: 90px;
-  height: 90px;
-  background: #f4d4b8;
-  border: 4px solid var(--border-main);
-  margin: 0 auto;
-  position: relative;
-  box-shadow: 
-    inset -6px -6px 0 rgba(0,0,0,0.15),
-    inset 6px 6px 0 rgba(255,255,255,0.4),
-    4px 4px 0 rgba(0,0,0,0.2);
-}
-
-.avatar-head::before,
-.avatar-head::after {
-  content: '';
-  position: absolute;
-  width: 14px;
-  height: 14px;
-  background: var(--text-main);
-  top: 30px;
-}
-
-.avatar-head::before { left: 18px; }
-.avatar-head::after { right: 18px; }
-
-.avatar-body {
-  width: 110px;
-  height: 110px;
-  background: var(--accent-blue);
-  border: 4px solid var(--border-main);
-  margin: 10px auto 0;
-  box-shadow: 
-    inset -6px -6px 0 rgba(0,0,0,0.15),
-    inset 6px 6px 0 rgba(255,255,255,0.3),
-    4px 4px 0 rgba(0,0,0,0.2);
-}
-
-.avatar-status {
-  margin-top: 1.5rem;
-  padding: 1rem;
-  background: var(--bg-panel);
-  border: 3px solid var(--border-main);
-  box-shadow: 4px 4px 0 var(--border-main);
-  font-size: 0.8rem;
-  line-height: 1.9;
-  color: var(--text-dim);
-  letter-spacing: 1px;
-}
-
-.avatar-status span {
-  color: var(--accent-ink);
-  font-weight: bold;
-}
-
-/* ═══ BOOK COVER ═══ */
+/* ═══ BOOK COVER (AVATAR INSIDE) ═══ */
 .book-cover {
-  flex: 1;
-  max-width: 620px;
+  width: 100%;
+  max-width: 720px;
   background: var(--book-binding);
   border: 6px solid var(--border-main);
   box-shadow: 
@@ -110,23 +27,22 @@
   position: relative;
   cursor: pointer;
   transition: transform 0.3s;
-  padding: 2rem;
+  padding: 2rem 2rem 2rem 3rem;
   color: #f4f6fb;
 }
 
 .book-cover::before {
-  /* Book binding strip */
   content: '';
   position: absolute;
-  left: 24px;
+  left: 20px;
   top: 0;
   bottom: 0;
   width: 8px;
   background: var(--book-binding-accent);
   box-shadow: 
-    12px 0 0 var(--book-binding-accent),
+    10px 0 0 var(--book-binding-accent),
     -2px 0 0 rgba(0,0,0,0.3),
-    14px 0 0 rgba(0,0,0,0.3);
+    12px 0 0 rgba(0,0,0,0.3);
 }
 
 .book-cover:hover {
@@ -138,59 +54,286 @@
 }
 
 .cover-inner {
-  padding-left: 3rem;
   position: relative;
   z-index: 1;
 }
 
-.cover-title {
-  font-size: 1.2rem;
-  font-weight: bold;
-  letter-spacing: 4px;
+/* ═══ TOP ROW: AVATAR + TITLE ═══ */
+.cover-top-row {
+  display: flex;
+  gap: 1.5rem;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.cover-avatar {
+  flex: 0 0 auto;
+  text-align: center;
+  position: relative;
+}
+
+.cover-avatar .pixel-avatar {
+  width: 110px;
+  height: 140px;
+  position: relative;
+  image-rendering: pixelated;
+}
+
+/* Smaller CSS-drawn avatar (inside cover) */
+.cover-avatar .pixel-avatar .css-head {
+  position: absolute;
+  top: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 55px;
+  height: 55px;
+  background: #f4d4b8;
+  border: 3px solid var(--border-main);
+  box-shadow: 
+    inset -4px -4px 0 rgba(0,0,0,0.15),
+    inset 4px 4px 0 rgba(255,255,255,0.4);
+  transition: transform 0.4s, filter 0.4s;
+}
+
+.cover-avatar .pixel-avatar .css-head::before,
+.cover-avatar .pixel-avatar .css-head::after {
+  content: '';
+  position: absolute;
+  width: 9px;
+  height: 9px;
+  background: var(--text-main);
+  top: 20px;
+  transition: all 0.4s;
+}
+
+.cover-avatar .pixel-avatar .css-head::before { left: 10px; }
+.cover-avatar .pixel-avatar .css-head::after  { right: 10px; }
+
+.cover-avatar .pixel-avatar .css-body {
+  position: absolute;
+  top: 70px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 70px;
+  height: 65px;
+  background: var(--accent-blue);
+  border: 3px solid var(--border-main);
+  box-shadow: 
+    inset -4px -4px 0 rgba(0,0,0,0.15),
+    inset 4px 4px 0 rgba(255,255,255,0.3);
+  transition: transform 0.4s, background 0.4s;
+}
+
+.cover-avatar .pixel-avatar .avatar-headache-halo {
+  top: 5px;
+  width: 65px;
+  height: 65px;
+}
+
+.avatar-mini-status {
+  margin-top: 0.5rem;
+  font-size: 0.65rem;
+  line-height: 1.6;
+  color: rgba(244, 246, 251, 0.75);
+  letter-spacing: 1px;
+  display: flex;
+  gap: 0.4rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.avatar-mini-status span {
   color: var(--book-binding-accent);
-  text-align: center;
-  margin-bottom: 0.5rem;
-  text-shadow: 2px 2px 0 rgba(0,0,0,0.5);
+  font-weight: bold;
 }
 
-.cover-subtitle {
-  font-size: 0.75rem;
-  letter-spacing: 2px;
-  color: rgba(244, 246, 251, 0.6);
-  text-align: center;
-  margin-bottom: 1.5rem;
+.avatar-mini-status .avatar-state-label {
+  display: block;
+  width: 100%;
+  margin-top: 0.3rem;
+  padding-top: 0.3rem;
+  border-top: 1px dashed rgba(184, 149, 74, 0.4);
+  font-size: 0.6rem;
+  color: var(--book-binding-accent);
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  font-weight: bold;
 }
 
-.cover-owner {
-  text-align: center;
-  font-size: 0.95rem;
-  letter-spacing: 2px;
-  color: #f4f6fb;
-  margin-bottom: 0.5rem;
+/* ═══ TITLE BLOCK ═══ */
+.cover-title-block {
+  flex: 1;
+  text-align: right;
 }
 
-.cover-day {
-  text-align: center;
-  font-size: 1.4rem;
+.cover-title {
+  font-size: 1.1rem;
   font-weight: bold;
   letter-spacing: 3px;
   color: var(--book-binding-accent);
-  margin-bottom: 1rem;
+  margin-bottom: 0.4rem;
+  text-shadow: 2px 2px 0 rgba(0,0,0,0.5);
+  line-height: 1.3;
+}
+
+.cover-subtitle {
+  font-size: 0.65rem;
+  letter-spacing: 2px;
+  color: rgba(244, 246, 251, 0.55);
+  margin-bottom: 0.8rem;
+}
+
+.cover-owner {
+  font-size: 0.85rem;
+  letter-spacing: 2px;
+  color: #f4f6fb;
+  margin-bottom: 0.3rem;
+}
+
+.cover-day {
+  font-size: 1.2rem;
+  font-weight: bold;
+  letter-spacing: 3px;
+  color: var(--book-binding-accent);
+  margin-bottom: 0.6rem;
   text-shadow: 2px 2px 0 rgba(0,0,0,0.5);
 }
 
 .cover-open-hint {
-  text-align: center;
-  font-size: 0.7rem;
+  font-size: 0.65rem;
   color: var(--book-binding-accent);
   letter-spacing: 2px;
   animation: blink 1.8s infinite;
-  margin-bottom: 1.5rem;
 }
 
 @keyframes blink {
   0%, 50% { opacity: 1; }
   51%, 100% { opacity: 0.35; }
+}
+
+/* ═══ DIVIDERS + SECTION TITLES ═══ */
+.cover-divider {
+  height: 2px;
+  background: var(--book-binding-accent);
+  margin: 1rem 0;
+  opacity: 0.5;
+}
+
+.cover-section-title {
+  font-size: 0.65rem;
+  letter-spacing: 2px;
+  color: var(--book-binding-accent);
+  margin-bottom: 0.6rem;
+  text-transform: uppercase;
+}
+
+/* ═══ HOURS ROWS ═══ */
+.hours-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin: 0.45rem 0;
+  font-size: 0.65rem;
+}
+
+.hours-label {
+  width: 50px;
+  color: rgba(244, 246, 251, 0.7);
+  letter-spacing: 1px;
+}
+
+.hours-bar-bg {
+  flex: 1;
+  height: 12px;
+  background: rgba(0,0,0,0.4);
+  border: 2px solid var(--border-main);
+  position: relative;
+  overflow: hidden;
+}
+
+.hours-bar-fill {
+  height: 100%;
+  width: 0%;
+  transition: width 0.6s ease;
+  image-rendering: pixelated;
+}
+
+.hours-bar-fill.study { background: var(--success); }
+.hours-bar-fill.media { background: var(--accent-violet); }
+.hours-bar-fill.total { background: var(--book-binding-accent); }
+
+.hours-value {
+  width: 60px;
+  text-align: right;
+  font-weight: bold;
+  color: var(--book-binding-accent);
+  font-size: 0.65rem;
+}
+
+/* ═══ QUICK GLANCE ═══ */
+.glance-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.35rem 1rem;
+  font-size: 0.65rem;
+  color: rgba(244, 246, 251, 0.75);
+  letter-spacing: 0.5px;
+}
+
+.glance-grid > div {
+  display: flex;
+  justify-content: space-between;
+}
+
+.glance-grid strong {
+  color: var(--book-binding-accent);
+}
+
+/* ═══ FAVOURITE WORD ═══ */
+.fav-word-box {
+  text-align: center;
+  padding: 0.4rem 0;
+}
+
+.fav-word-korean {
+  font-size: 0.95rem;
+  color: var(--book-binding-accent);
+  font-weight: bold;
+  letter-spacing: 2px;
+  margin-bottom: 0.15rem;
+}
+
+.fav-word-meaning {
+  font-size: 0.65rem;
+  color: rgba(244, 246, 251, 0.7);
+  font-style: italic;
+}
+
+/* ═══ MOBILE ═══ */
+@media (max-width: 600px) {
+  .book-cover {
+    padding: 1.5rem 1.25rem 1.5rem 2.5rem;
+  }
+
+  .cover-top-row {
+    flex-direction: column;
+    gap: 1rem;
+    align-items: center;
+  }
+
+  .cover-title-block {
+    text-align: center;
+  }
+
+  .cover-title {
+    font-size: 0.95rem;
+    letter-spacing: 2px;
+  }
+
+  .cover-avatar .pixel-avatar {
+    width: 100px;
+    height: 130px;
+  }
 }
 
 /* ═══ INSIDE BOOK COVER: HOURS ═══ */

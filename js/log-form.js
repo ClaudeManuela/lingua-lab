@@ -82,15 +82,10 @@ function renderLogForm() {
           <label>Motivation (1-5): <input type="number" min="1" max="5" id="phys-mot" value="${existing?.physiological?.motivation || ''}"></label>
         </div>
         <div class="headache-location">
-          <label>Headache Location:</label>
-          <select id="phys-hloc">
-            <option value="">— none —</option>
-            <option value="Forehead" ${existing?.physiological?.headacheLocation === 'Forehead' ? 'selected' : ''}>Forehead (Frontal)</option>
-            <option value="Temples" ${existing?.physiological?.headacheLocation === 'Temples' ? 'selected' : ''}>Temples (Temporal)</option>
-            <option value="Back" ${existing?.physiological?.headacheLocation === 'Back' ? 'selected' : ''}>Back (Occipital)</option>
-            <option value="General" ${existing?.physiological?.headacheLocation === 'General' ? 'selected' : ''}>General</option>
-          </select>
-        </div>
+  <input type="hidden" id="phys-hloc" value="${existing?.physiological?.headacheLocation || ''}">
+  <input type="hidden" id="phys-hak" value="${existing?.physiological?.headacheAfterKorean || 0}">
+  <div id="brain-map-slot"></div>
+</div>
       </section>
 
       <section class="form-section">
@@ -124,6 +119,10 @@ function renderLogForm() {
       </div>
     </div>
   `;
+  // Initialize brain map
+currentHeadacheZone = existing?.physiological?.headacheLocation || '';
+currentHeadacheIntensity = existing?.physiological?.headacheAfterKorean || 0;
+renderBrainMap('brain-map-slot', currentHeadacheZone, currentHeadacheIntensity);
 
   // Populate sessions
   const sessionsContainer = document.getElementById('sessions-container');
