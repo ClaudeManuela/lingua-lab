@@ -94,6 +94,10 @@ function updateCoverPage() {
   setText('cover-day', day);
   setText('cover-streak', streak);
   setText('cover-name', DATA.metadata.userName || '[YOUR NAME]');
+  
+  // Set data-day attribute for mobile two-column Day display
+const miniStatus = document.getElementById('avatar-mini-status');
+if (miniStatus) miniStatus.setAttribute('data-day', day);
 
   const latest = DATA.dailyLogs[DATA.dailyLogs.length - 1];
   const energy = latest?.physiological?.eveningEnergy || '—';

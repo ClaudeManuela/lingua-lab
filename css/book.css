@@ -20,6 +20,7 @@
 .book-cover {
   width: 100%;
   max-width: 720px;
+  min-height: 620px;          /* ← ADD this */
   background: var(--cover-base);
   border: 5px solid var(--border-main);
   box-shadow: 
@@ -31,6 +32,8 @@
   transition: transform 0.3s;
   padding: 1.25rem 1.25rem 1.25rem 3rem;
   color: var(--cover-ink);
+  display: flex;              /* ← ADD */
+  flex-direction: column;     /* ← ADD */
 }
 
 .book-cover::before {
@@ -572,6 +575,7 @@ body.dark-mode .levels-list {
   .book-cover {
     padding: 0.75rem 0.75rem 0.75rem 2rem;
     max-width: 100%;
+    min-height: auto;
   }
 
   .book-cover::before {
@@ -583,37 +587,31 @@ body.dark-mode .levels-list {
       10px 0 0 rgba(0,0,0,0.25);
   }
 
+  /* ─── WHITE LABEL: title above, two-column below ─── */
   .cover-label {
-    padding: 0.75rem 0.75rem 0.6rem 0.9rem;
+    padding: 0.75rem 0.85rem 0.65rem 1rem;
     max-width: 100%;
   }
 
   .cover-label-row {
     flex-direction: column;
-    align-items: center;
-    gap: 0.4rem;
+    align-items: stretch;
+    gap: 0;
   }
 
-  .cover-label-avatar {
-    order: -1;
-    width: auto;
-    margin-bottom: 0.25rem;
-  }
-
-  .cover-label-avatar .pixel-avatar {
-    width: 80px;
-    height: 100px;
-  }
-
+  /* Title block sits above everything, full width, centered */
   .cover-label-info {
+    order: -1;
     width: 100%;
     text-align: center;
+    margin-bottom: 0.5rem;
   }
 
   .cover-title-main {
     font-size: 1rem;
     line-height: 22px;
     margin-bottom: 22px;
+    white-space: normal;
   }
 
   .cover-byline {
@@ -626,13 +624,72 @@ body.dark-mode .levels-list {
     font-size: 0.75rem;
     line-height: 22px;
     margin-bottom: 11px;
+    display: none;                /* ← hide here, will show in the two-column row instead */
   }
 
+  /* Two-column row: avatar | status */
+  .cover-label-avatar {
+    width: 100%;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    margin-top: 0.25rem;
+    padding-top: 0.5rem;
+    border-top: 1px dashed var(--label-border);
+  }
+
+  .cover-label-avatar .pixel-avatar {
+    width: 75px;
+    height: 95px;
+    flex: 0 0 auto;
+  }
+
+  /* Mini status becomes the "right column" of the two-column layout */
+  .avatar-mini-status {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    text-align: left;
+    gap: 0.15rem;
+    margin-top: 0;
+    font-size: 0.6rem;
+    min-width: 90px;
+  }
+
+  .avatar-mini-status .avatar-state-label {
+    text-align: left;
+    margin-top: 0.2rem;
+    padding-top: 0.2rem;
+  }
+
+  /* Add Day counter to the right column via pseudo-element */
+  .avatar-mini-status::before {
+    content: "Day " attr(data-day) " / 90";
+    font-size: 0.75rem;
+    font-weight: bold;
+    color: var(--label-ink);
+    letter-spacing: 1px;
+    line-height: 1.4;
+    margin-bottom: 0.15rem;
+    padding-bottom: 0.15rem;
+    border-bottom: 1px dashed var(--label-border);
+    width: 100%;
+  }
+
+  /* Tap-to-open hint: full width below the two-column */
   .cover-open-hint {
     font-size: 0.55rem;
     letter-spacing: 2px;
+    text-align: center;
+    width: 100%;
+    margin-top: 0.5rem;
+    padding-top: 0.5rem;
+    border-top: 1px dashed var(--label-border);
   }
 
+  /* ─── COVER DATA SECTIONS ─── */
   .cover-divider {
     margin: 0.4rem 0;
   }
@@ -694,7 +751,7 @@ body.dark-mode .levels-list {
     font-size: 0.5rem;
   }
 
-  /* TOC / INTERIOR */
+  /* ─── TOC / INTERIOR ─── */
   .book-spread {
     flex-direction: column;
     min-height: auto;
@@ -758,5 +815,22 @@ body.dark-mode .levels-list {
 
   .placeholder-page::before {
     left: 26px;
+  }
+}
+
+/* ═══ VERY NARROW PHONES (fallback) ═══ */
+@media (max-width: 360px) {
+  .cover-label-avatar {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .avatar-mini-status {
+    align-items: center;
+    text-align: center;
+  }
+
+  .avatar-mini-status .avatar-state-label {
+    text-align: center;
   }
 }
