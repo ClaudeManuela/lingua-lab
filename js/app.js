@@ -4,9 +4,15 @@
 
 let DATA = null;
 
-// ─── INIT ────────────────────────────────────
-function init() {
-  DATA = recalculateAll();
+// I'm talking about innniiiiiiit
+
+async function init() {
+  console.log('🧪 Lingua Lab booting...');
+  
+  // Try to load from cloud first
+  DATA = await loadFromCloud();
+  console.log('📦 Loaded', DATA.dailyLogs?.length || 0, 'entries');
+  
   checkEditMode();
   initMode();
   updateCoverPage();
@@ -14,7 +20,7 @@ function init() {
   if (typeof refreshCoverAvatar === 'function') {
     refreshCoverAvatar();
   }
-  console.log('✅ Lingua Lab loaded.', DATA);
+  console.log('✅ Lingua Lab ready.');
 }
 
 // ─── LIGHT / DARK MODE ───────────────────────
@@ -94,7 +100,7 @@ function updateCoverPage() {
   setText('cover-day', day);
   setText('cover-streak', streak);
   setText('cover-name', DATA.metadata.userName || '[YOUR NAME]');
-  
+
   // Set data-day attribute for mobile two-column Day display
 const miniStatus = document.getElementById('avatar-mini-status');
 if (miniStatus) miniStatus.setAttribute('data-day', day);

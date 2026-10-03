@@ -1,115 +1,190 @@
 /* ============================================
-   DATA LAYER — Lingua Lab
-   Handles localStorage, recalculation, totals
+   DATA LAYER — Lingua Lab (Cloud Sync)
+   Reads/writes via Cloudflare Worker KV
    ============================================ */
 
 const STORAGE_KEY = 'linguaLab';
+const API_URL = 'https://lingua-lab-api.manuelaekotto.workers.dev/api/data';
+const ADMIN_KEY_SESSION = 'linguaLabAdminKey';
+
+let adminKey = null;
 
 // ─── DEFAULT STRUCTURE ───────────────────────
 function getDefaultData() {
   return {
     metadata: {
-      experimentStartDate: '2026-09-08', // ← CHANGE THIS to your Day 1
+      experimentStartDate: '2026-09-08',
       experimentEndDate: '2026-12-13',
-      userName: 'Claude Manuela',              // ← CHANGE THIS
-      createdAt: new Date().toISOString()
+      userName: 'Claude Manuela',
+      createdAt: new Date().toISOString(),
+      lastSaved: null
     },
     dailyLogs: [],
     weeklySummaries: [],
     testResults: [],
     labNotes: [],
-    favouriteWords: [],
     researchFindings: [],
+    favouriteWords: [],
     languageLevels: {
-      
-        korean:     { reading: 'A0', writing: 'A0', spelling: 'A0', listening: 'A0', speaking: 'A0', official: 'A0', lastStudied: null },
-  portuguese: { reading: 'B1', writing: 'B1', spelling: 'B1', listening: 'B2', speaking: 'B1', official: 'B1', lastStudied: null },
-  italian:    { reading: 'B1', writing: 'B1', spelling: 'B1', listening: 'B1', speaking: 'B1', official: 'B1', lastStudied: null },
-  arabic:     { reading: 'A2', writing: 'A2', spelling: 'A2', listening: 'A2', speaking: 'A2', official: 'A2', lastStudied: null },
-  japanese:   { reading: 'A1', writing: 'A1', spelling: 'A1', listening: 'A1', speaking: 'A1', official: 'A1', lastStudied: null },
-  spanish:    { reading: '—', writing: '—', spelling: '—', listening: '—', speaking: '—', official: '—', lastStudied: null },
-  french:     { reading: '—', writing: '—', spelling: '—', listening: '—', speaking: '—', official: '—', lastStudied: null },
-  english:    { reading: '—', writing: '—', spelling: '—', listening: '—', speaking: '—', official: '—', lastStudied: null }
+      korean:     { reading: 'A0', writing: 'A0', spelling: 'A0', listening: 'A0', speaking: 'A0', official: 'A0', lastStudied: null },
+      portuguese: { reading: 'B1', writing: 'B1', spelling: 'B1', listening: 'B2', speaking: 'B1', official: 'B1', lastStudied: null },
+      italian:    { reading: 'B1', writing: 'B1', spelling: 'B1', listening: 'B1', speaking: 'B1', official: 'B1', lastStudied: null },
+      arabic:     { reading: 'A2', writing: 'A2', spelling: 'A2', listening: 'A2', speaking: 'A2', official: 'A2', lastStudied: null },
+      japanese:   { reading: 'A1', writing: 'A1', spelling: 'A1', listening: 'A1', speaking: 'A1', official: 'A1', lastStudied: null },
+      spanish:    { reading: '—', writing: '—', spelling: '—', listening: '—', speaking: '—', official: '—', lastStudied: null },
+      french:     { reading: '—', writing: '—', spelling: '—', listening: '—', speaking: '—', official: '—', lastStudied: null },
+      english:    { reading: '—', writing: '—', spelling: '—', listening: '—', speaking: '—', official: '—', lastStudied: null }
     },
-    
     settings: {
-  koreanStudyTargetHours: 60,
-  koreanMediaTargetHours: 90,
-  editMode: false,
-  hangulAppName: 'Hangul App',       
-  customActivities: []                 // ← Stores any custom "Other" methods you've used
-}
+      koreanStudyTargetHours: 60,
+      koreanMediaTargetHours: 90,
+      editMode: false,
+      hangulAppName: 'Hangul App',
+      customActivities: []
+    }
   };
-}
-//function loadData
-
-function loadData() {
-  const raw = localStorage.getItem(STORAGE_KEY);
-  if (!raw) {
-    const fresh = getDefaultData();
-    saveData(fresh);
-    return fresh;
-  }
-  try {
-    const parsed = JSON.parse(raw);
-    // Migration: fill in any fields added in later phases
-    const migrated = migrateData(parsed);
-    return migrated;
-  } catch (e) {
-    console.error('Corrupt data, resetting.', e);
-    const fresh = getDefaultData();
-    saveData(fresh);
-    return fresh;
-  }
 }
 
 // ─── MIGRATION ───────────────────────────────
-// Fills in missing fields from the default shape without overwriting existing data.
 function migrateData(data) {
   const defaults = getDefaultData();
-
-  // Ensure metadata fields exist
   data.metadata = { ...defaults.metadata, ...(data.metadata || {}) };
-
-  // Ensure settings fields exist
   data.settings = { ...defaults.settings, ...(data.settings || {}) };
-
-  // Ensure settings.customActivities is an array
-  if (!Array.isArray(data.settings.customActivities)) {
-    data.settings.customActivities = [];
-  }
-
-  // Ensure top-level arrays exist
+  if (!Array.isArray(data.settings.customActivities)) data.settings.customActivities = [];
   if (!Array.isArray(data.dailyLogs)) data.dailyLogs = [];
   if (!Array.isArray(data.weeklySummaries)) data.weeklySummaries = [];
   if (!Array.isArray(data.testResults)) data.testResults = [];
   if (!Array.isArray(data.labNotes)) data.labNotes = [];
   if (!Array.isArray(data.researchFindings)) data.researchFindings = [];
   if (!Array.isArray(data.favouriteWords)) data.favouriteWords = [];
-
-  // Ensure languageLevels exists for all languages
   if (!data.languageLevels) data.languageLevels = {};
   Object.keys(defaults.languageLevels).forEach(lang => {
-    if (!data.languageLevels[lang]) {
-      data.languageLevels[lang] = defaults.languageLevels[lang];
-    }
+    if (!data.languageLevels[lang]) data.languageLevels[lang] = defaults.languageLevels[lang];
   });
-
-  // Persist the migrated data
-  saveData(data);
   return data;
 }
 
+// ─── LOCAL CACHE ─────────────────────────────
+function cacheData(data) {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  } catch (e) {
+    console.warn('Cache write failed (probably quota):', e);
+  }
+}
+
+function getCachedData() {
+  const raw = localStorage.getItem(STORAGE_KEY);
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw);
+  } catch (e) {
+    return null;
+  }
+}
+
+// ─── CLOUD SYNC ──────────────────────────────
+async function fetchFromCloud() {
+  try {
+    const res = await fetch(API_URL + '?t=' + Date.now()); // cache-bust
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+    if (data.empty) return null;
+    return migrateData(data);
+  } catch (e) {
+    console.warn('Cloud fetch failed, using cache:', e);
+    return null;
+  }
+}
+
+async function saveToCloud(data) {
+  const key = getAdminKey();
+  if (!key) {
+    console.warn('No admin key set. Save to cloud skipped.');
+    return { success: false, error: 'No admin key' };
+  }
+
+  data.metadata.lastSaved = new Date().toISOString();
+
+  try {
+    const res = await fetch(API_URL, {
+      method: 'PUT',
+      headers: {
+        'X-Admin-Key': key,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(data)
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || ('HTTP ' + res.status));
+    }
+    return await res.json();
+  } catch (e) {
+    console.error('Cloud save failed:', e);
+    return { success: false, error: e.message };
+  }
+}
+
+// ─── ADMIN KEY MANAGEMENT ────────────────────
+function setAdminKey(key) {
+  adminKey = key;
+  sessionStorage.setItem(ADMIN_KEY_SESSION, key);
+}
+
+function getAdminKey() {
+  if (adminKey) return adminKey;
+  adminKey = sessionStorage.getItem(ADMIN_KEY_SESSION);
+  return adminKey;
+}
+
+function clearAdminKey() {
+  adminKey = null;
+  sessionStorage.removeItem(ADMIN_KEY_SESSION);
+}
+
+// ─── LOAD / SAVE ─────────────────────────────
+// Kept for compatibility with existing code.
+// In cloud mode, loadData() returns the cached copy.
+// App init calls loadFromCloud() for the real fetch.
+function loadData() {
+  const cached = getCachedData();
+  if (cached) return migrateData(cached);
+  const fresh = getDefaultData();
+  cacheData(fresh);
+  return fresh;
+}
+
 function saveData(data) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  // Always cache locally
+  cacheData(data);
+  // Fire and forget cloud save (only succeeds in admin mode)
+  if (getAdminKey()) {
+    saveToCloud(data).then(result => {
+      if (result.success) {
+        console.log('☁️ Cloud save:', result.savedAt);
+      } else {
+        console.warn('⚠️ Cloud save failed:', result.error);
+      }
+    });
+  }
+}
+
+// ─── LOAD FROM CLOUD (called on app init) ────
+async function loadFromCloud() {
+  const cloudData = await fetchFromCloud();
+  if (cloudData) {
+    cacheData(cloudData);
+    return cloudData;
+  }
+  return loadData();
 }
 
 // ─── CALCULATIONS ────────────────────────────
 function daysBetween(dateA, dateB) {
   const a = new Date(dateA);
   const b = new Date(dateB);
-  const diff = Math.floor((b - a) / (1000 * 60 * 60 * 24));
-  return diff;
+  return Math.floor((b - a) / (1000 * 60 * 60 * 24));
 }
 
 function getCurrentDay(data) {
@@ -171,12 +246,11 @@ function calculateStreak(data) {
       streak++;
       cursor.setDate(cursor.getDate() - 1);
     } else if (streak === 0 && key === today.toISOString().slice(0, 10)) {
-      // Allow today to be missing without breaking the streak
       cursor.setDate(cursor.getDate() - 1);
     } else {
       break;
     }
-    if (streak > 400) break; // safety
+    if (streak > 400) break;
   }
   return streak;
 }
@@ -185,7 +259,6 @@ function getWeeklyIntrusions(data) {
   const today = new Date();
   const weekAgo = new Date(today);
   weekAgo.setDate(weekAgo.getDate() - 7);
-
   let total = 0;
   data.dailyLogs.forEach(log => {
     const logDate = new Date(log.date);
@@ -197,8 +270,7 @@ function getWeeklyIntrusions(data) {
 }
 
 function getAverageHeadache(data) {
-  const withData = data.dailyLogs
-    .filter(l => l.physiological?.headacheAfterKorean > 0);
+  const withData = data.dailyLogs.filter(l => l.physiological?.headacheAfterKorean > 0);
   if (!withData.length) return null;
   const sum = withData.reduce((a, l) => a + l.physiological.headacheAfterKorean, 0);
   return (sum / withData.length).toFixed(1);
@@ -215,16 +287,11 @@ function getBacklogCount(data) {
 // ─── RECALCULATION ENGINE ────────────────────
 function recalculateAll() {
   const data = loadData();
-
-  // Sort logs by date (ascending)
   data.dailyLogs.sort((a, b) => new Date(a.date) - new Date(b.date));
-
-  // Recompute day numbers
   data.dailyLogs.forEach(log => {
     log.day = daysBetween(data.metadata.experimentStartDate, log.date) + 1;
   });
-
-  saveData(data);
+  cacheData(data);
   return data;
 }
 

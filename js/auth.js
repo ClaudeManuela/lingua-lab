@@ -1,26 +1,28 @@
 /* ============================================
-   AUTH — Simple Edit Mode
-   Activation: add ?admin=true to URL, enter password
+   AUTH — Admin key for cloud writes
    ============================================ */
 
-const EDIT_PASSWORD = 'Books3077'; // ← CHANGE THIS to your own password
+const ADMIN_KEY_STORAGE = 'linguaLabAdminKey';
 
 function checkEditMode() {
   const urlParams = new URLSearchParams(window.location.search);
   
   if (urlParams.get('admin') === 'true') {
-    const entered = prompt('Enter edit password:');
-    if (entered === EDIT_PASSWORD) {
-      sessionStorage.setItem('editMode', 'true');
+    // Check if we already have a key this session
+    let key = sessionStorage.getItem(ADMIN_KEY_STORAGE);
+    if (!key) {
+      key = prompt('Enter admin key (Cloudflare secret):');
+      if (key) {
+        setAdminKey(key);
+      }
+    }
+    if (getAdminKey()) {
       activateEditMode();
       return true;
-    } else {
-      alert('Wrong password. Read-only mode.');
     }
   }
   
-  // Persist within session
-  if (sessionStorage.getItem('editMode') === 'true') {
+  if (getAdminKey()) {
     activateEditMode();
     return true;
   }
@@ -35,14 +37,13 @@ function activateEditMode() {
 }
 
 function exitEditMode() {
-  sessionStorage.removeItem('editMode');
+  clearAdminKey();
   document.body.classList.remove('edit-mode');
   const banner = document.getElementById('edit-banner');
   if (banner) banner.classList.add('hidden');
-  // Clean URL
   window.history.replaceState({}, '', window.location.pathname);
 }
 
 function isEditable() {
-  return sessionStorage.getItem('editMode') === 'true';
+  return !!getAdminKey();
 }
