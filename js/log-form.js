@@ -356,7 +356,10 @@ function saveLog() {
     };
   }).filter(s => s.language);
 
-  // Persist any new custom activities for future quick-pick
+    // Persist any new custom activities for future quick-pick
+  if (!Array.isArray(DATA.settings.customActivities)) {
+    DATA.settings.customActivities = [];
+  }
   sessions.forEach(s => {
     if (s.customActivity && !DATA.settings.customActivities.includes(s.customActivity)) {
       DATA.settings.customActivities.push(s.customActivity);

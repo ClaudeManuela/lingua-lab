@@ -41,8 +41,8 @@ function getDefaultData() {
 }
   };
 }
+//function loadData
 
-// ─── LOAD / SAVE ─────────────────────────────
 function loadData() {
   const raw = localStorage.getItem(STORAGE_KEY);
   if (!raw) {
@@ -51,13 +51,53 @@ function loadData() {
     return fresh;
   }
   try {
-    return JSON.parse(raw);
+    const parsed = JSON.parse(raw);
+    // Migration: fill in any fields added in later phases
+    const migrated = migrateData(parsed);
+    return migrated;
   } catch (e) {
     console.error('Corrupt data, resetting.', e);
     const fresh = getDefaultData();
     saveData(fresh);
     return fresh;
   }
+}
+
+// ─── MIGRATION ───────────────────────────────
+// Fills in missing fields from the default shape without overwriting existing data.
+function migrateData(data) {
+  const defaults = getDefaultData();
+
+  // Ensure metadata fields exist
+  data.metadata = { ...defaults.metadata, ...(data.metadata || {}) };
+
+  // Ensure settings fields exist
+  data.settings = { ...defaults.settings, ...(data.settings || {}) };
+
+  // Ensure settings.customActivities is an array
+  if (!Array.isArray(data.settings.customActivities)) {
+    data.settings.customActivities = [];
+  }
+
+  // Ensure top-level arrays exist
+  if (!Array.isArray(data.dailyLogs)) data.dailyLogs = [];
+  if (!Array.isArray(data.weeklySummaries)) data.weeklySummaries = [];
+  if (!Array.isArray(data.testResults)) data.testResults = [];
+  if (!Array.isArray(data.labNotes)) data.labNotes = [];
+  if (!Array.isArray(data.researchFindings)) data.researchFindings = [];
+  if (!Array.isArray(data.favouriteWords)) data.favouriteWords = [];
+
+  // Ensure languageLevels exists for all languages
+  if (!data.languageLevels) data.languageLevels = {};
+  Object.keys(defaults.languageLevels).forEach(lang => {
+    if (!data.languageLevels[lang]) {
+      data.languageLevels[lang] = defaults.languageLevels[lang];
+    }
+  });
+
+  // Persist the migrated data
+  saveData(data);
+  return data;
 }
 
 function saveData(data) {
