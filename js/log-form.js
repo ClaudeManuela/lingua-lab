@@ -411,7 +411,7 @@ function saveLog() {
     labNote: document.getElementById('lab-note').value
   };
 
-  saveData(DATA);
+   saveData(DATA);
   upsertLog(dateStr, entry);
   DATA = recalculateAll();
   updateCoverPage();
@@ -456,5 +456,11 @@ function onDateChange(newDate) {
 }
 
 function closeLogForm() {
-  showPage('notebook-page');
+  // Return to the Logs landing page (with the entry list visible)
+  if (typeof renderLogsLanding === 'function') {
+    showPage('logs-page');
+    renderLogsLanding();
+  } else {
+    showPage('notebook-page');
+  }
 }

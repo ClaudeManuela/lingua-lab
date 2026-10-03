@@ -73,8 +73,9 @@ function goToSection(section) {
     return;
   }
   if (section === 'logs') {
-    if (typeof openLogForm === 'function') {
-      openLogForm();
+    if (typeof renderLogsLanding === 'function') {
+      showPage('logs-page');
+      renderLogsLanding();
       return;
     }
   }
