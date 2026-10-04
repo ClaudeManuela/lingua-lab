@@ -46,6 +46,7 @@
   --paper-margin: #e0a0a0;
   --paper-ink: #2a2520;
   --paper-ink-soft: #6a6560;
+  --paper-graph-line: rgba(180, 180, 180, 0.35);
   
   --font-pixel: 'Courier New', monospace;
   --font-hand: 'Courier New', monospace;
@@ -95,6 +96,7 @@ body.dark-mode {
   --paper-margin: #5a3a3a;
   --paper-ink: #d8d0c8;
   --paper-ink-soft: #8a8078;
+  --paper-graph-line: rgba(90, 90, 110, 0.35);
 }
 
 * {
@@ -218,6 +220,8 @@ body {
   display: none !important;
 }
 /* ═══ NAV BAR (interior pages) ═══ */
+
+/* ═══ NAV BAR (interior pages) ═══ */
 .nav-bar {
   position: fixed;
   top: 48px;
@@ -265,6 +269,9 @@ body {
   letter-spacing: 2px;
   color: var(--accent-ink);
   text-transform: uppercase;
+  flex: 0 0 auto;
+  text-align: center;
+  padding: 0 1rem;
 }
 
 /* Body padding when nav is visible */
@@ -374,6 +381,22 @@ body.dark-mode .pixel-border {
   }
   body.has-nav {
     padding-top: 88px;
+  }
+}
+
+@media (max-width: 768px) {
+  .nav-bar {
+    padding: 0 0.5rem;
+  }
+  .nav-btn {
+    font-size: 0.6rem;
+    padding: 0.3rem 0.5rem;
+    letter-spacing: 0.5px;
+  }
+  .nav-title {
+    font-size: 0.65rem;
+    letter-spacing: 1px;
+    padding: 0 0.5rem;
   }
 }
 /* ═══ MODAL SYSTEM ═══ */

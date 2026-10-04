@@ -1,5 +1,6 @@
 /* ============================================
    BOOK STYLING — Claude's Language Lab
+   Everything lives inside the notebook
    ============================================ */
 
 /* ═══ COVER PAGE WRAPPER ═══ */
@@ -349,7 +350,9 @@
   opacity: 0.65;
 }
 
-/* ═══ OPEN BOOK (TOC) ═══ */
+/* ═══════════════════════════════════════════
+   NOTEBOOK SPREAD — used by every interior page
+   ═══════════════════════════════════════════ */
 .book-spread {
   display: flex;
   max-width: 1150px;
@@ -377,9 +380,19 @@
   z-index: 2;
 }
 
+/* Single-page spread variant (narrow pages) */
+.book-spread.single-page {
+  max-width: 900px;
+}
+
+.book-spread.single-page::before {
+  display: none;
+}
+
+/* ═══ BOOK PAGE ═══ */
 .book-page {
   flex: 1;
-  padding: 2.5rem 2rem 2.5rem 3.5rem;
+  padding: 2rem 1.75rem 2rem 3.25rem;
   position: relative;
   background-image: 
     repeating-linear-gradient(
@@ -391,12 +404,13 @@
   background-position: 0 40px;
   line-height: 28px;
   color: var(--paper-ink);
+  min-width: 0;
 }
 
 .book-page::before {
   content: '';
   position: absolute;
-  left: 50px;
+  left: 44px;
   top: 0;
   bottom: 0;
   width: 2px;
@@ -404,11 +418,25 @@
   opacity: 0.7;
 }
 
+/* ═══ GRAPH PAPER PAGE ═══ */
+.book-page.graph-paper {
+  background-image: 
+    linear-gradient(to right, var(--paper-graph-line) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--paper-graph-line) 1px, transparent 1px);
+  background-size: 20px 20px;
+  background-position: 0 0;
+}
+
+.book-page.graph-paper::before {
+  background: var(--paper-margin);
+}
+
+/* ═══ PAGE HEADINGS ═══ */
 .book-page h2 {
   font-size: 1rem;
   letter-spacing: 2px;
   color: var(--paper-ink);
-  margin-bottom: 1.25rem;
+  margin-bottom: 1rem;
   border-bottom: 2px solid var(--paper-ink);
   padding-bottom: 0.4rem;
   text-transform: uppercase;
@@ -418,6 +446,41 @@
   line-height: 28px;
 }
 
+.book-page h3 {
+  font-size: 0.8rem;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--paper-ink);
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.3rem;
+  border-bottom: 2px solid var(--paper-ink);
+  display: inline-block;
+  padding-right: 0.75rem;
+  background: var(--paper-bg);
+}
+
+/* ═══ INDEX CARD (floats on notebook paper) ═══ */
+.index-card {
+  background: var(--paper-bg);
+  border: 2px solid var(--border-main);
+  box-shadow: 3px 3px 0 rgba(0,0,0,0.15);
+  padding: 0.85rem 1rem;
+  margin-bottom: 0.85rem;
+  position: relative;
+}
+
+.index-card-title {
+  font-size: 0.75rem;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--paper-ink);
+  margin-bottom: 0.6rem;
+  padding-bottom: 0.35rem;
+  border-bottom: 2px solid var(--paper-ruling);
+  font-weight: bold;
+}
+
+/* ═══ TABLE OF CONTENTS ═══ */
 .toc {
   list-style: none;
 }
@@ -425,13 +488,14 @@
 .toc li {
   padding: 0.6rem 0.85rem;
   margin: 0.35rem 0;
-  background: rgba(255, 255, 255, 0.55);
+  background: var(--paper-bg);
+  border: 2px solid var(--border-main);
   border-left: 5px solid var(--accent-blue);
   cursor: pointer;
   transition: all 0.2s;
   font-size: 0.9rem;
   color: var(--paper-ink);
-  box-shadow: 2px 2px 0 rgba(0,0,0,0.06);
+  box-shadow: 3px 3px 0 rgba(0,0,0,0.1);
   line-height: 28px;
 }
 
@@ -457,6 +521,7 @@ body.dark-mode .toc li:hover {
   line-height: 20px;
 }
 
+/* ═══ STATS LISTS ═══ */
 .stats-list,
 .levels-list {
   display: flex;
@@ -464,9 +529,10 @@ body.dark-mode .toc li:hover {
   gap: 0.35rem;
   font-size: 0.85rem;
   color: var(--paper-ink);
-  background: rgba(255,255,255,0.55);
+  background: var(--paper-bg);
   padding: 0.75rem 1rem;
-  border: 2px solid var(--paper-ruling);
+  border: 2px solid var(--border-main);
+  box-shadow: 3px 3px 0 rgba(0,0,0,0.1);
 }
 
 body.dark-mode .stats-list,
@@ -488,6 +554,7 @@ body.dark-mode .levels-list {
   font-weight: bold;
 }
 
+/* ═══ PLACEHOLDER PAGES ═══ */
 .placeholder-page {
   max-width: 800px;
   margin: 3rem auto;
@@ -535,6 +602,7 @@ body.dark-mode .levels-list {
   margin: 0.75rem 0;
 }
 
+/* ═══ BOOK OPENING ANIMATION ═══ */
 @keyframes bookOpen {
   0% {
     transform: scale(1) rotateY(0deg);
@@ -554,15 +622,108 @@ body.dark-mode .levels-list {
   animation: bookOpen 0.6s ease forwards;
 }
 
-.page.active {
-  opacity: 1;
-  transform: translateY(0);
-}
-
+/* ═══ PAGE TRANSITIONS — page turn feel ═══ */
 .page {
   opacity: 0;
-  transform: translateY(8px);
-  transition: opacity 0.35s ease, transform 0.35s ease;
+  transform: perspective(1200px) rotateY(-3deg) translateX(8px);
+  transition: opacity 0.35s ease, transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+  transform-origin: left center;
+}
+
+.page.active {
+  opacity: 1;
+  transform: perspective(1200px) rotateY(0deg) translateX(0);
+}
+
+/* ═══ TOC RIGHT PAGE SPLIT ═══ */
+.toc-right-columns {
+  display: grid;
+  grid-template-columns: 30% 70%;
+  gap: 1rem;
+}
+
+.toc-stats-compact {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  font-size: 0.7rem;
+  color: var(--paper-ink-soft);
+  background: var(--paper-bg);
+  padding: 0.6rem 0.75rem;
+  border: 2px solid var(--border-main);
+  box-shadow: 3px 3px 0 rgba(0,0,0,0.1);
+}
+
+.toc-stats-compact > div {
+  display: flex;
+  justify-content: space-between;
+  line-height: 1.6;
+}
+
+.toc-stats-compact strong {
+  color: var(--paper-ink);
+}
+
+.toc-lang-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.toc-lang-row {
+  display: grid;
+  grid-template-columns: 24px 1fr auto auto 14px 20px;
+  gap: 0.5rem;
+  align-items: center;
+  padding: 0.5rem 0.7rem;
+  background: var(--paper-bg);
+  border: 2px solid var(--border-main);
+  border-left: 4px solid var(--lang-accent);
+  box-shadow: 2px 2px 0 rgba(0,0,0,0.1);
+  cursor: pointer;
+  transition: all 0.15s;
+  font-size: 0.75rem;
+  color: var(--paper-ink);
+}
+
+.toc-lang-row:hover {
+  background: var(--lang-accent-soft, rgba(0,0,0,0.05));
+  transform: translateX(3px);
+}
+
+.toc-lang-flag {
+  font-size: 0.9rem;
+  text-align: center;
+}
+
+.toc-lang-name {
+  font-weight: bold;
+  letter-spacing: 0.5px;
+  color: var(--paper-ink);
+}
+
+.toc-lang-level {
+  font-size: 0.65rem;
+  color: var(--paper-ink-soft);
+  letter-spacing: 0.5px;
+}
+
+.toc-lang-days {
+  font-size: 0.65rem;
+  color: var(--paper-ink-soft);
+  text-align: right;
+}
+
+.toc-lang-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 1px solid var(--border-main);
+}
+
+.toc-lang-arrow {
+  font-weight: bold;
+  font-size: 0.9rem;
 }
 
 /* ═══ MOBILE ═══ */
@@ -622,7 +783,6 @@ body.dark-mode .levels-list {
     display: none;
   }
 
-  /* Two-column: avatar 65% | status 35% */
   .cover-label-avatar {
     width: 100%;
     display: flex;
@@ -745,9 +905,11 @@ body.dark-mode .levels-list {
     font-size: 0.5rem;
   }
 
+  /* ─── BOOK SPREAD (mobile → single column) ─── */
   .book-spread {
     flex-direction: column;
     min-height: auto;
+    margin: 1rem auto;
   }
 
   .book-spread::before {
@@ -767,6 +929,13 @@ body.dark-mode .levels-list {
     background-position: 0 32px;
   }
 
+  .book-page.graph-paper {
+    background-image: 
+      linear-gradient(to right, var(--paper-graph-line) 1px, transparent 1px),
+      linear-gradient(to bottom, var(--paper-graph-line) 1px, transparent 1px);
+    background-size: 16px 16px;
+  }
+
   .book-page::before {
     left: 26px;
   }
@@ -776,6 +945,11 @@ body.dark-mode .levels-list {
     margin-bottom: 0.75rem;
     padding-bottom: 0.3rem;
     line-height: 24px;
+  }
+
+  .book-page h3 {
+    font-size: 0.7rem;
+    margin-bottom: 0.5rem;
   }
 
   .toc li {
@@ -809,103 +983,12 @@ body.dark-mode .levels-list {
   .placeholder-page::before {
     left: 26px;
   }
-}
 
-/* ═══ TOC RIGHT PAGE SPLIT ═══ */
-.toc-right-columns {
-  display: grid;
-  grid-template-columns: 30% 70%;
-  gap: 1rem;
-}
-
-@media (max-width: 700px) {
+  /* ─── TOC RIGHT COLUMN (mobile → stacked) ─── */
   .toc-right-columns {
     grid-template-columns: 1fr;
   }
-}
 
-.toc-stats-compact {
-  display: flex;
-  flex-direction: column;
-  gap: 0.2rem;
-  font-size: 0.7rem;
-  color: var(--paper-ink-soft);
-  background: rgba(255,255,255,0.5);
-  padding: 0.6rem 0.75rem;
-  border: 2px solid var(--paper-ruling);
-}
-
-.toc-stats-compact > div {
-  display: flex;
-  justify-content: space-between;
-  line-height: 1.6;
-}
-
-.toc-stats-compact strong {
-  color: var(--paper-ink);
-}
-
-.toc-lang-list {
-  display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
-}
-
-.toc-lang-row {
-  display: grid;
-  grid-template-columns: 24px 1fr auto auto 14px 20px;
-  gap: 0.5rem;
-  align-items: center;
-  padding: 0.5rem 0.7rem;
-  background: rgba(255,255,255,0.6);
-  border-left: 4px solid var(--lang-accent);
-  cursor: pointer;
-  transition: all 0.15s;
-  font-size: 0.75rem;
-  color: var(--paper-ink);
-}
-
-.toc-lang-row:hover {
-  background: var(--lang-accent-soft, rgba(0,0,0,0.05));
-  transform: translateX(3px);
-}
-
-.toc-lang-flag {
-  font-size: 0.9rem;
-  text-align: center;
-}
-
-.toc-lang-name {
-  font-weight: bold;
-  letter-spacing: 0.5px;
-  color: var(--paper-ink);
-}
-
-.toc-lang-level {
-  font-size: 0.65rem;
-  color: var(--paper-ink-soft);
-  letter-spacing: 0.5px;
-}
-
-.toc-lang-days {
-  font-size: 0.65rem;
-  color: var(--paper-ink-soft);
-  text-align: right;
-}
-
-.toc-lang-dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  border: 1px solid var(--border-main);
-}
-
-.toc-lang-arrow {
-  font-weight: bold;
-  font-size: 0.9rem;
-}
-
-@media (max-width: 700px) {
   .toc-lang-row {
     grid-template-columns: 20px 1fr auto 12px 18px;
     font-size: 0.7rem;
@@ -914,5 +997,10 @@ body.dark-mode .levels-list {
 
   .toc-lang-days {
     display: none;
+  }
+
+  /* ─── Page turn on mobile is subtler ─── */
+  .page {
+    transform: perspective(800px) rotateY(-2deg) translateX(4px);
   }
 }

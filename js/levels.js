@@ -1,74 +1,91 @@
 /* ============================================
    LEVELS PAGE + INDIVIDUAL LANGUAGE PAGES
+   Everything lives inside notebook spreads
    ============================================ */
 
 // ─── MAIN LEVELS INDEX ───────────────────────
 function renderLevelsIndex() {
   const container = document.getElementById('levels-page');
-  const cards = LANGUAGE_ORDER.map(slug => renderLanguageCard(slug)).join('');
+
+  const rows = LANGUAGE_ORDER.map(slug => {
+    const meta = LANGUAGES[slug];
+    const data = DATA.languageLevels[slug] || {};
+    const official = data.official || meta.defaultOfficial;
+    const daysSince = getDaysSinceLastStudied(DATA, slug);
+    const recColor = getRecencyColor(daysSince);
+    const lastText = daysSince === null ? 'never'
+      : daysSince === 0 ? 'today'
+      : daysSince === 1 ? '1d ago'
+      : daysSince + 'd ago';
+
+    return `
+      <div class="toc-lang-row" onclick="openLanguagePage('${slug}')" 
+           style="--lang-accent: ${meta.accent}; --lang-accent-soft: ${meta.accentSoft};">
+        <span class="toc-lang-flag">${meta.flag}</span>
+        <span class="toc-lang-name">${meta.name}</span>
+        <span class="toc-lang-level">${official}</span>
+        <span class="toc-lang-days">${lastText}</span>
+        <span class="toc-lang-dot" style="background: ${recColor};"></span>
+        <span class="toc-lang-arrow" style="color: ${meta.accent};">→</span>
+      </div>
+    `;
+  }).join('');
 
   container.innerHTML = `
-    <div class="levels-index">
-      <div class="levels-header">
+    <div class="book-spread">
+
+      <div class="book-page">
         <h2>Levels & Stats</h2>
-        <p class="levels-subtitle">Click a language to open its page</p>
-      </div>
-      <div class="levels-grid">
-        ${cards}
-      </div>
-    </div>
-  `;
-}
+        <p style="font-size: 0.85rem; color: var(--paper-ink); margin-bottom: 1rem;">
+          Click a language on the right to open its notebook page.
+        </p>
 
-function renderLanguageCard(slug) {
-  const meta = LANGUAGES[slug];
-  const data = DATA.languageLevels[slug] || {};
-  const official = data.official || meta.defaultOfficial;
-  const target = data.target || meta.target || 'C2 Low';
-  const daysSince = getDaysSinceLastStudied(DATA, slug);
-  const recColor = getRecencyColor(daysSince);
-  const summary = getLanguageSummary(DATA, slug);
+        <div class="index-card" style="margin-top: 1.5rem;">
+          <div class="index-card-title">Recency Legend</div>
+          <div style="display: flex; flex-direction: column; gap: 0.4rem; font-size: 0.8rem;">
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+              <span class="toc-lang-dot" style="background: #4a9d6e;"></span>
+              <span>Studied within 7 days</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+              <span class="toc-lang-dot" style="background: #d99b3d;"></span>
+              <span>Not studied 8–21 days</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+              <span class="toc-lang-dot" style="background: #c73e5c;"></span>
+              <span>Not studied 22+ days</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+              <span class="toc-lang-dot" style="background: #c8c8c8;"></span>
+              <span>Never studied</span>
+            </div>
+          </div>
+        </div>
 
-  const lastStudiedText = daysSince === null ? 'never'
-    : daysSince === 0 ? 'today'
-    : daysSince === 1 ? '1 day ago'
-    : daysSince + ' days ago';
-
-  return `
-    <div class="lang-card" style="--lang-accent: ${meta.accent}; --lang-accent-soft: ${meta.accentSoft};" 
-         onclick="openLanguagePage('${slug}')">
-      <div class="lang-card-header">
-        <span class="lang-card-flag">${meta.flag}</span>
-        <span class="lang-card-name">${meta.name.toUpperCase()}</span>
-        <span class="lang-card-arrow">→</span>
-      </div>
-      <div class="lang-card-body">
-        <div class="lang-card-row">
-          <span>Official:</span>
-          <strong>${official}</strong>
-        </div>
-        <div class="lang-card-row">
-          <span>Target:</span>
-          <strong>${target}</strong>
-        </div>
-        <div class="lang-card-row">
-          <span>Last studied:</span>
-          <strong style="color: ${recColor};">${lastStudiedText}</strong>
-        </div>
-        <div class="lang-card-row">
-          <span>Hours:</span>
-          <strong>${formatHoursShort(summary.totalMinutes)}</strong>
-        </div>
-        <div class="lang-card-row">
-          <span>Media:</span>
-          <strong>${formatHoursShort(summary.mediaMinutes)}</strong>
+        <div class="index-card" style="margin-top: 1rem;">
+          <div class="index-card-title">About Levels</div>
+          <div style="font-size: 0.8rem; color: var(--paper-ink); line-height: 1.6;">
+            Each language has its own page with official level, five skill
+            breakdowns, custom test results, permanent notes, and reflections.
+            All levels use granular CEFR tiers: A0 Low → C2 High.
+          </div>
         </div>
       </div>
+
+      <div class="book-page">
+        <h2>All Languages</h2>
+        <div class="toc-lang-list">
+          ${rows}
+        </div>
+      </div>
+
     </div>
   `;
 }
 
 // ─── INDIVIDUAL LANGUAGE PAGE ────────────────
+let currentLanguage = null;
+
 function openLanguagePage(slug) {
   const meta = LANGUAGES[slug];
   if (!meta) return;
@@ -76,8 +93,6 @@ function openLanguagePage(slug) {
   renderLanguagePage(slug);
   showPage('language-page');
 }
-
-let currentLanguage = null;
 
 function renderLanguagePage(slug) {
   const container = document.getElementById('language-page');
@@ -98,157 +113,156 @@ function renderLanguagePage(slug) {
     : daysSince + ' days ago';
 
   container.innerHTML = `
-    <div class="lang-page" style="--lang-accent: ${meta.accent}; --lang-accent-soft: ${meta.accentSoft};">
+    <div class="book-spread" style="--lang-accent: ${meta.accent}; --lang-accent-soft: ${meta.accentSoft};">
 
-      <div class="lang-page-header">
-        <button class="lang-back-btn" onclick="goToLevels()">← Back to Levels</button>
-        <div class="lang-page-title">
-          <span class="lang-page-flag">${meta.flag}</span>
-          <span>${meta.name.toUpperCase()}</span>
+      <!-- LEFT PAGE -->
+      <div class="book-page">
+        <h2>${meta.flag} ${meta.name}</h2>
+
+        <div class="index-card">
+          <div class="index-card-title">Official Level</div>
+          <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+            <div style="display: flex; justify-content: space-between; font-size: 0.85rem;">
+              <span>Current:</span>
+              ${admin 
+                ? `<select class="lang-select" onchange="updateLanguageField('${slug}', 'official', this.value)" style="max-width: 140px;">
+                     ${SKILL_LEVELS.map(l => `<option value="${l}" ${l === official ? 'selected' : ''}>${l}</option>`).join('')}
+                   </select>`
+                : `<strong>${official}</strong>`}
+            </div>
+            <div style="display: flex; justify-content: space-between; font-size: 0.85rem;">
+              <span>Target:</span>
+              ${admin
+                ? `<select class="lang-select" onchange="updateLanguageField('${slug}', 'target', this.value)" style="max-width: 140px;">
+                     ${SKILL_LEVELS.map(l => `<option value="${l}" ${l === target ? 'selected' : ''}>${l}</option>`).join('')}
+                   </select>`
+                : `<strong>${target}</strong>`}
+            </div>
+            ${data.lastOfficialTest ? `
+              <div style="font-size: 0.75rem; color: var(--paper-ink-soft); margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px dashed var(--paper-ruling);">
+                Last official test: <strong>${data.lastOfficialTest.name || '—'}</strong> 
+                on ${formatDate(data.lastOfficialTest.date)}
+                ${data.lastOfficialTest.link ? `<a href="${data.lastOfficialTest.link}" target="_blank" style="color: var(--accent-ink);">view</a>` : ''}
+              </div>
+            ` : ''}
+          </div>
+        </div>
+
+        <div class="index-card">
+          <div class="index-card-title">Skill Breakdown</div>
+          <div class="lang-skills">
+            ${renderSkillRow(slug, 'reading', 'Reading', skills.reading)}
+            ${renderSkillRow(slug, 'writing', 'Writing', skills.writing)}
+            ${renderSkillRow(slug, 'listening', 'Listening', skills.listening)}
+            ${renderSkillRow(slug, 'speaking', 'Speaking', skills.speaking)}
+            ${renderSkillRow(slug, 'spelling', 'Spelling', skills.spelling)}
+          </div>
+        </div>
+
+        <div class="index-card">
+          <div class="index-card-title">Level Progress</div>
+          <div class="lang-sparkline">
+            <div class="lang-sparkline-bar">
+              <div class="lang-sparkline-fill" style="width: ${getLevelProgress(official)}%; background: ${meta.accent};"></div>
+            </div>
+            <div class="lang-sparkline-labels">
+              <span>A0</span><span>A1</span><span>A2</span><span>B1</span><span>B2</span><span>C1</span><span>C2</span>
+            </div>
+            <div class="lang-sparkline-info">${official} → target ${target}</div>
+          </div>
+        </div>
+
+        <div style="margin-top: 1.5rem;">
+          <button class="lang-back-btn" onclick="goToLevels()" style="background: ${meta.accent};">← Back to Levels</button>
         </div>
       </div>
 
-      <section class="lang-section">
-        <h3>Official Level</h3>
-        <div class="lang-official-grid">
-          <div class="lang-official-cell">
-            <div class="lang-official-label">Current</div>
-            ${admin 
-              ? `<select class="lang-select" onchange="updateLanguageField('${slug}', 'official', this.value)">
-                   ${SKILL_LEVELS.map(l => `<option value="${l}" ${l === official ? 'selected' : ''}>${l}</option>`).join('')}
-                 </select>`
-              : `<div class="lang-official-value">${official}</div>`}
-          </div>
-          <div class="lang-official-cell">
-            <div class="lang-official-label">Target</div>
-            ${admin
-              ? `<select class="lang-select" onchange="updateLanguageField('${slug}', 'target', this.value)">
-                   ${SKILL_LEVELS.map(l => `<option value="${l}" ${l === target ? 'selected' : ''}>${l}</option>`).join('')}
-                 </select>`
-              : `<div class="lang-official-value">${target}</div>`}
-          </div>
-        </div>
-        ${data.lastOfficialTest ? `
-          <div class="lang-official-test">
-            <span>Last official test:</span>
-            <strong>${data.lastOfficialTest.name || '—'}</strong>
-            <span>on ${formatDate(data.lastOfficialTest.date)}</span>
-            ${data.lastOfficialTest.link ? `<a href="${data.lastOfficialTest.link}" target="_blank">view</a>` : ''}
-          </div>
-        ` : ''}
-      </section>
+      <!-- RIGHT PAGE -->
+      <div class="book-page">
 
-      <section class="lang-section">
-        <h3>Skill Breakdown</h3>
-        <div class="lang-skills">
-          ${renderSkillRow(slug, 'reading', 'Reading', skills.reading)}
-          ${renderSkillRow(slug, 'writing', 'Writing', skills.writing)}
-          ${renderSkillRow(slug, 'listening', 'Listening', skills.listening)}
-          ${renderSkillRow(slug, 'speaking', 'Speaking', skills.speaking)}
-          ${renderSkillRow(slug, 'spelling', 'Spelling', skills.spelling)}
-        </div>
-      </section>
-
-      <section class="lang-section">
-        <h3>Auto Stats (from daily logs)</h3>
-        <div class="lang-stats-grid">
-          <div class="lang-stat-cell">
-            <div class="lang-stat-label">Total hours</div>
-            <div class="lang-stat-value">${formatHoursShort(summary.totalMinutes)}</div>
-          </div>
-          <div class="lang-stat-cell">
-            <div class="lang-stat-label">Media hours</div>
-            <div class="lang-stat-value">${formatHoursShort(summary.mediaMinutes)}</div>
-          </div>
-          <div class="lang-stat-cell">
-            <div class="lang-stat-label">Sessions</div>
-            <div class="lang-stat-value">${summary.sessionCount}</div>
-          </div>
-          <div class="lang-stat-cell">
-            <div class="lang-stat-label">Media items</div>
-            <div class="lang-stat-value">${summary.mediaCount}</div>
-          </div>
-          <div class="lang-stat-cell">
-            <div class="lang-stat-label">Last studied</div>
-            <div class="lang-stat-value">${lastStudiedText}</div>
-          </div>
-          <div class="lang-stat-cell">
-            <div class="lang-stat-label">First session</div>
-            <div class="lang-stat-value">${summary.firstDate ? formatDateShort(summary.firstDate) : '—'}</div>
-          </div>
-        </div>
-      </section>
-
-      <section class="lang-section">
-        <h3>Custom Tests</h3>
-        ${admin ? `
-          <form class="lang-test-form" onsubmit="submitTest(event, '${slug}')">
-            <div class="lang-test-grid">
-              <label>Test Name: <input type="text" name="name" required></label>
-              <label>Score: <input type="number" name="score" required></label>
-              <label>Max Score: <input type="number" name="maxScore" required></label>
-              <label>Date: <input type="date" name="date"></label>
-              <label>Source: <input type="text" name="source" placeholder="e.g., Busuu, TOPIK Mock"></label>
-              <label>Link: <input type="url" name="link" placeholder="optional"></label>
+        <div class="index-card">
+          <div class="index-card-title">Auto Stats (from daily logs)</div>
+          <div class="lang-stats-grid">
+            <div class="lang-stat-cell">
+              <div class="lang-stat-label">Total hours</div>
+              <div class="lang-stat-value">${formatHoursShort(summary.totalMinutes)}</div>
             </div>
-            <label class="lang-test-notes-label">Notes: <input type="text" name="notes" placeholder="optional"></label>
-            <button type="submit" class="add-btn">+ ADD TEST RESULT</button>
-          </form>
-        ` : ''}
-
-        <div class="lang-tests-list">
-          ${tests.length ? tests.map(t => renderTestRow(t)).join('') : '<div class="lang-empty">No test results yet</div>'}
-        </div>
-      </section>
-
-      <section class="lang-section">
-        <h3>Permanent Notes</h3>
-        ${admin 
-          ? `<textarea class="lang-permanent-note" rows="4" 
-                       onchange="updateLanguageField('${slug}', 'permanentNote', this.value)"
-                       placeholder="About this language, how you study, your strategy...">${data.permanentNote || ''}</textarea>`
-          : `<div class="lang-permanent-note-readonly">${data.permanentNote || 'No notes yet.'}</div>`}
-      </section>
-
-      <section class="lang-section">
-        <h3>Reflections</h3>
-        ${admin ? `
-          <form class="lang-reflection-form" onsubmit="submitReflection(event, '${slug}')">
-            <textarea name="text" rows="2" required placeholder="What did you notice? What improved? What's frustrating?"></textarea>
-            <button type="submit" class="add-btn">+ ADD REFLECTION</button>
-          </form>
-        ` : ''}
-
-        <div class="lang-reflections-list">
-          ${reflections.length 
-            ? reflections.map(r => `
-                <div class="lang-reflection">
-                  <div class="lang-reflection-date">${formatDate(r.date)}</div>
-                  <div class="lang-reflection-text">${escapeHtml(r.text)}</div>
-                </div>
-              `).join('')
-            : '<div class="lang-empty">No reflections yet</div>'}
-        </div>
-      </section>
-
-      <section class="lang-section">
-        <h3>Level Progress</h3>
-        <div class="lang-sparkline">
-          <div class="lang-sparkline-bar">
-            <div class="lang-sparkline-fill" style="width: ${getLevelProgress(official)}%; background: ${meta.accent};"></div>
+            <div class="lang-stat-cell">
+              <div class="lang-stat-label">Media hours</div>
+              <div class="lang-stat-value">${formatHoursShort(summary.mediaMinutes)}</div>
+            </div>
+            <div class="lang-stat-cell">
+              <div class="lang-stat-label">Sessions</div>
+              <div class="lang-stat-value">${summary.sessionCount}</div>
+            </div>
+            <div class="lang-stat-cell">
+              <div class="lang-stat-label">Media items</div>
+              <div class="lang-stat-value">${summary.mediaCount}</div>
+            </div>
+            <div class="lang-stat-cell">
+              <div class="lang-stat-label">Last studied</div>
+              <div class="lang-stat-value">${lastStudiedText}</div>
+            </div>
+            <div class="lang-stat-cell">
+              <div class="lang-stat-label">First session</div>
+              <div class="lang-stat-value">${summary.firstDate ? formatDateShort(summary.firstDate) : '—'}</div>
+            </div>
           </div>
-          <div class="lang-sparkline-labels">
-            <span>A0</span>
-            <span>A1</span>
-            <span>A2</span>
-            <span>B1</span>
-            <span>B2</span>
-            <span>C1</span>
-            <span>C2</span>
-          </div>
-          <div class="lang-sparkline-info">${official} → target ${target}</div>
         </div>
-      </section>
+
+        <div class="index-card">
+          <div class="index-card-title">Custom Tests</div>
+          ${admin ? `
+            <form class="lang-test-form" onsubmit="submitTest(event, '${slug}')">
+              <div class="lang-test-grid">
+                <label>Test Name: <input type="text" name="name" required></label>
+                <label>Score: <input type="number" name="score" required></label>
+                <label>Max Score: <input type="number" name="maxScore" required></label>
+                <label>Date: <input type="date" name="date"></label>
+                <label>Source: <input type="text" name="source" placeholder="e.g., Busuu, TOPIK Mock"></label>
+                <label>Link: <input type="url" name="link" placeholder="optional"></label>
+              </div>
+              <label class="lang-test-notes-label">Notes: <input type="text" name="notes" placeholder="optional"></label>
+              <button type="submit" class="add-btn">+ Add Test Result</button>
+            </form>
+          ` : ''}
+
+          <div class="lang-tests-list">
+            ${tests.length ? tests.map(t => renderTestRow(t)).join('') : '<div class="lang-empty">No test results yet</div>'}
+          </div>
+        </div>
+
+        <div class="index-card">
+          <div class="index-card-title">Permanent Notes</div>
+          ${admin 
+            ? `<textarea class="lang-permanent-note" rows="4" 
+                         onchange="updateLanguageField('${slug}', 'permanentNote', this.value)"
+                         placeholder="About this language, how you study, your strategy...">${data.permanentNote || ''}</textarea>`
+            : `<div class="lang-permanent-note-readonly">${data.permanentNote || 'No notes yet.'}</div>`}
+        </div>
+
+        <div class="index-card">
+          <div class="index-card-title">Reflections</div>
+          ${admin ? `
+            <form class="lang-reflection-form" onsubmit="submitReflection(event, '${slug}')">
+              <textarea name="text" rows="2" required placeholder="What did you notice? What improved? What's frustrating?"></textarea>
+              <button type="submit" class="add-btn">+ Add Reflection</button>
+            </form>
+          ` : ''}
+
+          <div class="lang-reflections-list">
+            ${reflections.length 
+              ? reflections.map(r => `
+                  <div class="lang-reflection">
+                    <div class="lang-reflection-date">${formatDate(r.date)}</div>
+                    <div class="lang-reflection-text">${escapeHtml(r.text)}</div>
+                  </div>
+                `).join('')
+              : '<div class="lang-empty">No reflections yet</div>'}
+          </div>
+        </div>
+
+      </div>
 
     </div>
   `;
@@ -366,7 +380,6 @@ function goToLevels() {
 function getDaysSinceLastStudied(data, slug) {
   const meta = LANGUAGES[slug];
   if (!meta) return null;
-
   const target = meta.name.toLowerCase();
   let mostRecentDate = null;
 
@@ -399,11 +412,7 @@ function getLanguageSummary(data, slug) {
   const meta = LANGUAGES[slug];
   const target = meta.name.toLowerCase();
 
-  let totalMinutes = 0;
-  let sessionCount = 0;
-  let mediaMinutes = 0;
-  let mediaCount = 0;
-  let firstDate = null;
+  let totalMinutes = 0, sessionCount = 0, mediaMinutes = 0, mediaCount = 0, firstDate = null;
 
   (data.dailyLogs || []).forEach(log => {
     (log.sessions || []).forEach(s => {

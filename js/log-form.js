@@ -24,21 +24,18 @@ function openLogForm(dateStr = null) {
 // ─── RENDER FORM ─────────────────────────────
 function renderLogForm() {
     if (!isEditable()) {
+   
     const container = document.getElementById('logs-page');
     container.innerHTML = `
-      <div class="log-form-container">
-        <div class="log-header">
-          <h2>DAILY LOG — Read Only</h2>
-        </div>
-        <p style="text-align:center; padding: 2rem; color: var(--paper-ink-soft);">
-          You are viewing in read-only mode.<br>
-          Add <code>?admin=true</code> to the URL to edit.
-        </p>
-        <div class="form-actions">
-          <button class="cancel-btn" onclick="closeLogForm()">CLOSE</button>
+      <div class="book-spread single-page">
+        <div class="book-page">
+          <div class="log-form-container">
+            <!-- existing log form content here -->
+          </div>
         </div>
       </div>
     `;
+
     showPage('logs-page');
     return;
   }

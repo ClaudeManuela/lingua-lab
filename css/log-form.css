@@ -1,6 +1,36 @@
 /* ============================================
    DAILY LOG FORM STYLES — UV Lab Edition
    ============================================ */
+.log-form-container {
+  max-width: 100%;
+  margin: 0;
+  padding: 0;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  background-image: none;
+}
+
+.log-form-container .index-card,
+.form-section {
+  background: var(--paper-bg);
+  border: 2px solid var(--border-main);
+  box-shadow: 3px 3px 0 rgba(0,0,0,0.15);
+  padding: 1rem 1.25rem;
+  margin-bottom: 1rem;
+}
+
+.form-section h3 {
+  font-size: 0.8rem;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--paper-ink);
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.3rem;
+  border-bottom: 2px solid var(--paper-ink);
+  display: inline-block;
+  padding-right: 0.75rem;
+}
 
 .log-form-container {
   max-width: 950px;

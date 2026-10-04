@@ -2,6 +2,150 @@
    ENTRY LIST — Logs Landing + All Entries View
    ============================================ */
 
+   /* ═══ ENTRY CARDS AS INDEX CARDS ═══ */
+.entry-card {
+  background: var(--paper-bg);
+  border: 2px solid var(--border-main);
+  box-shadow: 3px 3px 0 rgba(0,0,0,0.15);
+  padding: 0.85rem 1rem;
+  margin-bottom: 0.85rem;
+  position: relative;
+}
+
+.entry-card::before {
+  content: none; /* Remove old pink margin bar */
+}
+
+.entry-list-container {
+  max-width: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+.entry-list-header {
+  background: var(--paper-bg);
+  border: 2px solid var(--border-main);
+  padding: 0.85rem 1rem;
+  margin-bottom: 0.85rem;
+  box-shadow: 3px 3px 0 rgba(0,0,0,0.15);
+}
+
+.entry-summary-strip {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 0.4rem 1rem;
+  font-size: 0.7rem;
+  color: var(--paper-ink);
+}
+
+.entry-summary-strip > div {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.15rem 0;
+}
+
+.entry-summary-strip strong {
+  color: var(--accent-ink);
+}
+
+.filter-bar {
+  background: var(--paper-bg);
+  border: 2px solid var(--border-main);
+  padding: 0.75rem 1rem;
+  margin-bottom: 0.85rem;
+  box-shadow: 3px 3px 0 rgba(0,0,0,0.1);
+}
+
+.filter-chip {
+  background: var(--paper-bg);
+  border: 2px solid var(--border-main);
+  box-shadow: 2px 2px 0 rgba(0,0,0,0.1);
+}
+
+.filter-chip.active {
+  background: var(--accent-ink);
+  color: var(--text-inverse);
+}
+
+.filter-search,
+.filter-sort {
+  background: var(--bg-input);
+  color: var(--text-main);
+  border: 2px solid var(--border-main);
+}
+
+.lang-stats-card {
+  background: var(--paper-bg);
+  border: 2px solid var(--border-main);
+  padding: 0.85rem 1rem;
+  margin-bottom: 0.85rem;
+  box-shadow: 3px 3px 0 rgba(0,0,0,0.1);
+}
+
+.logs-landing {
+  max-width: 100%;
+  margin: 0;
+  padding: 0;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  background-image: none;
+}
+
+.logs-landing::before {
+  content: none;
+}
+
+.logs-actions button {
+  background: var(--accent-violet);
+  color: var(--text-inverse);
+  border: 2px solid var(--border-main);
+  padding: 0.5rem 1rem;
+  font-family: var(--font-pixel);
+  font-size: 0.75rem;
+  font-weight: bold;
+  letter-spacing: 1px;
+  cursor: pointer;
+  box-shadow: 3px 3px 0 rgba(0,0,0,0.2);
+  max-width: fit-content;
+}
+
+.logs-tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  border-bottom: 2px solid var(--paper-ruling);
+  padding-bottom: 0.75rem;
+}
+
+.logs-tab {
+  background: var(--paper-bg);
+  border: 2px solid var(--border-main);
+  padding: 0.5rem 1rem;
+  font-family: var(--font-pixel);
+  font-size: 0.75rem;
+  font-weight: bold;
+  letter-spacing: 1px;
+  cursor: pointer;
+  color: var(--paper-ink);
+  box-shadow: 2px 2px 0 rgba(0,0,0,0.15);
+  max-width: fit-content;
+}
+
+.logs-tab.active {
+  background: var(--accent-blue);
+  color: var(--text-inverse);
+}
+
+.entry-empty {
+  text-align: center;
+  padding: 2rem 1rem;
+  background: var(--paper-bg);
+  border: 2px dashed var(--border-soft);
+  color: var(--paper-ink-soft);
+  font-size: 0.85rem;
+}
+
 /* ═══ LOGS LANDING PAGE ═══ */
 .logs-landing {
   max-width: 1150px;

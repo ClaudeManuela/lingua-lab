@@ -28,20 +28,24 @@ function renderLogsLanding() {
   const admin = isEditable();
 
   container.innerHTML = `
-    <div class="logs-landing">
-      <div class="logs-tabs">
-        <button class="logs-tab active" onclick="renderEntryList()">ALL ENTRIES</button>
-        ${admin ? `<button class="logs-tab" onclick="openLogForm()">TODAY'S LOG</button>` : ''}
+    <div class="book-spread single-page">
+
+      <div class="book-page">
+        <div class="logs-tabs">
+          <button class="logs-tab active" onclick="renderEntryList()">All Entries</button>
+          ${admin ? `<button class="logs-tab" onclick="openLogForm()">Today's Log</button>` : ''}
+        </div>
+
+        ${admin ? `
+          <div class="logs-actions">
+            <button onclick="openLogForm()">+ New Entry</button>
+            <button onclick="openLogForm(getBacklogSuggestionDate())">+ Backfill Previous Day</button>
+          </div>
+        ` : ''}
+
+        <div id="entry-list-target"></div>
       </div>
 
-      ${admin ? `
-        <div class="logs-actions">
-          <button onclick="openLogForm()">+ NEW ENTRY</button>
-          <button onclick="openLogForm(getBacklogSuggestionDate())">+ BACKFILL PREVIOUS DAY</button>
-        </div>
-      ` : ''}
-
-      <div id="entry-list-target"></div>
     </div>
   `;
 
@@ -69,22 +73,22 @@ function renderEntryList() {
   const summary = computeSummary(filtered);
 
   target.innerHTML = `
-    <div class="entry-list-header">
-      <h2> Entry Archive</h2>
-      <div class="entry-summary-strip">
-        <div><span>Total entries:</span> <strong>${filtered.length}</strong></div>
-        <div><span>Backlog:</span> <strong>${filtered.filter(l => l.backlog).length}</strong></div>
-        <div><span>Live:</span> <strong>${filtered.filter(l => !l.backlog).length}</strong></div>
-        <div><span>Total study time:</span> <strong>${formatHours(summary.totalMinutes)}</strong></div>
-        <div><span>Avg headache:</span> <strong>${summary.avgHeadache || '—'}</strong></div>
-        <div><span>Avg intrusions/day:</span> <strong>${summary.avgIntrusions || '—'}</strong></div>
-      </div>
+  <div class="index-card">
+    <div class="index-card-title">Entry Archive</div>
+    <div class="entry-summary-strip">
+      <div><span>Total:</span> <strong>${filtered.length}</strong></div>
+      <div><span>Backlog:</span> <strong>${filtered.filter(l => l.backlog).length}</strong></div>
+      <div><span>Live:</span> <strong>${filtered.filter(l => !l.backlog).length}</strong></div>
+      <div><span>Study time:</span> <strong>${formatHours(summary.totalMinutes)}</strong></div>
+      <div><span>Avg headache:</span> <strong>${summary.avgHeadache || '—'}</strong></div>
+      <div><span>Avg intrusions:</span> <strong>${summary.avgIntrusions || '—'}</strong></div>
     </div>
+  </div>
 
-    ${renderFilterBar()}
-    ${renderLanguageStats(filtered)}
-    ${filtered.length ? filtered.map(renderEntryCard).join('') : renderEmptyState()}
-  `;
+  ${renderFilterBar()}
+  ${renderLanguageStats(filtered)}
+  ${filtered.length ? filtered.map(renderEntryCard).join('') : renderEmptyState()}
+`;
 }
 
 // ─── FILTER BAR ──────────────────────────────
