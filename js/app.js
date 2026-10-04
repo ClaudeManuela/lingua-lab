@@ -95,6 +95,13 @@ function goToSection(section) {
       return;
     }
   }
+  if (section === 'levels') {
+    if (typeof renderLevelsIndex === 'function') {
+      renderLevelsIndex();
+      showPage('levels-page');
+      return;
+    }
+  }
   showPage(section + '-page');
 }
 
@@ -165,6 +172,40 @@ function updateTOCPage() {
   Object.keys(DATA.languageLevels).forEach(lang => {
     setText(`toc-lv-${lang}`, DATA.languageLevels[lang].official);
   });
+  
+  if (typeof renderTOCLanguages === 'function') {
+  renderTOCLanguages();
+}
+}
+
+function renderTOCLanguages() {
+  const container = document.getElementById('toc-lang-list');
+  if (!container) return;
+
+  const rows = LANGUAGE_ORDER.map(slug => {
+    const meta = LANGUAGES[slug];
+    const data = DATA.languageLevels[slug] || {};
+    const official = data.official || meta.defaultOfficial;
+    const daysSince = getDaysSinceLastStudied(DATA, slug);
+    const recColor = getRecencyColor(daysSince);
+    const lastText = daysSince === null ? 'never'
+      : daysSince === 0 ? 'today'
+      : daysSince + 'd ago';
+
+    return `
+      <div class="toc-lang-row" onclick="openLanguagePage('${slug}')" 
+           style="--lang-accent: ${meta.accent};">
+        <span class="toc-lang-flag">${meta.flag}</span>
+        <span class="toc-lang-name">${meta.name}</span>
+        <span class="toc-lang-level">${official}</span>
+        <span class="toc-lang-days">${lastText}</span>
+        <span class="toc-lang-dot" style="background: ${recColor};"></span>
+        <span class="toc-lang-arrow" style="color: ${meta.accent};">→</span>
+      </div>
+    `;
+  }).join('');
+
+  container.innerHTML = rows;
 }
 
 // ─── UTILITIES ───────────────────────────────

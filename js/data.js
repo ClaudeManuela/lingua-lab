@@ -26,15 +26,18 @@ function getDefaultData() {
     researchFindings: [],
     favouriteWords: [],
     languageLevels: {
-      korean:     { reading: 'A0', writing: 'A0', spelling: 'A0', listening: 'A0', speaking: 'A0', official: 'A0', lastStudied: null },
-      portuguese: { reading: 'B1', writing: 'B1', spelling: 'B1', listening: 'B2', speaking: 'B1', official: 'B1', lastStudied: null },
-      italian:    { reading: 'B1', writing: 'B1', spelling: 'B1', listening: 'B1', speaking: 'B1', official: 'B1', lastStudied: null },
-      arabic:     { reading: 'A2', writing: 'A2', spelling: 'A2', listening: 'A2', speaking: 'A2', official: 'A2', lastStudied: null },
-      japanese:   { reading: 'A1', writing: 'A1', spelling: 'A1', listening: 'A1', speaking: 'A1', official: 'A1', lastStudied: null },
-      spanish:    { reading: '—', writing: '—', spelling: '—', listening: '—', speaking: '—', official: '—', lastStudied: null },
-      french:     { reading: '—', writing: '—', spelling: '—', listening: '—', speaking: '—', official: '—', lastStudied: null },
-      english:    { reading: '—', writing: '—', spelling: '—', listening: '—', speaking: '—', official: '—', lastStudied: null }
+      korean:     { reading: 'A0 Low', writing: 'A0 Low', spelling: 'A0 Low', listening: 'A0 Low', speaking: 'A0 Low', official: 'A0 Low', target: 'C2 Low', lastStudied: null, permanentNote: '', skills: null },
+      portuguese: { reading: 'B1 Mid', writing: 'B1 Mid', spelling: 'B1 Mid', listening: 'B2 Low', speaking: 'B1 Mid', official: 'B1 Mid', target: 'C2 Low', lastStudied: null, permanentNote: '', skills: null },
+      italian:    { reading: 'B1 Mid', writing: 'B1 Mid', spelling: 'B1 Mid', listening: 'B1 Mid', speaking: 'B1 Mid', official: 'B1 Mid', target: 'C2 Low', lastStudied: null, permanentNote: '', skills: null },
+      arabic:     { reading: 'A2 Mid', writing: 'A2 Mid', spelling: 'A2 Mid', listening: 'A2 Mid', speaking: 'A2 Mid', official: 'A2 Mid', target: 'C2 Low', lastStudied: null, permanentNote: '', skills: null },
+      japanese:   { reading: 'A1 Mid', writing: 'A1 Mid', spelling: 'A1 Mid', listening: 'A1 Mid', speaking: 'A1 Mid', official: 'A1 Mid', target: 'C2 Low', lastStudied: null, permanentNote: '', skills: null },
+      spanish:    { reading: 'A0 Low', writing: 'A0 Low', spelling: 'A0 Low', listening: 'A0 Low', speaking: 'A0 Low', official: 'A0 Low', target: 'C2 Low', lastStudied: null, permanentNote: '', skills: null },
+      french:     { reading: 'A0 Low', writing: 'A0 Low', spelling: 'A0 Low', listening: 'A0 Low', speaking: 'A0 Low', official: 'A0 Low', target: 'C2 Low', lastStudied: null, permanentNote: '', skills: null },
+      english:    { reading: 'A0 Low', writing: 'A0 Low', spelling: 'A0 Low', listening: 'A0 Low', speaking: 'A0 Low', official: 'A0 Low', target: 'C2 Low', lastStudied: null, permanentNote: '', skills: null }
     },
+  languageTests: [],
+  languageReflections: [],
+    
     settings: {
       koreanStudyTargetHours: 60,
       koreanMediaTargetHours: 90,
@@ -47,6 +50,33 @@ function getDefaultData() {
 
 // ─── MIGRATION ───────────────────────────────
 function migrateData(data) {
+
+      // Ensure new top-level arrays exist
+    if (!Array.isArray(data.languageTests)) data.languageTests = [];
+    if (!Array.isArray(data.languageReflections)) data.languageReflections = [];
+
+    // Migrate language level format (A0 → A0 Low, etc.)
+    const levelMigrate = {
+      'A0': 'A0 Low', 'A1': 'A1 Low', 'A2': 'A2 Low',
+      'B1': 'B1 Low', 'B2': 'B2 Low', 'C1': 'C1 Low', 'C2': 'C2 Low'
+    };
+    Object.keys(data.languageLevels).forEach(slug => {
+      const lang = data.languageLevels[slug];
+      if (levelMigrate[lang.official]) lang.official = levelMigrate[lang.official];
+      if (!lang.target) lang.target = 'C2 Low';
+      if (!lang.permanentNote) lang.permanentNote = '';
+      // Consolidate skills into a nested object
+      if (!lang.skills) {
+        lang.skills = {
+          reading: levelMigrate[lang.reading] || lang.reading || 'A0 Low',
+          writing: levelMigrate[lang.writing] || lang.writing || 'A0 Low',
+          listening: levelMigrate[lang.listening] || lang.listening || 'A0 Low',
+          speaking: levelMigrate[lang.speaking] || lang.speaking || 'A0 Low',
+          spelling: levelMigrate[lang.spelling] || lang.spelling || 'A0 Low'
+        };
+      }
+    });
+
   const defaults = getDefaultData();
   data.metadata = { ...defaults.metadata, ...(data.metadata || {}) };
   data.settings = { ...defaults.settings, ...(data.settings || {}) };
