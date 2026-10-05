@@ -164,7 +164,9 @@ function createEmptySession() {
     durationMinutes: 0, 
     language: '', 
     activity: '', 
-    customActivity: '',   // ← NEW: filled when activity === 'Other'
+    customActivity: '',
+    subtitleLanguage: '',   // new
+    splitTime: false,       // new
     notes: '' 
   };
 }
@@ -210,7 +212,7 @@ function renderSession(container, session, index) {
           ).join('')}
         </select>
       </label>
-      <label>Activity:
+            <label>Activity:
         <select class="sess-act" onchange="onActivityChange(${index})">
           <option value="">— pick —</option>
           ${allActivities.map(a => 
@@ -218,6 +220,20 @@ function renderSession(container, session, index) {
           ).join('')}
           <option value="Other" ${session.activity === 'Other' ? 'selected' : ''}>Other…</option>
         </select>
+      </label>
+      <label>Subtitle Language:
+        <select class="sess-subtitle">
+          <option value="">— none —</option>
+          ${['Korean','Portuguese','Italian','Arabic','Japanese','Spanish','French','English'].map(l => 
+            `<option value="${l}" ${session.subtitleLanguage === l ? 'selected' : ''}>${l}</option>`
+          ).join('')}
+        </select>
+      </label>
+      <label>Split Time:
+        <span style="display:flex; align-items:center; gap:0.4rem; font-size:0.7rem;">
+          <input type="checkbox" class="sess-split" ${session.splitTime ? 'checked' : ''}>
+          <span>60/40</span>
+        </span>
       </label>
     </div>
     <div class="custom-activity-row" id="custom-${index}" style="display: ${session.activity === 'Other' ? 'flex' : 'none'}; margin-top: 0.5rem; gap: 0.5rem; align-items: center;">
@@ -281,6 +297,8 @@ function reindexSessions() {
     language: card.querySelector('.sess-lang').value,
     activity: card.querySelector('.sess-act').value,
     customActivity: card.querySelector('.sess-custom')?.value || '',
+    subtitleLanguage: card.querySelector('.sess-subtitle')?.value || '',
+    splitTime: card.querySelector('.sess-split')?.checked || false,
     notes: card.querySelector('.sess-notes').value
   }));
   container.innerHTML = '';
@@ -373,6 +391,8 @@ function saveLog() {
       language: card.querySelector('.sess-lang').value,
       activity: activity,
       customActivity: customActivity,
+      subtitleLanguage: card.querySelector('.sess-subtitle')?.value || '',
+      splitTime: card.querySelector('.sess-split')?.checked || false,
       notes: card.querySelector('.sess-notes').value
     };
   }).filter(s => s.language);

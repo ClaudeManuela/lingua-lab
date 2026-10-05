@@ -384,12 +384,14 @@ function getDaysSinceLastStudied(data, slug) {
   let mostRecentDate = null;
 
   (data.dailyLogs || []).forEach(log => {
-    (log.sessions || []).forEach(s => {
-      if ((s.language || '').toLowerCase() === target) {
-        if (!mostRecentDate || new Date(log.date) > new Date(mostRecentDate)) {
-          mostRecentDate = log.date;
-        }
+  (log.sessions || []).forEach(s => {
+    const audioLang = (s.language || '').toLowerCase();
+    const subLang = (s.subtitleLanguage || '').toLowerCase();
+    if (audioLang === target || subLang === target) {
+      if (!mostRecentDate || new Date(log.date) > new Date(mostRecentDate)) {
+        mostRecentDate = log.date;
       }
+    }
     });
     (log.mediaConsumed || []).forEach(m => {
       if ((m.language || '').toLowerCase() === target || (m.audioLanguage || '').toLowerCase() === target) {
@@ -415,20 +417,21 @@ function getLanguageSummary(data, slug) {
   let totalMinutes = 0, sessionCount = 0, mediaMinutes = 0, mediaCount = 0, firstDate = null;
 
   (data.dailyLogs || []).forEach(log => {
-    (log.sessions || []).forEach(s => {
-      if ((s.language || '').toLowerCase() === target) {
-        totalMinutes += s.durationMinutes || 0;
-        sessionCount++;
-        if (!firstDate || new Date(log.date) < new Date(firstDate)) firstDate = log.date;
-      }
-    });
-    (log.mediaConsumed || []).forEach(m => {
-      if ((m.language || '').toLowerCase() === target || (m.audioLanguage || '').toLowerCase() === target) {
-        mediaMinutes += m.durationMinutes || 0;
-        mediaCount++;
-        if (!firstDate || new Date(log.date) < new Date(firstDate)) firstDate = log.date;
-      }
-    });
+  (log.sessions || []).forEach(s => {
+    const audioLang = (s.language || '').toLowerCase();
+    const subLang = (s.subtitleLanguage || '').toLowerCase();
+    
+    if (audioLang === target) {
+      totalMinutes += s.splitTime ? (s.durationMinutes || 0) * 0.6 : (s.durationMinutes || 0);
+      sessionCount++;
+      if (!firstDate || new Date(log.date) < new Date(firstDate)) firstDate = log.date;
+    }
+    if (subLang === target && s.splitTime) {
+      totalMinutes += (s.durationMinutes || 0) * 0.4;
+      sessionCount++;
+      if (!firstDate || new Date(log.date) < new Date(firstDate)) firstDate = log.date;
+    }
+  });
   });
 
   return { totalMinutes, mediaMinutes, sessionCount, mediaCount, firstDate };
