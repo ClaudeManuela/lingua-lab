@@ -64,6 +64,16 @@ function migrateData(data) {
     if (!data.seedPoints) data.seedPoints = {};
     if (!data.gardenSpent) data.gardenSpent = {};
 
+    // Ensure vocabulary entries have position fields
+    (data.vocabulary || []).forEach(w => {
+      if (w.gardenX === undefined) w.gardenX = 100 + Math.random() * 800;
+      if (w.gardenY === undefined) w.gardenY = 100 + Math.random() * 600;
+      if (!w.reading) w.reading = '';
+      if (!w.theme) w.theme = '';
+      if (!Array.isArray(w.childIds)) w.childIds = [];
+      if (!Array.isArray(w.connections)) w.connections = [];
+    });
+
     // Migrate language level format (A0 → A0 Low, etc.)
     const levelMigrate = {
       'A0': 'A0 Low', 'A1': 'A1 Low', 'A2': 'A2 Low',
