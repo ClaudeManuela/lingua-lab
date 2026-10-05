@@ -37,6 +37,10 @@ function getDefaultData() {
     },
   languageTests: [],
   languageReflections: [],
+  vocabulary: [],
+  seedPoints: {},
+  gardenSessions: [],
+  gardenSpent: {},
     
     settings: {
       koreanStudyTargetHours: 60,
@@ -54,6 +58,11 @@ function migrateData(data) {
       // Ensure new top-level arrays exist
     if (!Array.isArray(data.languageTests)) data.languageTests = [];
     if (!Array.isArray(data.languageReflections)) data.languageReflections = [];
+    //garden array checks
+    if (!Array.isArray(data.vocabulary)) data.vocabulary = [];
+    if (!Array.isArray(data.gardenSessions)) data.gardenSessions = [];
+    if (!data.seedPoints) data.seedPoints = {};
+    if (!data.gardenSpent) data.gardenSpent = {};
 
     // Migrate language level format (A0 → A0 Low, etc.)
     const levelMigrate = {

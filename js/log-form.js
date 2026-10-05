@@ -126,7 +126,16 @@ function renderLogForm() {
             </select>
           </label>
         </div>
+         <label>Words learned today (comma-separated):
+        <textarea id="kor-words-list" rows="2" placeholder="안녕, 감사, 물">${existing?.koreanOutput?.wordsList || ''}</textarea>
+      </label>
       </section>
+
+      <section class="form-section">
+      <h3>OTHER LANGUAGES — Words Learned</h3>
+      <div id="other-words-container"></div>
+      <button type="button" class="add-btn" onclick="addOtherWordRow()">+ Add Language</button>
+    </section>
 
       <section class="form-section">
         <h3> LAB NOTE</h3>
@@ -154,6 +163,14 @@ renderBrainMap('brain-map-slot', currentHeadacheZone, currentHeadacheIntensity);
   const mediaContainer = document.getElementById('media-container');
   const media = existing?.mediaConsumed || [];
   media.forEach((m, i) => renderMedia(mediaContainer, m, i));
+
+  // Populate other-languages words rows from existing entry
+if (existing?.otherLanguagesWords && Array.isArray(existing.otherLanguagesWords)) {
+  const container = document.getElementById('other-words-container');
+  existing.otherLanguagesWords.forEach((entry, i) => {
+    renderOtherWordRow(container, entry, i);
+  });
+}
 }
 
 // ─── SESSION RENDERING ───────────────────────
@@ -447,13 +464,86 @@ function saveLog() {
     },
     koreanOutput: {
       newWords: parseInt(document.getElementById('kor-words').value) || 0,
+      wordsList: document.getElementById('kor-words-list')?.value || '',
       subtitleIgnore: parseInt(document.getElementById('kor-subignore').value) || 0,
       intrusions: parseInt(document.getElementById('kor-intrusions').value) || 0,
       dominantIntruder: document.getElementById('kor-dominant').value,
       workingMemorySpan: parseInt(document.getElementById('kor-wm').value) || 0
     },
+    otherLanguagesWords: Array.from(document.querySelectorAll('#other-words-container .session-card')).map(card => ({
+        language: card.querySelector('.other-words-lang').value,
+        words: card.querySelector('.other-words-list').value,
+        meanings: card.querySelector('.other-words-meanings').value
+      })).filter(e => e.language),
     labNote: document.getElementById('lab-note').value
   };
+        // Push Korean words to garden
+      const korWords = parseWordList(entry.koreanOutput.wordsList);
+      korWords.forEach(w => {
+        const existing = DATA.vocabulary.find(v => 
+          v.language === 'korean' && v.word.toLowerCase() === w.toLowerCase()
+        );
+        if (existing) {
+          existing.waters = (existing.waters || 0) + 1;
+          existing.lastWatered = dateStr;
+          updateWordStage(existing);
+        } else {
+          DATA.vocabulary.push({
+            id: generateUUID(),
+            word: w,
+            meaning: '',
+            language: 'korean',
+            dateAdded: dateStr,
+            waters: 1,
+            lastWatered: dateStr,
+            stage: 'sprout',
+            parentId: null,
+            childIds: [],
+            connections: [],
+            favorite: false,
+            notes: '',
+            backlog: formMode === 'backlog'
+          });
+        }
+      });
+
+      // Push other-language words to garden
+      document.querySelectorAll('#other-words-container .session-card').forEach(card => {
+        const lang = card.querySelector('.other-words-lang').value;
+        if (!lang) return;
+        const wordsText = card.querySelector('.other-words-list').value;
+        const meaningsText = card.querySelector('.other-words-meanings').value;
+        const words = parseWordList(wordsText);
+        const meanings = parseWordList(meaningsText);
+
+        words.forEach((w, i) => {
+          const existing = DATA.vocabulary.find(v => 
+            v.language === lang && v.word.toLowerCase() === w.toLowerCase()
+          );
+          if (existing) {
+            existing.waters = (existing.waters || 0) + 1;
+            existing.lastWatered = dateStr;
+            updateWordStage(existing);
+          } else {
+            DATA.vocabulary.push({
+              id: generateUUID(),
+              word: w,
+              meaning: meanings[i] || '',
+              language: lang,
+              dateAdded: dateStr,
+              waters: 1,
+              lastWatered: dateStr,
+              stage: 'sprout',
+              parentId: null,
+              childIds: [],
+              connections: [],
+              favorite: false,
+              notes: '',
+              backlog: formMode === 'backlog'
+            });
+          }
+        });
+      });
 
    saveData(DATA);
   upsertLog(dateStr, entry);
@@ -507,4 +597,37 @@ function closeLogForm() {
   } else {
     showPage('notebook-page');
   }
+}
+function addOtherWordRow() {
+  const container = document.getElementById('other-words-container');
+  const index = container.children.length;
+  renderOtherWordRow(container, { language: '', words: '', meanings: '' }, index);
+}
+
+function renderOtherWordRow(container, entry, index) {
+  const div = document.createElement('div');
+  div.className = 'session-card';
+  div.innerHTML = `
+    <div class="session-header">
+      <span>LANGUAGE ${index + 1}</span>
+      <button type="button" class="remove-btn" onclick="this.closest('.session-card').remove()">X</button>
+    </div>
+    <div class="session-grid">
+      <label>Language:
+        <select class="other-words-lang">
+          <option value="">— pick —</option>
+          ${GARDEN_LANGUAGES.map(slug => 
+            `<option value="${slug}" ${entry.language === slug ? 'selected' : ''}>${LANGUAGES[slug].flag} ${LANGUAGES[slug].name}</option>`
+          ).join('')}
+        </select>
+      </label>
+    </div>
+    <label style="display:block; margin-top: 0.5rem; font-size: 0.7rem; color: var(--text-dim);">Words (comma-separated):
+      <textarea class="other-words-list" rows="2" placeholder="olá, obrigado">${entry.words || ''}</textarea>
+    </label>
+    <label style="display:block; margin-top: 0.5rem; font-size: 0.7rem; color: var(--text-dim);">Meanings (optional):
+      <textarea class="other-words-meanings" rows="2" placeholder="hello, thanks">${entry.meanings || ''}</textarea>
+    </label>
+  `;
+  container.appendChild(div);
 }

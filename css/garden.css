@@ -1,0 +1,185 @@
+/* ============================================
+   LEXICAL GARDEN
+   ============================================ */
+
+.garden-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-bottom: 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 2px solid var(--paper-ruling);
+}
+
+.garden-tab {
+  background: var(--paper-bg);
+  border: 2px solid var(--border-main);
+  padding: 0.35rem 0.7rem;
+  font-family: var(--font-pixel);
+  font-size: 0.65rem;
+  font-weight: bold;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  color: var(--paper-ink);
+  box-shadow: 2px 2px 0 rgba(0,0,0,0.12);
+  max-width: fit-content;
+}
+
+.garden-tab:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 3px 3px 0 rgba(0,0,0,0.15);
+}
+
+.garden-tab.active {
+  background: var(--accent-ink);
+  color: var(--text-inverse);
+}
+
+.garden-stage-group {
+  margin-bottom: 1rem;
+}
+
+.garden-stage-label {
+  font-size: 0.7rem;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--paper-ink-soft);
+  font-weight: bold;
+  margin-bottom: 0.4rem;
+  padding-bottom: 0.2rem;
+  border-bottom: 1px dashed var(--paper-ruling);
+}
+
+.garden-word-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.garden-word-row {
+  display: grid;
+  grid-template-columns: 24px 1fr auto auto 16px 20px;
+  gap: 0.5rem;
+  align-items: center;
+  padding: 0.4rem 0.6rem;
+  background: var(--paper-bg);
+  border: 2px solid var(--border-main);
+  border-left: 4px solid var(--lang-accent);
+  box-shadow: 2px 2px 0 rgba(0,0,0,0.1);
+  cursor: pointer;
+  font-size: 0.75rem;
+  color: var(--paper-ink);
+}
+
+.garden-word-row:hover {
+  transform: translateX(3px);
+  background: var(--bg-input);
+}
+
+.garden-word-flag {
+  font-size: 0.85rem;
+  text-align: center;
+}
+
+.garden-word-text {
+  font-weight: bold;
+  letter-spacing: 0.5px;
+}
+
+.garden-word-meaning {
+  color: var(--paper-ink-soft);
+  font-size: 0.7rem;
+  font-style: italic;
+  text-align: right;
+}
+
+.garden-word-waters {
+  color: var(--accent-ink);
+  font-weight: bold;
+  font-size: 0.7rem;
+  min-width: 24px;
+  text-align: right;
+}
+
+.garden-word-star {
+  color: var(--accent-violet);
+  font-weight: bold;
+}
+
+.garden-word-arrow {
+  color: var(--lang-accent);
+  font-weight: bold;
+  text-align: right;
+}
+
+/* Seed points + Total hours */
+.seed-points-grid,
+.total-hours-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.seed-point-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.3rem 0.5rem;
+  background: var(--paper-bg);
+  border-left: 3px solid var(--lang-accent);
+  font-size: 0.75rem;
+  color: var(--paper-ink);
+}
+
+.seed-point-row strong {
+  color: var(--accent-ink);
+}
+
+.garden-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  font-size: 0.75rem;
+}
+
+.garden-summary-row {
+  display: flex;
+  justify-content: space-between;
+  color: var(--paper-ink);
+}
+
+.garden-summary-row strong {
+  color: var(--accent-ink);
+}
+
+/* Word card modal content */
+.word-card-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  font-size: 0.8rem;
+}
+
+.word-card-stats > div {
+  display: flex;
+  justify-content: space-between;
+}
+
+.word-card-stats strong {
+  color: var(--accent-ink);
+}
+
+/* Mobile */
+@media (max-width: 700px) {
+  .garden-word-row {
+    grid-template-columns: 20px 1fr auto 14px 18px;
+    font-size: 0.7rem;
+    padding: 0.35rem 0.5rem;
+  }
+  .garden-word-meaning {
+    display: none;
+  }
+  .garden-tab {
+    font-size: 0.6rem;
+    padding: 0.3rem 0.55rem;
+  }
+}

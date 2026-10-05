@@ -11,6 +11,7 @@
   <link rel="stylesheet" href="css/brain-map.css">
   <link rel="stylesheet" href="css/avatar.css">
   <link rel="stylesheet" href="css/levels.css">
+  <link rel="stylesheet" href="css/garden.css">
 </head>
 <body>
 
@@ -135,10 +136,11 @@
         <h2>Table of Contents</h2>
         <ul class="toc">
           <li onclick="goToSection('logs')">1. LOGS <small>Daily Entries, Weekly Summaries, Media</small></li>
-          <li onclick="goToSection('results')">2. RESULTS <small>Test Scores, Typing, Words</small></li>
-          <li onclick="goToSection('notes')">3. NOTES <small>Lab Notes, Aha Moments, Research</small></li>
-          <li onclick="goToSection('levels')">4. LEVELS & STATS <small>Skill Levels, Official Scores</small></li>
-          <li onclick="goToSection('graphs')">5. GRAPHS <small>Brain Map, Correlations, Trends</small></li>
+          <li onclick="goToSection('garden')">2. LEXICAL GARDEN <small>Vocabulary, Words, Growth & cool visuals</small></li>
+          <li onclick="goToSection('results')">3. RESULTS <small>Test Scores, Typing, Charts</small></li>
+          <li onclick="goToSection('notes')">4. NOTES <small>Lab Notes, Aha Moments, Research</small></li>
+          <li onclick="goToSection('levels')">5. LEVELS & STATS <small>Skill Levels, Official Scores</small></li>
+          <li onclick="goToSection('graphs')">6. GRAPHS <small>Brain Map, Correlations, Trends</small></li>
         </ul>
 
         <button class="back-btn" onclick="closeBook()">CLOSE BOOK</button>
@@ -173,6 +175,9 @@
   <!-- PAGE 3: LOGS -->
   <div id="logs-page" class="page"></div>
 
+  <!-- PAGE 3.5: LEXICAL GARDEN -->
+<div id="garden-page" class="page"></div>
+
   <!-- PAGE 4: RESULTS -->
   <div id="results-page" class="page">
     <div class="placeholder-page">
@@ -186,7 +191,8 @@
   <div id="notes-page" class="page">
     <div class="placeholder-page">
       <h2>Notes</h2>
-      <p>Phase 6 will build lab notes feed, aha moments, research findings.</p>
+      <p> Claude has not gotten arounf to it yet but, 
+        Phase 6 will build lab notes feed, aha moments, research findings.</p>
       <button class="back-btn" onclick="goToSection('toc')">BACK TO CONTENTS</button>
     </div>
   </div>
@@ -195,7 +201,7 @@
   <div id="levels-page" class="page">
     <div class="placeholder-page">
       <h2>Levels & Stats</h2>
-      <p>Phase 4 will build skill levels per language, official scores, last studied.</p>
+      <p>Across languages.</p>
       <button class="back-btn" onclick="goToSection('toc')">BACK TO CONTENTS</button>
     </div>
   </div>
@@ -204,7 +210,8 @@
   <div id="graphs-page" class="page">
     <div class="placeholder-page">
       <h2>Graphs</h2>
-      <p>Phase 9 will build brain map, test score trends, sleep correlations, intrusion charts.</p>
+      <p>One of these days, Claude will remember to build the graphs. 
+        Phase 9 will build brain map, test score trends, sleep correlations, intrusion charts.</p>
       <button class="back-btn" onclick="goToSection('toc')">BACK TO CONTENTS</button>
     </div>
   </div>
@@ -283,6 +290,7 @@
 <script src="js/brain-map.js"></script>
 <script src="js/sprite-slicer.js"></script>
 <script src="js/avatar.js"></script>
+<script src="js/garden.js"></script>
 <script src="js/levels.js"></script>
 <script src="js/log-form.js"></script>
 <script src="js/entry-list.js"></script>
