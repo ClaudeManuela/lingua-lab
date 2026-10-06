@@ -36,14 +36,9 @@ function renderGarden() {
         <h2 style="font-size: 0.9rem; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 1rem; color: var(--paper-ink);">Lexical Garden</h2>
 
         <div class="garden-sidebar-section">
-          <div class="garden-sidebar-title">Seed Points (spendable)</div>
-          <div id="seed-points-list"></div>
-        </div>
-
-        <div class="garden-sidebar-section">
-          <div class="garden-sidebar-title">Total Hours (permanent)</div>
-          <div id="total-hours-list"></div>
-        </div>
+            <div class="garden-sidebar-title">Languages (hours · points)</div>
+            <div id="seed-points-list"></div>
+            </div>
 
         <div class="garden-sidebar-section">
           <div class="garden-sidebar-title">Summary</div>
@@ -173,19 +168,18 @@ function renderGarden() {
 // ═══════════════════════════════════════════════
 
 function renderGardenSidebar() {
-  // Seed points
   const points = calculateSeedPoints();
-  document.getElementById('seed-points-list').innerHTML = GARDEN_LANGUAGES.map(slug => {
-    const meta = LANGUAGES[slug];
-    return `<div class="garden-sidebar-row"><span>${meta.flag} ${meta.name}</span><strong>${points[slug] || 0} pts</strong></div>`;
-  }).join('');
 
-  // Total hours
-  document.getElementById('total-hours-list').innerHTML = GARDEN_LANGUAGES.map(slug => {
+  // Single combined list: flag / name / hours / points
+  document.getElementById('seed-points-list').innerHTML = GARDEN_LANGUAGES.map(slug => {
     const meta = LANGUAGES[slug];
     const summary = getLanguageSummary(DATA, slug);
     const hours = (summary.totalMinutes / 60).toFixed(1);
-    return `<div class="garden-sidebar-row"><span>${meta.flag} ${meta.name}</span><strong>${hours}h</strong></div>`;
+    const pts = points[slug] || 0;
+    return `<div class="garden-sidebar-row">
+      <span>${meta.flag} ${meta.name}</span>
+      <strong>${hours}h · ${pts}pts</strong>
+    </div>`;
   }).join('');
 
   // Summary
