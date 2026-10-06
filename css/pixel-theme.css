@@ -401,14 +401,14 @@ body.dark-mode .pixel-border {
 }
 /* ═══ MODAL SYSTEM ═══ */
 .modal-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.6);
-  z-index: 2000;
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 9999 !important;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 1rem;
+  background: rgba(0, 0, 0, 0.6);
 }
 
 .modal-overlay.hidden {

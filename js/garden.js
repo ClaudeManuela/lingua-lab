@@ -468,7 +468,15 @@ function renderPlantSVG(stage, size, meta) {
 
 function checkRotatePrompt() {
   const dismissed = sessionStorage.getItem('gardenRotateDismissed');
-  if (dismissed) return;
+  const isPortrait = window.matchMedia('(max-width: 700px) and (orientation: portrait)').matches;
+  const prompt = document.getElementById('rotate-prompt');
+  if (!prompt) return;
+  
+  if (gardenView === 'garden' && isPortrait && !dismissed) {
+    prompt.style.display = 'flex';
+  } else {
+    prompt.style.display = 'none';
+  }
 }
 
 function dismissRotatePrompt() {

@@ -553,21 +553,25 @@
 @media (max-width: 900px) {
   .garden-layout {
     grid-template-columns: 1fr;
+    display: flex;
+    flex-direction: column;
   }
 
   .garden-sidebar {
+    order: 2;  /* sidebar comes after */
     border-right: none;
-    border-bottom: 3px solid var(--border-main);
+    border-top: 3px solid var(--border-main);
+    border-bottom: none;
     max-height: none;
     padding: 1rem 1rem 1rem 2.25rem;
   }
 
-  .garden-sidebar::before {
-    left: 22px;
+  .garden-main {
+    order: 1;  /* garden comes first */
   }
 
   .garden-canvas-wrap {
-    min-height: 400px;
+    min-height: 70vh;
   }
 
   .garden-canvas {
