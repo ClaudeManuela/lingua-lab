@@ -632,3 +632,116 @@
     max-width: fit-content;
   }
 }
+/* ═══ GARDEN ZOOM CONTROLS ═══ */
+.garden-zoom-controls {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  display: flex;
+  gap: 0.3rem;
+  align-items: center;
+  background: var(--paper-bg);
+  border: 2px solid var(--border-main);
+  padding: 0.3rem 0.5rem;
+  z-index: 20;
+  box-shadow: 3px 3px 0 rgba(0,0,0,0.2);
+}
+
+.garden-zoom-controls button {
+  background: var(--paper-bg);
+  border: 2px solid var(--border-main);
+  width: 28px;
+  height: 28px;
+  font-family: var(--font-pixel);
+  font-size: 0.9rem;
+  font-weight: bold;
+  cursor: pointer;
+  color: var(--paper-ink);
+  padding: 0;
+  line-height: 1;
+}
+
+.garden-zoom-controls button:hover {
+  background: var(--accent-blue);
+  color: var(--text-inverse);
+}
+
+.garden-zoom-label {
+  font-size: 0.65rem;
+  font-weight: bold;
+  color: var(--paper-ink);
+  padding: 0 0.3rem;
+  letter-spacing: 0.5px;
+}
+
+/* ═══ MODAL ROOT — full page centered ═══ */
+.garden-modal-root {
+  position: relative;
+  z-index: 9998;
+}
+
+.garden-modal-root .modal-overlay {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 9999 !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background: rgba(0, 0, 0, 0.6);
+}
+
+/* ═══ WORD TYPE BADGE IN LIST ═══ */
+.garden-word-type {
+  font-size: 0.6rem;
+  color: var(--paper-ink-soft);
+  background: rgba(0,0,0,0.08);
+  padding: 0 0.3rem;
+  margin-left: 0.35rem;
+  border-radius: 2px;
+  font-weight: normal;
+  letter-spacing: 0.3px;
+}
+
+/* ═══ MOBILE — GARDEN FIRST ═══ */
+@media (max-width: 900px) {
+  .garden-layout {
+    display: flex;
+    flex-direction: column;
+    grid-template-columns: none;
+  }
+
+  .garden-sidebar {
+    order: 2;
+    border-right: none;
+    border-bottom: none;
+    border-top: 3px solid var(--border-main);
+    max-height: none;
+    padding: 1rem 1rem 1rem 2.25rem;
+  }
+
+  .garden-sidebar::before {
+    left: 22px;
+  }
+
+  .garden-main {
+    order: 1;
+  }
+
+  .garden-canvas-wrap {
+    min-height: 65vh;
+  }
+
+  .garden-canvas {
+    width: 1200px;
+    height: 1000px;
+  }
+}
+
+.garden-sidebar-h2 {
+  font-size: 0.9rem;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin-bottom: 1rem;
+  color: var(--paper-ink);
+}
