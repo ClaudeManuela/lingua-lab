@@ -1,13 +1,11 @@
 /* ============================================
-   LEXICAL GARDEN — Phase 5.2 Part 2
-   Zoom, drag, branches, focus, word types
+   LEXICAL GARDEN — Phase 5.2.5
+   Tree-visual word card, fuzzy search
    ============================================ */
 
 let gardenTab = 'all';
 let gardenView = 'garden';
 let currentZoom = 1.0;
-let currentPanX = 0;
-let currentPanY = 0;
 
 const GARDEN_LANGUAGES = ['korean', 'portuguese', 'italian', 'arabic', 'japanese', 'spanish'];
 
@@ -35,28 +33,22 @@ const DEFAULT_WORD_TYPES = [
 function renderGarden() {
   const container = document.getElementById('garden-page');
   if (!container) return;
-
   const admin = isEditable();
 
-  // Clean up any leftover modal mounts from previous renders
   document.querySelectorAll('.garden-modal-root').forEach(el => el.remove());
 
   container.innerHTML = `
     <div class="garden-layout">
-
       <div class="garden-sidebar">
         <h2 class="garden-sidebar-h2">Lexical Garden</h2>
-
         <div class="garden-sidebar-section">
           <div class="garden-sidebar-title">Languages (hours · points)</div>
           <div id="seed-points-list"></div>
         </div>
-
         <div class="garden-sidebar-section">
           <div class="garden-sidebar-title">Summary</div>
           <div id="garden-summary-list"></div>
         </div>
-
         ${admin ? `
           <div class="garden-sidebar-section">
             <div class="garden-sidebar-title">Actions</div>
@@ -68,25 +60,19 @@ function renderGarden() {
           </div>
         ` : ''}
       </div>
-
       <div class="garden-main">
         <div class="garden-view-toggle">
           <button class="${gardenView === 'garden' ? 'active' : ''}" onclick="setGardenView('garden')">Garden</button>
           <button class="${gardenView === 'list' ? 'active' : ''}" onclick="setGardenView('list')">List</button>
         </div>
-
         <div class="garden-tabs" id="garden-tabs"></div>
-
         <div id="garden-view-container" style="flex:1; display:flex; overflow:hidden; position:relative;"></div>
       </div>
-
     </div>
   `;
 
-  // Mount modals at body root (fixes positioning)
   mountGardenModals(admin);
   mountRotatePrompt();
-
   renderGardenSidebar();
   renderGardenTabs();
   renderGardenView();
@@ -166,11 +152,7 @@ function mountGardenModals(admin) {
       </div>
 
       <div id="word-card-modal" class="modal-overlay hidden">
-        <div class="modal-box" id="word-card-content"></div>
-      </div>
-
-      <div id="focus-modal" class="modal-overlay hidden">
-        <div class="modal-box" id="focus-modal-content" style="max-width: 900px; width: 90vw;"></div>
+        <div class="word-card-wide" id="word-card-content"></div>
       </div>
     </div>
   `;
@@ -180,16 +162,13 @@ function mountGardenModals(admin) {
 
 function mountRotatePrompt() {
   if (document.getElementById('rotate-prompt-root')) return;
-  const html = `
+  document.body.insertAdjacentHTML('beforeend', `
     <div class="rotate-prompt" id="rotate-prompt-root" style="display:none;">
       <div class="rotate-prompt-icon">📱</div>
-      <div class="rotate-prompt-text">
-        Rotate your phone horizontally to walk through your garden.
-      </div>
+      <div class="rotate-prompt-text">Rotate your phone horizontally to walk through your garden.</div>
       <button onclick="dismissRotatePrompt()">Continue in portrait</button>
     </div>
-  `;
-  document.body.insertAdjacentHTML('beforeend', html);
+  `);
 }
 
 // ═══════════════════════════════════════════════
@@ -203,10 +182,7 @@ function renderGardenSidebar() {
     const summary = getLanguageSummary(DATA, slug);
     const hours = (summary.totalMinutes / 60).toFixed(1);
     const pts = points[slug] || 0;
-    return `<div class="garden-sidebar-row">
-      <span>${meta.flag} ${meta.name}</span>
-      <strong>${hours}h · ${pts}pts</strong>
-    </div>`;
+    return `<div class="garden-sidebar-row"><span>${meta.flag} ${meta.name}</span><strong>${hours}h · ${pts}pts</strong></div>`;
   }).join('');
 
   const words = DATA.vocabulary || [];
@@ -237,14 +213,12 @@ function calculateSeedPoints() {
 function renderGardenTabs() {
   const container = document.getElementById('garden-tabs');
   if (!container) return;
-
   const tabs = [
     { key: 'all', label: 'All' },
     ...GARDEN_LANGUAGES.map(slug => ({ key: slug, label: LANGUAGES[slug].flag + ' ' + LANGUAGES[slug].name })),
     { key: 'recent', label: 'Recent' },
     { key: 'favorites', label: 'Favorites' }
   ];
-
   container.innerHTML = tabs.map(t => `
     <button class="garden-tab ${gardenTab === t.key ? 'active' : ''}" onclick="setGardenTab('${t.key}')">${t.label}</button>
   `).join('');
@@ -264,16 +238,15 @@ function setGardenView(view) {
 function renderGardenView() {
   const container = document.getElementById('garden-view-container');
   if (!container) return;
-
   if (gardenView === 'list') {
     container.innerHTML = `<div class="garden-list-view" id="garden-list-view"></div>`;
     renderGardenList();
   } else {
     container.innerHTML = `
       <div class="garden-zoom-controls">
-        <button onclick="zoomIn()" title="Zoom in">+</button>
-        <button onclick="zoomOut()" title="Zoom out">−</button>
-        <button onclick="resetZoom()" title="Reset zoom">⟲</button>
+        <button onclick="zoomIn()">+</button>
+        <button onclick="zoomOut()">−</button>
+        <button onclick="resetZoom()">⟲</button>
         <span class="garden-zoom-label" id="zoom-label">100%</span>
       </div>
       <div class="garden-canvas-wrap" id="garden-canvas-wrap">
@@ -291,10 +264,6 @@ function renderGardenView() {
   checkRotatePrompt();
 }
 
-// ═══════════════════════════════════════════════
-// ZOOM
-// ═══════════════════════════════════════════════
-
 function applyZoom() {
   const canvas = document.getElementById('garden-canvas');
   if (!canvas) return;
@@ -303,25 +272,9 @@ function applyZoom() {
   const label = document.getElementById('zoom-label');
   if (label) label.textContent = Math.round(currentZoom * 100) + '%';
 }
-
-function zoomIn() {
-  currentZoom = Math.min(3, currentZoom + 0.15);
-  applyZoom();
-}
-
-function zoomOut() {
-  currentZoom = Math.max(0.4, currentZoom - 0.15);
-  applyZoom();
-}
-
-function resetZoom() {
-  currentZoom = 1.0;
-  applyZoom();
-}
-
-// ═══════════════════════════════════════════════
-// FILTER
-// ═══════════════════════════════════════════════
+function zoomIn() { currentZoom = Math.min(3, currentZoom + 0.15); applyZoom(); }
+function zoomOut() { currentZoom = Math.max(0.4, currentZoom - 0.15); applyZoom(); }
+function resetZoom() { currentZoom = 1.0; applyZoom(); }
 
 function getFilteredWords() {
   let words = [...(DATA.vocabulary || [])];
@@ -342,13 +295,11 @@ function getFilteredWords() {
 function renderGardenList() {
   const container = document.getElementById('garden-list-view');
   if (!container) return;
-
   const words = getFilteredWords();
   if (!words.length) {
     container.innerHTML = `<div class="lang-empty">No words in this garden yet</div>`;
     return;
   }
-
   const stages = ['flowering', 'trunk', 'sapling', 'seedling', 'sprout', 'seed'];
   const groups = {};
   stages.forEach(s => groups[s] = []);
@@ -356,7 +307,6 @@ function renderGardenList() {
     const stage = w.stage || 'seed';
     if (groups[stage]) groups[stage].push(w);
   });
-
   const stageLabels = {
     flowering: 'Flowering (20+ waters)',
     trunk: 'Trunk (12+ waters)',
@@ -365,7 +315,6 @@ function renderGardenList() {
     sprout: 'Sprout (1-2)',
     seed: 'Seed (0)'
   };
-
   container.innerHTML = stages.map(stage => {
     if (!groups[stage].length) return '';
     return `
@@ -402,10 +351,8 @@ function renderWordRow(w) {
 function renderGardenPlants() {
   const canvas = document.getElementById('garden-canvas');
   if (!canvas) return;
-
   const words = getFilteredWords();
   const admin = isEditable();
-
   if (!words.length) {
     const empty = document.createElement('div');
     empty.className = 'garden-empty';
@@ -413,7 +360,6 @@ function renderGardenPlants() {
     canvas.appendChild(empty);
     return;
   }
-
   words.forEach(w => {
     const plant = createPlantElement(w, admin);
     canvas.appendChild(plant);
@@ -424,29 +370,25 @@ function createPlantElement(w, admin) {
   const meta = LANGUAGES[w.language];
   const stage = w.stage || 'seed';
   const size = getPlantSize(stage);
-
   const el = document.createElement('div');
   el.className = 'garden-plant';
   el.dataset.id = w.id;
   el.style.left = (w.gardenX || 100) + 'px';
   el.style.top = (w.gardenY || 100) + 'px';
   el.style.width = size + 'px';
-
   el.innerHTML = `
     <svg class="garden-plant-svg" viewBox="0 0 ${size} ${size}" width="${size}" height="${size}">
       ${renderPlantSVG(stage, size)}
     </svg>
     <div class="garden-plant-label">${escapeHtml(w.word)}</div>
   `;
-
-  el.addEventListener('click', (e) => {
+  el.addEventListener('click', () => {
     if (el.dataset.dragged === 'true') {
       el.dataset.dragged = 'false';
       return;
     }
     openWordCard(w.id);
   });
-
   return el;
 }
 
@@ -467,7 +409,6 @@ function renderPlantSVG(stage, size) {
   const trunkBrown = '#a07850';
   const sproutGreen = '#6a9d4a';
   const leafGreen = '#5a8d3a';
-
   switch (stage) {
     case 'seed':
       return `<circle cx="${c}" cy="${c + 3}" r="2" fill="${soilBrown}"/>`;
@@ -514,8 +455,7 @@ function checkRotatePrompt() {
   if (!prompt) return;
   const dismissed = sessionStorage.getItem('gardenRotateDismissed');
   const isPortrait = window.matchMedia('(max-width: 700px) and (orientation: portrait)').matches;
-  const shouldShow = gardenView === 'garden' && isPortrait && !dismissed;
-  prompt.style.display = shouldShow ? 'flex' : 'none';
+  prompt.style.display = (gardenView === 'garden' && isPortrait && !dismissed) ? 'flex' : 'none';
 }
 
 function dismissRotatePrompt() {
@@ -558,12 +498,10 @@ function submitBackfill(event) {
 function addWordsToGarden(language, wordsText, meaningsText, date, backlog) {
   const words = parseWordList(wordsText);
   const meanings = parseWordList(meaningsText);
-
   words.forEach((word, i) => {
     const existing = DATA.vocabulary.find(w => 
       w.language === language && w.word.toLowerCase() === word.toLowerCase()
     );
-
     if (existing) {
       existing.waters = (existing.waters || 0) + 1;
       existing.lastWatered = date;
@@ -593,7 +531,6 @@ function addWordsToGarden(language, wordsText, meaningsText, date, backlog) {
       });
     }
   });
-
   saveData(DATA);
 }
 
@@ -628,14 +565,9 @@ function updateWordStage(w) {
   else w.stage = 'seed';
 }
 
-// ═══════════════════════════════════════════════
-// REARRANGE BY THEME
-// ═══════════════════════════════════════════════
-
 function rearrangeByTheme() {
   if (!isEditable()) return;
-  if (!confirm('Rearrange all plants by theme? This will move plants to cluster same-theme words together.')) return;
-
+  if (!confirm('Rearrange all plants by theme?')) return;
   const words = DATA.vocabulary || [];
   const themes = {};
   words.forEach(w => {
@@ -643,26 +575,23 @@ function rearrangeByTheme() {
     if (!themes[t]) themes[t] = [];
     themes[t].push(w);
   });
-
   let yOffset = 100;
   Object.keys(themes).forEach(theme => {
     const group = themes[theme];
-    const groupY = yOffset;
     group.forEach((w, i) => {
       const col = i % 6;
       const row = Math.floor(i / 6);
       w.gardenX = 100 + col * 90;
-      w.gardenY = groupY + row * 90;
+      w.gardenY = yOffset + row * 90;
     });
     yOffset += 120 + Math.ceil(group.length / 6) * 90;
   });
-
   saveData(DATA);
   renderGarden();
 }
 
 // ═══════════════════════════════════════════════
-// WORD CARD
+// WORD CARD — Phase 5.2.5 redesign
 // ═══════════════════════════════════════════════
 
 function getWordTypeOptions() {
@@ -678,92 +607,269 @@ function openWordCard(id) {
   const admin = isEditable();
   const content = document.getElementById('word-card-content');
   const typeOptions = getWordTypeOptions();
+  const parent = word.parentId ? DATA.vocabulary.find(w => w.id === word.parentId) : null;
+  const connections = (word.connections || []).map(cid => DATA.vocabulary.find(w => w.id === cid)).filter(Boolean);
 
   content.innerHTML = `
-    <div class="modal-header">
-      <h2>${meta.flag} ${escapeHtml(word.word)}</h2>
+    <div class="word-card-header">
+      <div class="word-card-header-title">${meta.flag} ${escapeHtml(word.word)}</div>
       <button onclick="closeModal('word-card-modal')" class="remove-btn">X</button>
     </div>
-    <div class="modal-body">
 
-      <div class="word-card-section">
-        ${admin ? `
-          <div class="word-card-field">
-            <label>Word:</label>
-            <input type="text" value="${escapeHtml(word.word)}" onchange="updateWordField('${word.id}', 'word', this.value)">
-          </div>
-          <div class="word-card-field">
-            <label>Meaning:</label>
-            <input type="text" value="${escapeHtml(word.meaning || '')}" onchange="updateWordField('${word.id}', 'meaning', this.value)">
-          </div>
-          <div class="word-card-field">
-            <label>Reading:</label>
-            <input type="text" value="${escapeHtml(word.reading || '')}" onchange="updateWordField('${word.id}', 'reading', this.value)">
-          </div>
-          <div class="word-card-field">
-            <label>Word Type:</label>
-            <select onchange="onWordTypeChange('${word.id}', this.value)">
-              <option value="">— pick —</option>
-              ${typeOptions.map(t => `<option value="${t}" ${word.wordType === t ? 'selected' : ''}>${t}</option>`).join('')}
-            </select>
-          </div>
-          <div class="word-card-field" id="custom-type-field-${word.id}" style="${word.wordType === 'Other' ? '' : 'display:none;'}">
-            <label>Custom Type Name:</label>
-            <input type="text" placeholder="e.g., Onomatopoeia" onchange="addCustomWordType(this.value, '${word.id}')">
-          </div>
-          <div class="word-card-field">
-            <label>Theme:</label>
-            <input type="text" value="${escapeHtml(word.theme || '')}" onchange="updateWordField('${word.id}', 'theme', this.value)" placeholder="e.g., greetings, time adverbs">
-          </div>
-          <div class="word-card-field">
-            <label>Notes:</label>
-            <textarea onchange="updateWordField('${word.id}', 'notes', this.value)">${escapeHtml(word.notes || '')}</textarea>
-          </div>
-        ` : `
-          <div class="word-card-field"><strong>Meaning:</strong> ${escapeHtml(word.meaning || '—')}</div>
-          ${word.reading ? `<div class="word-card-field"><strong>Reading:</strong> ${escapeHtml(word.reading)}</div>` : ''}
-          ${word.wordType ? `<div class="word-card-field"><strong>Type:</strong> ${escapeHtml(word.wordType)}</div>` : ''}
-          ${word.theme ? `<div class="word-card-field"><strong>Theme:</strong> ${escapeHtml(word.theme)}</div>` : ''}
-          ${word.notes ? `<div class="word-card-field"><strong>Notes:</strong> ${escapeHtml(word.notes)}</div>` : ''}
-        `}
+    <div class="word-card-body">
+
+      <div class="word-card-left">
+        <div class="word-card-tree-bg" id="word-card-tree"></div>
+        <button class="word-card-show-all hidden" id="word-card-show-all" onclick="toggleAllBranches('${word.id}')">Show all branches</button>
       </div>
 
-      <div class="word-card-section">
-        <div class="word-card-section-title">Stats</div>
-        <div class="word-card-field">Language: <strong>${meta.name}</strong></div>
-        <div class="word-card-field">Stage: <strong>${word.stage || 'seed'}</strong></div>
-        <div class="word-card-field">Waters: <strong>${word.waters || 0}</strong></div>
-        <div class="word-card-field">Added: <strong>${word.dateAdded}</strong></div>
-        <div class="word-card-field">Last watered: <strong>${word.lastWatered || '—'}</strong></div>
-      </div>
+      <div class="word-card-right">
+        <div class="word-card-ruled">
 
-      <div class="word-card-section">
-        <div class="word-card-section-title">Branches</div>
-        <div id="word-card-branches"></div>
-        ${admin ? `<button class="add-btn" onclick="openAddBranchForm('${word.id}')">+ Add Branch</button>` : ''}
-      </div>
+          <div class="word-card-line">
+            <span class="word-card-label">Meaning</span>
+            <span class="word-card-value">${escapeHtml(word.meaning || '—')}</span>
+          </div>
 
-      <div class="word-card-section">
-        <div class="word-card-section-title">Connections</div>
-        <div id="word-card-connections"></div>
-        ${admin ? `<button class="add-btn" onclick="openAddConnectionForm('${word.id}')">+ Connect</button>` : ''}
-      </div>
+          <div class="word-card-line">
+            <span class="word-card-label">Type</span>
+            <span class="word-card-value">${escapeHtml(word.wordType || '—')}</span>
+          </div>
 
-      ${admin ? `
-        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 1rem;">
-          <button class="add-btn" onclick="waterWord('${word.id}')">Water +1</button>
-          <button class="add-btn" onclick="toggleFavorite('${word.id}')">${word.favorite ? 'Unfavorite' : 'Favorite'}</button>
-          <button class="add-btn" onclick="closeModal('word-card-modal'); openFocusMode('${word.id}')">Focus Tree</button>
+          <div class="word-card-line">
+            <span class="word-card-label">Theme</span>
+            <span class="word-card-value">${escapeHtml(word.theme || '—')}</span>
+          </div>
+
+          <div class="word-card-line">
+            <span class="word-card-label">Stage</span>
+            <span class="word-card-value">${word.stage || 'seed'}</span>
+          </div>
+
+          <div class="word-card-line">
+            <span class="word-card-label">Waters</span>
+            <span class="word-card-value">${word.waters || 0}</span>
+          </div>
+
+          <div class="word-card-line">
+            <span class="word-card-label">Added</span>
+            <span class="word-card-value">${word.dateAdded}</span>
+          </div>
+
+          <div class="word-card-line">
+            <span class="word-card-label">Last watered</span>
+            <span class="word-card-value">${word.lastWatered || '—'}</span>
+          </div>
+
+          <div class="word-card-divider"></div>
+
+          <div class="word-card-line-full">
+            <span class="word-card-label">Connections</span>
+            <div class="word-card-connections">
+              ${connections.length ? connections.map(c => `
+                <button class="connection-pill" onclick="openWordCard('${c.id}')">
+                  ${LANGUAGES[c.language].flag} ${escapeHtml(c.word)}
+                </button>
+              `).join('') : '<span class="word-card-empty">— none yet —</span>'}
+            </div>
+          </div>
+
+          ${admin ? `
+            <div class="word-card-actions">
+              <button class="add-btn" onclick="waterWord('${word.id}')">Water +1</button>
+              <button class="add-btn" onclick="toggleFavorite('${word.id}')">${word.favorite ? 'Unfavorite' : 'Favorite'}</button>
+              <button class="add-btn" onclick="openAddBranchForm('${word.id}')">+ Branch</button>
+              <button class="add-btn" onclick="openAddConnectionForm('${word.id}')">+ Connect</button>
+            </div>
+
+            <div class="word-card-edit-toggle" onclick="toggleEditSection()">
+              <span>Edit</span>
+              <span id="edit-toggle-icon">▼</span>
+            </div>
+
+            <div class="word-card-edit-section hidden" id="edit-section">
+              <div class="word-card-field">
+                <label>Word:</label>
+                <input type="text" value="${escapeHtml(word.word)}" onchange="updateWordField('${word.id}', 'word', this.value)">
+              </div>
+              <div class="word-card-field">
+                <label>Meaning:</label>
+                <input type="text" value="${escapeHtml(word.meaning || '')}" onchange="updateWordField('${word.id}', 'meaning', this.value)">
+              </div>
+              <div class="word-card-field">
+                <label>Reading:</label>
+                <input type="text" value="${escapeHtml(word.reading || '')}" onchange="updateWordField('${word.id}', 'reading', this.value)">
+              </div>
+              <div class="word-card-field">
+                <label>Word Type:</label>
+                <select onchange="onWordTypeChange('${word.id}', this.value)">
+                  <option value="">— pick —</option>
+                  ${typeOptions.map(t => `<option value="${t}" ${word.wordType === t ? 'selected' : ''}>${t}</option>`).join('')}
+                </select>
+              </div>
+              <div class="word-card-field" id="custom-type-field-${word.id}" style="${word.wordType === 'Other' ? '' : 'display:none;'}">
+                <label>Custom Type Name:</label>
+                <input type="text" placeholder="e.g., Onomatopoeia" onchange="addCustomWordType(this.value, '${word.id}')">
+              </div>
+              <div class="word-card-field">
+                <label>Theme:</label>
+                <input type="text" value="${escapeHtml(word.theme || '')}" onchange="updateWordField('${word.id}', 'theme', this.value)">
+              </div>
+              <div class="word-card-field">
+                <label>Notes:</label>
+                <textarea onchange="updateWordField('${word.id}', 'notes', this.value)">${escapeHtml(word.notes || '')}</textarea>
+              </div>
+            </div>
+          ` : ''}
+
         </div>
-      ` : ''}
+      </div>
 
     </div>
   `;
 
-  renderWordCardBranches(word);
-  renderWordCardConnections(word);
   document.getElementById('word-card-modal').classList.remove('hidden');
+
+  setTimeout(() => drawWordCardTree(word, parent), 60);
 }
+
+function toggleEditSection() {
+  const section = document.getElementById('edit-section');
+  const icon = document.getElementById('edit-toggle-icon');
+  if (!section) return;
+  const isHidden = section.classList.toggle('hidden');
+  icon.textContent = isHidden ? '▼' : '▲';
+}
+
+function toggleAllBranches(wordId) {
+  window._showAllBranches = !window._showAllBranches;
+  openWordCard(wordId);
+}
+
+// ═══════════════════════════════════════════════
+// TREE DRAWING
+// ═══════════════════════════════════════════════
+
+function drawWordCardTree(word, parent) {
+  const container = document.getElementById('word-card-tree');
+  if (!container) return;
+
+  const w = container.clientWidth;
+  const h = container.clientHeight;
+  if (!w || !h) return;
+
+  // Gather children (direct branches)
+  let children = (word.childIds || []).map(id => DATA.vocabulary.find(x => x.id === id)).filter(Boolean);
+  const showAll = window._showAllBranches;
+  const capped = !showAll && children.length > 8;
+  const visibleChildren = capped ? children.slice(0, 8) : children;
+
+  // Show "Show all" button if capped
+  const showAllBtn = document.getElementById('word-card-show-all');
+  if (showAllBtn) {
+    if (capped) {
+      showAllBtn.classList.remove('hidden');
+      showAllBtn.textContent = `Show all ${children.length} branches`;
+    } else if (showAll && children.length > 8) {
+      showAllBtn.classList.remove('hidden');
+      showAllBtn.textContent = 'Show fewer';
+    } else {
+      showAllBtn.classList.add('hidden');
+    }
+  }
+
+  // Node sizes by stage
+  const sizeFor = (stage) => {
+    switch (stage) {
+      case 'flowering': return 44;
+      case 'trunk': return 38;
+      case 'sapling': return 30;
+      case 'seedling': return 24;
+      case 'sprout': return 20;
+      default: return 16;
+    }
+  };
+
+  // Layout — trunk at bottom center, children higher up in tiers
+  const centerX = w / 2;
+  const baseY = h - 60;
+  const tierHeight = 80;
+
+  // Store positions
+  const positions = {};
+
+  // Trunk (current word) at bottom
+  positions[word.id] = { x: centerX, y: baseY, size: sizeFor(word.stage), isCurrent: true };
+
+  // Parent below (if any) — offset down and slightly to the side
+  if (parent) {
+    positions[parent.id] = { x: centerX + 100, y: baseY + 55, size: sizeFor(parent.stage), isParent: true };
+  }
+
+  // Distribute children in tiers (upward)
+  // Simple approach: 1 tier if ≤ 4 children, 2 tiers if more
+  const tiers = visibleChildren.length <= 4 ? 1 : 2;
+  visibleChildren.forEach((child, i) => {
+    const tierIndex = tiers === 1 ? 0 : Math.floor(i / Math.ceil(visibleChildren.length / 2));
+    const indexInTier = tiers === 1 ? i : (i % Math.ceil(visibleChildren.length / 2));
+    const tierCount = tiers === 1 ? visibleChildren.length : Math.ceil(visibleChildren.length / 2);
+    
+    const tierWidth = w * 0.8;
+    const spacing = tierWidth / (tierCount + 1);
+    const x = (w - tierWidth) / 2 + spacing * (indexInTier + 1);
+    const y = baseY - 40 - (tierIndex + 1) * tierHeight;
+
+    positions[child.id] = { x, y, size: sizeFor(child.stage) };
+  });
+
+  // Build SVG
+  let svg = '';
+
+  // Branch lines (parent → trunk, trunk → children)
+  if (parent) {
+    const p1 = positions[parent.id];
+    const t = positions[word.id];
+    const mx = (p1.x + t.x) / 2;
+    const my = (p1.y + t.y) / 2 + 15;
+    svg += `<path d="M ${p1.x} ${p1.y - p1.size/2} Q ${mx} ${my} ${t.x} ${t.y + t.size/2}" stroke="#b8906a" stroke-width="3" fill="none"/>`;
+  }
+  visibleChildren.forEach(child => {
+    const c = positions[child.id];
+    const t = positions[word.id];
+    const mx = (c.x + t.x) / 2;
+    const my = (c.y + t.y) / 2 + 20;
+    svg += `<path d="M ${c.x} ${c.y + c.size/2} Q ${mx} ${my} ${t.x} ${t.y - t.size/2}" stroke="#b8906a" stroke-width="3" fill="none"/>`;
+  });
+
+  // Nodes
+  Object.entries(positions).forEach(([id, pos]) => {
+    const nodeWord = id === word.id ? word : (id === parent?.id ? parent : visibleChildren.find(c => c.id === id));
+    if (!nodeWord) return;
+    const meta = LANGUAGES[nodeWord.language];
+    const isCurrent = pos.isCurrent;
+    const fill = isCurrent ? '#a07850' : '#c8a878';
+    const stroke = isCurrent ? '#5a3a2a' : '#8a6a4a';
+
+    svg += `
+      <g style="cursor:pointer" onclick="openWordCard('${nodeWord.id}')">
+        <circle cx="${pos.x}" cy="${pos.y}" r="${pos.size / 2}" fill="${fill}" stroke="${stroke}" stroke-width="${isCurrent ? 4 : 2}"/>
+        <text x="${pos.x}" y="${pos.y + 4}" text-anchor="middle" font-size="${Math.max(8, pos.size / 4)}" fill="#fff" font-family="Courier New, monospace" font-weight="bold">
+          ${escapeHtml((nodeWord.word || '').slice(0, 6))}
+        </text>
+      </g>
+    `;
+  });
+
+  container.innerHTML = `
+    <svg width="100%" height="100%" viewBox="0 0 ${w} ${h}" preserveAspectRatio="xMidYMid meet">
+      ${svg}
+    </svg>
+  `;
+}
+
+// ═══════════════════════════════════════════════
+// ACTIONS
+// ═══════════════════════════════════════════════
 
 function onWordTypeChange(wordId, value) {
   if (!isEditable()) return;
@@ -784,38 +890,6 @@ function addCustomWordType(name, wordId) {
   const word = DATA.vocabulary.find(w => w.id === wordId);
   if (word) word.wordType = name;
   saveData(DATA);
-}
-
-function renderWordCardBranches(word) {
-  const container = document.getElementById('word-card-branches');
-  if (!container) return;
-  const branches = (word.childIds || []).map(id => DATA.vocabulary.find(w => w.id === id)).filter(Boolean);
-  if (!branches.length) {
-    container.innerHTML = `<div style="font-size:0.7rem; color: var(--text-dim); font-style: italic;">No branches yet</div>`;
-    return;
-  }
-  container.innerHTML = branches.map(b => `
-    <div class="word-card-branch-row">
-      <span>${b.direction === 'up' ? '↑' : b.direction === 'down' ? '↓' : b.direction === 'left' ? '←' : '→'} ${escapeHtml(b.word)} (${escapeHtml(b.meaning || '')})</span>
-      <button onclick="removeBranch('${word.id}', '${b.id}')">X</button>
-    </div>
-  `).join('');
-}
-
-function renderWordCardConnections(word) {
-  const container = document.getElementById('word-card-connections');
-  if (!container) return;
-  const connections = (word.connections || []).map(id => DATA.vocabulary.find(w => w.id === id)).filter(Boolean);
-  if (!connections.length) {
-    container.innerHTML = `<div style="font-size:0.7rem; color: var(--text-dim); font-style: italic;">No connections yet</div>`;
-    return;
-  }
-  container.innerHTML = connections.map(c => `
-    <div class="word-card-connection-row">
-      <span>↔ ${LANGUAGES[c.language].flag} ${escapeHtml(c.word)} (${escapeHtml(c.meaning || '')})</span>
-      <button onclick="removeConnection('${word.id}', '${c.id}')">X</button>
-    </div>
-  `).join('');
 }
 
 function updateWordField(id, key, value) {
@@ -880,14 +954,13 @@ function openAddBranchForm(parentId) {
   if (!isEditable()) return;
   const parent = DATA.vocabulary.find(w => w.id === parentId);
   if (!parent) return;
-
   const content = document.getElementById('word-card-content');
   content.innerHTML = `
-    <div class="modal-header">
-      <h2>Add Branch to ${escapeHtml(parent.word)}</h2>
+    <div class="word-card-header">
+      <div class="word-card-header-title">Add Branch to ${escapeHtml(parent.word)}</div>
       <button onclick="closeModal('word-card-modal')" class="remove-btn">X</button>
     </div>
-    <div class="modal-body">
+    <div class="modal-body" style="padding: 1.5rem;">
       <div class="word-card-field">
         <label>Branch Word:</label>
         <input type="text" id="branch-word" placeholder="e.g., 안녕하세요">
@@ -932,10 +1005,8 @@ function submitBranch(parentId) {
 
   const direction = window._branchDirection || 'right';
   const offsets = {
-    up: { x: 0, y: -120 },
-    down: { x: 0, y: 120 },
-    left: { x: -140, y: 0 },
-    right: { x: 140, y: 0 }
+    up: { x: 0, y: -120 }, down: { x: 0, y: 120 },
+    left: { x: -140, y: 0 }, right: { x: 140, y: 0 }
   };
   const off = offsets[direction];
 
@@ -960,7 +1031,6 @@ function submitBranch(parentId) {
     wordType: '',
     direction: direction
   };
-
   DATA.vocabulary.push(newWord);
   parent.childIds = parent.childIds || [];
   parent.childIds.push(newWord.id);
@@ -970,70 +1040,79 @@ function submitBranch(parentId) {
 }
 
 // ═══════════════════════════════════════════════
-// CONNECTION FORM
+// CONNECTION FORM (with fuzzy search)
 // ═══════════════════════════════════════════════
 
 function openAddConnectionForm(wordId) {
   if (!isEditable()) return;
   const word = DATA.vocabulary.find(w => w.id === wordId);
   if (!word) return;
+  window._connectionSource = wordId;
 
   const content = document.getElementById('word-card-content');
   content.innerHTML = `
-    <div class="modal-header">
-      <h2>Connect ${escapeHtml(word.word)}</h2>
+    <div class="word-card-header">
+      <div class="word-card-header-title">Connect ${escapeHtml(word.word)}</div>
       <button onclick="closeModal('word-card-modal')" class="remove-btn">X</button>
     </div>
-    <div class="modal-body">
+    <div class="modal-body" style="padding: 1.5rem;">
       <div class="word-card-field">
-        <label>Search for a word:</label>
-        <input type="text" id="connection-search" placeholder="Type to filter..." oninput="filterConnectionList(this.value)">
+        <label>Search:</label>
+        <input type="text" id="connection-search" placeholder="Type to filter (fuzzy search enabled)..." oninput="renderConnectionCandidates(this.value)">
       </div>
-      <div id="connection-candidates" style="max-height: 300px; overflow-y: auto; border: 2px solid var(--border-main); padding: 0.5rem; background: var(--bg-input);"></div>
-      <div class="modal-footer">
+      <div id="connection-candidates" style="max-height: 340px; overflow-y: auto; border: 2px solid var(--border-main); padding: 0.5rem; background: var(--bg-input); margin-top: 0.75rem;"></div>
+      <div class="modal-footer" style="margin-top: 1rem;">
         <button class="cancel-btn" onclick="openWordCard('${wordId}')">Cancel</button>
       </div>
     </div>
   `;
-  filterConnectionList('');
+  renderConnectionCandidates('');
   document.getElementById('word-card-modal').classList.remove('hidden');
 }
 
-function filterConnectionList(query) {
-  const currentId = window._currentConnectionSourceId || null;
+function renderConnectionCandidates(query) {
   const container = document.getElementById('connection-candidates');
   if (!container) return;
-  const sourceId = document.querySelector('[onclick*="openAddConnectionForm"]') ? null : null;
+  const sourceId = window._connectionSource;
+  const sourceWord = DATA.vocabulary.find(w => w.id === sourceId);
+  if (!sourceWord) return;
 
-  // Determine source word from the modal content
-  const headerText = document.querySelector('#word-card-content .modal-header h2')?.textContent || '';
-  const words = DATA.vocabulary || [];
-  const q = (query || '').toLowerCase();
+  // Exclude self and already connected
+  const existing = new Set(sourceWord.connections || []);
+  existing.add(sourceId);
 
-  const candidates = words.filter(w => {
-    if (!w.word) return false;
-    return q === '' || w.word.toLowerCase().includes(q) || (w.meaning || '').toLowerCase().includes(q);
-  }).slice(0, 40);
+  const candidates = (DATA.vocabulary || []).filter(w => !existing.has(w.id));
 
-  container.innerHTML = candidates.map(w => `
-    <div style="padding: 0.3rem 0.5rem; cursor: pointer; border-bottom: 1px solid var(--border-soft); font-size: 0.8rem;"
+  // Apply fuzzy search
+  let results;
+  if (typeof fuzzySearch === 'function' && query && query.trim()) {
+    results = fuzzySearch(query, candidates);
+  } else {
+    results = candidates.slice(0, 60);
+  }
+
+  if (!results.length) {
+    container.innerHTML = `<div style="font-size:0.75rem; color: var(--text-dim); text-align:center; padding: 1rem;">No matches</div>`;
+    return;
+  }
+
+  container.innerHTML = results.map(w => `
+    <div style="padding: 0.4rem 0.6rem; cursor: pointer; border-bottom: 1px solid var(--border-soft); font-size: 0.8rem; display:flex; gap:0.5rem; align-items:center;"
+         onmouseover="this.style.background='rgba(0,0,0,0.05)'"
+         onmouseout="this.style.background='transparent'"
          onclick="submitConnection('${w.id}')">
-      ${LANGUAGES[w.language].flag} <strong>${escapeHtml(w.word)}</strong> — ${escapeHtml(w.meaning || '')}
+      <span>${LANGUAGES[w.language].flag}</span>
+      <strong>${escapeHtml(w.word)}</strong>
+      <span style="color: var(--text-dim); font-size:0.7rem;">— ${escapeHtml(w.meaning || '')}</span>
     </div>
-  `).join('') || '<div style="font-size:0.75rem; color: var(--text-dim);">No matches</div>';
+  `).join('');
 }
 
 function submitConnection(targetId) {
   if (!isEditable()) return;
-  // Find source word from currently open modal
-  const source = window._connectionSource;
-  if (!source) {
-    // Attempt to derive from header
-    alert('Please reopen the word card and try connecting again.');
-    return;
-  }
-
-  const sourceWord = DATA.vocabulary.find(w => w.id === source);
+  const sourceId = window._connectionSource;
+  if (!sourceId) return;
+  const sourceWord = DATA.vocabulary.find(w => w.id === sourceId);
   const targetWord = DATA.vocabulary.find(w => w.id === targetId);
   if (!sourceWord || !targetWord || sourceWord.id === targetWord.id) return;
 
@@ -1045,88 +1124,4 @@ function submitConnection(targetId) {
   saveData(DATA);
   renderGarden();
   openWordCard(sourceWord.id);
-}
-
-// Store connection source when opening form
-const _origOpenAddConnectionForm = openAddConnectionForm;
-openAddConnectionForm = function(wordId) {
-  window._connectionSource = wordId;
-  _origOpenAddConnectionForm(wordId);
-};
-
-// ═══════════════════════════════════════════════
-// FOCUS MODE
-// ═══════════════════════════════════════════════
-
-function openFocusMode(wordId) {
-  const word = DATA.vocabulary.find(w => w.id === wordId);
-  if (!word) return;
-
-  const content = document.getElementById('focus-modal-content');
-
-  // Gather tree: trunk + all branches (recursive one level)
-  const branches = (word.childIds || []).map(id => DATA.vocabulary.find(w => w.id === id)).filter(Boolean);
-
-  content.innerHTML = `
-    <div class="modal-header">
-      <h2>${LANGUAGES[word.language].flag} ${escapeHtml(word.word)} Tree</h2>
-      <button onclick="closeModal('focus-modal')" class="remove-btn">X</button>
-    </div>
-    <div class="modal-body">
-      <div class="garden-focus-tree" id="focus-tree">
-        <svg class="garden-focus-svg" id="focus-svg"></svg>
-      </div>
-      <div class="garden-focus-actions">
-        ${isEditable() ? `<button class="add-btn" onclick="closeModal('focus-modal'); openAddBranchForm('${word.id}')">+ Add Branch</button>` : ''}
-      </div>
-    </div>
-  `;
-
-  document.getElementById('focus-modal').classList.remove('hidden');
-
-  // Draw tree after layout
-  setTimeout(() => drawFocusTree(word, branches), 50);
-}
-
-function drawFocusTree(trunk, branches) {
-  const svg = document.getElementById('focus-svg');
-  const tree = document.getElementById('focus-tree');
-  if (!svg || !tree) return;
-
-  const w = tree.clientWidth;
-  const h = tree.clientHeight;
-  const cx = w / 2;
-  const cy = h / 2;
-
-  // Directions
-  const positions = {
-    up: { x: cx, y: cy - 140 },
-    down: { x: cx, y: cy + 140 },
-    left: { x: cx - 200, y: cy },
-    right: { x: cx + 200, y: cy }
-  };
-
-  let paths = '';
-  let nodes = '';
-
-  // Trunk node
-  nodes += `
-    <g class="focus-node" style="cursor: pointer;" onclick="closeModal('focus-modal'); openWordCard('${trunk.id}')">
-      <circle cx="${cx}" cy="${cy}" r="30" fill="#a07850" stroke="#5a3a2a" stroke-width="3"/>
-      <text x="${cx}" y="${cy + 4}" text-anchor="middle" font-size="12" fill="#fff" font-family="Courier New, monospace" font-weight="bold">${escapeHtml(trunk.word.slice(0, 8))}</text>
-    </g>
-  `;
-
-  branches.forEach(b => {
-    const pos = positions[b.direction || 'right'] || positions.right;
-    paths += `<path d="M ${cx} ${cy} Q ${(cx + pos.x) / 2} ${(cy + pos.y) / 2 - 20} ${pos.x} ${pos.y}" />`;
-    nodes += `
-      <g class="focus-node" style="cursor: pointer;" onclick="closeModal('focus-modal'); openWordCard('${b.id}')">
-        <circle cx="${pos.x}" cy="${pos.y}" r="22" fill="#b8906a" stroke="#5a3a2a" stroke-width="3"/>
-        <text x="${pos.x}" y="${pos.y + 4}" text-anchor="middle" font-size="10" fill="#fff" font-family="Courier New, monospace" font-weight="bold">${escapeHtml(b.word.slice(0, 8))}</text>
-      </g>
-    `;
-  });
-
-  svg.innerHTML = paths + nodes;
 }
