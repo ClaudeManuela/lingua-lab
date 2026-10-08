@@ -666,12 +666,15 @@ function openWordCard(id) {
           <div class="word-card-line-full">
             <span class="word-card-label">Connections</span>
             <div class="word-card-connections">
-              ${connections.length ? connections.map(c => `
-                <button class="connection-pill" onclick="openWordCard('${c.id}')">
-                  ${LANGUAGES[c.language].flag} ${escapeHtml(c.word)}
-                </button>
-              `).join('') : '<span class="word-card-empty">— none yet —</span>'}
-            </div>
+          ${connections.length ? connections.map(c => `
+            <span class="connection-pill-wrap">
+              <button class="connection-pill" onclick="openWordCard('${c.id}')">
+                ${LANGUAGES[c.language].flag} ${escapeHtml(c.word)}
+              </button>
+              ${admin ? `<button class="connection-pill-delete" onclick="event.stopPropagation(); disconnectWord('${word.id}', '${c.id}')" title="Remove connection">×</button>` : ''}
+            </span>
+          `).join('') : '<span class="word-card-empty">— none yet —</span>'}
+        </div>
           </div>
 
           ${admin ? `
@@ -1050,7 +1053,7 @@ function renderBranchCandidates(query) {
     return;
   }
 
-  container.innerHTML = results.map(w => `
+    container.innerHTML = results.map(w => `
     <div class="branch-candidate-row" data-id="${w.id}"
          onclick="selectBranchCandidate('${w.id}')"
          style="padding: 0.4rem 0.6rem; cursor: pointer; border-bottom: 1px solid var(--border-soft); font-size: 0.8rem; display:flex; gap:0.5rem; align-items:center;">
@@ -1058,14 +1061,19 @@ function renderBranchCandidates(query) {
       ${w.reading ? `<span style="color:var(--text-dim); font-size:0.7rem;">(${escapeHtml(w.reading)})</span>` : ''}
       <span style="color: var(--text-dim); font-size:0.7rem;">— ${escapeHtml(w.meaning || '')}</span>
     </div>
-  `).join('') + `
+  `).join('');
+
+  // Always show the create-new fallback at the bottom
+  const fallbackHtml = `
     <div style="padding: 0.6rem; text-align:center; border-top: 1px dashed var(--border-soft); margin-top: 0.5rem;">
       <button class="add-btn" style="font-size:0.7rem;" onclick="showNewWordSection()">
         Not here? Create New Word
       </button>
     </div>
   `;
+  container.insertAdjacentHTML('beforeend', fallbackHtml);
 }
+
 
 function selectBranchCandidate(id) {
   const word = DATA.vocabulary.find(w => w.id === id);
@@ -1330,4 +1338,17 @@ function submitConnection(targetId) {
   saveData(DATA);
   renderGarden();
   openWordCard(sourceWord.id);
+}
+
+function disconnectWord(aId, bId) {
+  if (!isEditable()) return;
+  if (!confirm('Remove this connection?')) return;
+  const a = DATA.vocabulary.find(w => w.id === aId);
+  const b = DATA.vocabulary.find(w => w.id === bId);
+  if (!a || !b) return;
+  a.connections = (a.connections || []).filter(id => id !== bId);
+  b.connections = (b.connections || []).filter(id => id !== aId);
+  saveData(DATA);
+  openWordCard(aId);
+  renderGarden();
 }

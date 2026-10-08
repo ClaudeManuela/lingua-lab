@@ -1022,3 +1022,32 @@
 .branch-selected-display.hidden {
   display: none;
 }
+.connection-pill-wrap {
+  display: inline-flex;
+  align-items: stretch;
+  gap: 0;
+}
+
+.connection-pill-wrap .connection-pill {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+  margin-right: 0;
+}
+
+.connection-pill-delete {
+  background: var(--danger);
+  color: white;
+  border: 2px solid var(--border-main);
+  border-left: none;
+  padding: 0.2rem 0.4rem;
+  font-family: var(--font-pixel);
+  font-size: 0.7rem;
+  font-weight: bold;
+  cursor: pointer;
+  box-shadow: 2px 2px 0 rgba(0,0,0,0.15);
+  max-width: fit-content;
+}
+
+.connection-pill-delete:hover {
+  background: #a02e48;
+}
