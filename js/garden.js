@@ -45,6 +45,10 @@ function renderGarden() {
           <div class="garden-sidebar-title">Languages (hours · points)</div>
           <div id="seed-points-list"></div>
         </div>
+          <div class="garden-sidebar-section">
+          <div class="garden-sidebar-title">Study History</div>
+          <div id="study-history-list"></div>
+        </div>
         <div class="garden-sidebar-section">
           <div class="garden-sidebar-title">Summary</div>
           <div id="garden-summary-list"></div>
@@ -53,12 +57,17 @@ function renderGarden() {
           <div class="garden-sidebar-section">
             <div class="garden-sidebar-title">Actions</div>
             <div class="garden-sidebar-actions">
+              <button onclick="openStudyMode()">Study</button>
               <button onclick="openAddWordsModal()">+ Add Words</button>
               <button onclick="openBackfillModal()">Backfill</button>
               <button onclick="rearrangeByTheme()">Cluster by Theme</button>
+              <button onclick="restoreGardenPlacement()"
+                      ${DATA.settings._lastGardenSnapshot?.length ? '' : 'disabled'}>
+                Restore Placement
+              </button>
             </div>
           </div>
-        ` : ''}
+` : ''}
       </div>
       <div class="garden-main">
         <div class="garden-view-toggle">
@@ -193,7 +202,11 @@ function renderGardenSidebar() {
     <div class="garden-sidebar-row"><span>Total waters</span><strong>${totalWaters}</strong></div>
     <div class="garden-sidebar-row"><span>Backfilled</span><strong>${backlogCount}</strong></div>
   `;
+
+  const historyEl = document.getElementById('study-history-list');
+  if (historyEl) historyEl.innerHTML = renderStudyHistory();
 }
+//gamification and what not
 
 function calculateSeedPoints() {
   const result = {};
@@ -567,7 +580,15 @@ function updateWordStage(w) {
 
 function rearrangeByTheme() {
   if (!isEditable()) return;
-  if (!confirm('Rearrange all plants by theme?')) return;
+  if (!confirm('Rearrange all plants by theme? You can undo this with "Restore Placement".')) return;
+
+  // Snapshot current positions for undo
+  DATA.settings._lastGardenSnapshot = (DATA.vocabulary || []).map(w => ({
+    id: w.id,
+    gardenX: w.gardenX,
+    gardenY: w.gardenY
+  }));
+
   const words = DATA.vocabulary || [];
   const themes = {};
   words.forEach(w => {
@@ -575,6 +596,7 @@ function rearrangeByTheme() {
     if (!themes[t]) themes[t] = [];
     themes[t].push(w);
   });
+
   let yOffset = 100;
   Object.keys(themes).forEach(theme => {
     const group = themes[theme];
@@ -586,6 +608,29 @@ function rearrangeByTheme() {
     });
     yOffset += 120 + Math.ceil(group.length / 6) * 90;
   });
+
+  saveData(DATA);
+  renderGarden();
+}
+
+function restoreGardenPlacement() {
+  if (!isEditable()) return;
+  const snap = DATA.settings._lastGardenSnapshot;
+  if (!snap || !snap.length) {
+    alert('No saved placement to restore.');
+    return;
+  }
+  if (!confirm('Restore the placement from before the last "Cluster by Theme"?')) return;
+
+  snap.forEach(s => {
+    const w = DATA.vocabulary.find(x => x.id === s.id);
+    if (w) {
+      w.gardenX = s.gardenX;
+      w.gardenY = s.gardenY;
+    }
+  });
+
+  DATA.settings._lastGardenSnapshot = null;
   saveData(DATA);
   renderGarden();
 }

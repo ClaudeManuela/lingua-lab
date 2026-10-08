@@ -96,12 +96,18 @@ function goToSection(section) {
     }
   }
   if (section === 'garden') {
-  if (typeof renderGarden === 'function') {
-    showPage('garden-page');
-    renderGarden();
-    return;
+    if (typeof renderGarden === 'function') {
+      showPage('garden-page');
+      renderGarden();
+      return;
+    }
   }
-}
+  if (section === 'study') {
+    if (typeof openStudyMode === 'function') {
+      openStudyMode();
+      return;
+    }
+  }
   if (section === 'levels') {
     if (typeof renderLevelsIndex === 'function') {
       renderLevelsIndex();

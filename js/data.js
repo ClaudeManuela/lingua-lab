@@ -38,6 +38,8 @@ function getDefaultData() {
   languageTests: [],
   languageReflections: [],
   vocabulary: [],
+  studySessions: [],
+studyState: null,
   seedPoints: {},
   gardenSessions: [],
   gardenSpent: {},
@@ -46,8 +48,15 @@ function getDefaultData() {
       koreanStudyTargetHours: 60,
       koreanMediaTargetHours: 90,
       editMode: false,
+      study: {
+        sessionSize: 25,
+        languageFilter: 'all',
+        reverseMode: false,
+        dueThreshold: 14
+      },
       hangulAppName: 'Hangul App',
       customActivities: []
+      
     }
   };
 }
@@ -63,6 +72,10 @@ function migrateData(data) {
     if (!Array.isArray(data.gardenSessions)) data.gardenSessions = [];
     if (!data.seedPoints) data.seedPoints = {};
     if (!data.gardenSpent) data.gardenSpent = {};
+    //garden positionning
+    if (data.settings && data.settings._lastGardenSnapshot === undefined) {
+  data.settings._lastGardenSnapshot = null;
+}
 
     // Ensure vocabulary entries have position fields
     (data.vocabulary || []).forEach(w => {
@@ -73,6 +86,18 @@ function migrateData(data) {
       if (!Array.isArray(w.childIds)) w.childIds = [];
       if (!Array.isArray(w.connections)) w.connections = [];
     });
+
+          // Study mode additions
+      if (!Array.isArray(data.studySessions)) data.studySessions = [];
+      if (data.studyState === undefined) data.studyState = null;
+      if (!data.settings.study) {
+        data.settings.study = {
+          sessionSize: 25,
+          languageFilter: 'all',
+          reverseMode: false,
+          dueThreshold: 14
+        };
+      }
 
     // Migrate language level format (A0 → A0 Low, etc.)
     const levelMigrate = {

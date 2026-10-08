@@ -1,0 +1,387 @@
+/* ============================================
+   FLASHCARD STUDY MODE — Phase 5.3b
+   ============================================ */
+
+/* ═══ SETUP / COMPLETE CARD ═══ */
+.study-setup-wrap {
+  max-width: 640px;
+  margin: 2rem auto;
+  padding: 0 1rem;
+}
+
+.study-setup-card {
+  background: var(--paper-bg);
+  border: 4px solid var(--border-main);
+  box-shadow: 8px 8px 0 rgba(0,0,0,0.2);
+  padding: 1.5rem;
+  background-image:
+    repeating-linear-gradient(
+      transparent 0px,
+      transparent 27px,
+      var(--paper-ruling) 27px,
+      var(--paper-ruling) 28px
+    );
+  background-position: 0 40px;
+  line-height: 28px;
+  color: var(--paper-ink);
+}
+
+.study-setup-card h2 {
+  font-size: 1rem;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  border-bottom: 2px solid var(--paper-ink);
+  padding-bottom: 0.4rem;
+  margin-bottom: 1rem;
+  display: inline-block;
+  padding-right: 1rem;
+}
+
+.study-setup-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin-bottom: 1.25rem;
+  font-size: 0.8rem;
+}
+
+.study-setup-stats > div {
+  display: flex;
+  justify-content: space-between;
+  border-bottom: 1px dashed var(--paper-ruling);
+  padding: 0.2rem 0;
+}
+
+.study-setup-stats strong {
+  color: var(--accent-ink);
+}
+
+.study-setup-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+}
+
+.study-setup-form label {
+  display: flex;
+  flex-direction: column;
+  font-size: 0.75rem;
+  color: var(--paper-ink-soft);
+  gap: 0.3rem;
+  letter-spacing: 0.5px;
+  font-weight: bold;
+  text-transform: uppercase;
+}
+
+.study-setup-form input,
+.study-setup-form select {
+  background: var(--bg-input);
+  color: var(--text-main);
+  border: 2px solid var(--border-main);
+  padding: 0.4rem;
+  font-family: var(--font-pixel);
+  font-size: 0.85rem;
+}
+
+.study-reverse-label {
+  flex-direction: row !important;
+  align-items: center;
+  gap: 0.5rem !important;
+  text-transform: none !important;
+  font-weight: normal !important;
+}
+
+.study-setup-actions {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+/* ═══ RESUME BANNER ═══ */
+.study-resume-banner {
+  background: var(--accent-lavender);
+  border: 2px solid var(--accent-violet);
+  padding: 0.75rem;
+  margin-bottom: 1rem;
+  font-size: 0.8rem;
+}
+
+.study-resume-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+/* ═══ SESSION VIEW ═══ */
+.study-session-wrap {
+  max-width: 640px;
+  margin: 2rem auto;
+  padding: 0 1rem;
+}
+
+.study-session-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.8rem;
+  font-weight: bold;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--paper-ink);
+  margin-bottom: 1rem;
+}
+
+.study-exit-btn {
+  background: var(--danger);
+  color: white;
+  border: 2px solid var(--border-main);
+  padding: 0.3rem 0.75rem;
+  font-family: var(--font-pixel);
+  font-size: 0.7rem;
+  font-weight: bold;
+  letter-spacing: 1px;
+  cursor: pointer;
+  box-shadow: 2px 2px 0 rgba(0,0,0,0.2);
+}
+
+/* ═══ FLIP CARD ═══ */
+.study-card {
+  perspective: 1400px;
+  width: 100%;
+  min-height: 340px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.study-card-inner {
+  position: relative;
+  width: 100%;
+  min-height: 340px;
+  transition: transform 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+  transform-style: preserve-3d;
+}
+
+.study-card.flipped .study-card-inner {
+  transform: rotateY(180deg);
+}
+
+.study-card-face {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+  background: var(--paper-bg);
+  border: 4px solid var(--border-main);
+  box-shadow: 8px 8px 0 rgba(0,0,0,0.2);
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  background-image:
+    repeating-linear-gradient(
+      transparent 0px,
+      transparent 27px,
+      var(--paper-ruling) 27px,
+      var(--paper-ruling) 28px
+    );
+  background-position: 0 40px;
+  color: var(--paper-ink);
+}
+
+.study-card-back {
+  transform: rotateY(180deg);
+  justify-content: flex-start;
+  padding-top: 1.5rem;
+}
+
+.study-card-word {
+  font-size: 1.8rem;
+  font-weight: bold;
+  letter-spacing: 2px;
+  color: var(--paper-ink);
+  margin-bottom: 0.4rem;
+  line-height: 1.3;
+}
+
+.study-card-reading {
+  font-size: 1rem;
+  color: var(--paper-ink-soft);
+  font-style: italic;
+  margin-bottom: 0.75rem;
+}
+
+.study-card-meaning {
+  font-size: 1.3rem;
+  font-weight: bold;
+  color: var(--accent-ink);
+  letter-spacing: 1px;
+}
+
+.study-card-divider {
+  width: 60%;
+  height: 2px;
+  background: var(--paper-ink);
+  opacity: 0.3;
+  margin: 1rem 0;
+}
+
+.study-card-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  justify-content: center;
+  font-size: 0.7rem;
+  color: var(--paper-ink-soft);
+  letter-spacing: 0.5px;
+  margin-top: 0.75rem;
+  text-transform: uppercase;
+}
+
+.study-card-hint {
+  margin-top: 1.5rem;
+  font-size: 0.7rem;
+  letter-spacing: 2px;
+  color: var(--paper-ink-soft);
+  animation: blink 1.8s infinite;
+}
+
+.study-card-back-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+}
+
+/* ═══ GRADE BUTTONS ═══ */
+.study-grade-row {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: auto;
+  padding-top: 1rem;
+  width: 100%;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.study-grade {
+  flex: 1;
+  min-width: 100px;
+  border: 3px solid var(--border-main);
+  padding: 0.6rem 0.75rem;
+  font-family: var(--font-pixel);
+  font-size: 0.75rem;
+  font-weight: bold;
+  letter-spacing: 1px;
+  cursor: pointer;
+  color: white;
+  box-shadow: 3px 3px 0 rgba(0,0,0,0.25);
+  text-transform: uppercase;
+}
+
+.study-grade.didnt { background: var(--danger); }
+.study-grade.almost { background: var(--warning); }
+.study-grade.knew { background: var(--success); }
+
+.study-grade:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 4px 4px 0 rgba(0,0,0,0.3);
+}
+
+/* ═══ TIMER ═══ */
+.study-timer {
+  text-align: center;
+  margin-top: 1rem;
+  font-size: 0.8rem;
+  letter-spacing: 2px;
+  color: var(--paper-ink-soft);
+  font-weight: bold;
+}
+
+/* ═══ COMPLETE CARD ═══ */
+.study-complete-card {
+  max-width: 560px;
+}
+
+.study-changes-title {
+  font-size: 0.75rem;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  font-weight: bold;
+  margin-bottom: 0.5rem;
+  color: var(--paper-ink);
+}
+
+.study-changes-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin-bottom: 1.25rem;
+  font-size: 0.8rem;
+}
+
+.study-change-row {
+  padding: 0.4rem 0.6rem;
+  background: rgba(74, 157, 110, 0.12);
+  border-left: 3px solid var(--success);
+  color: var(--paper-ink);
+}
+
+.study-change-empty {
+  font-size: 0.75rem;
+  color: var(--paper-ink-soft);
+  font-style: italic;
+}
+
+/* ═══ DESKTOP: EMBED IN NOTEBOOK ═══ */
+@media (min-width: 901px) {
+  #study-page.active {
+    display: flex;
+    justify-content: center;
+  }
+}
+
+/* ═══ MOBILE: FULLSCREEN TAKEOVER ═══ */
+@media (max-width: 900px) {
+  #study-page.active {
+    position: fixed;
+    inset: 0;
+    z-index: 1500;
+    background: var(--bg-main);
+    overflow-y: auto;
+    padding-top: 92px;
+  }
+
+  .study-setup-wrap,
+  .study-session-wrap {
+    margin: 1rem auto;
+    padding: 0 0.75rem;
+  }
+
+  .study-setup-card {
+    padding: 1rem;
+  }
+
+  .study-card {
+    min-height: 300px;
+  }
+
+  .study-card-inner {
+    min-height: 300px;
+  }
+
+  .study-card-word {
+    font-size: 1.4rem;
+  }
+
+  .study-card-meaning {
+    font-size: 1.1rem;
+  }
+
+  .study-grade {
+    font-size: 0.65rem;
+    min-width: 80px;
+    padding: 0.5rem 0.5rem;
+  }
+}

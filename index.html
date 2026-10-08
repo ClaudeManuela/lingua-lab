@@ -12,6 +12,7 @@
   <link rel="stylesheet" href="css/avatar.css">
   <link rel="stylesheet" href="css/levels.css">
   <link rel="stylesheet" href="css/garden.css">
+  <link rel="stylesheet" href="css/study.css">
 </head>
 <body>
 
@@ -136,11 +137,12 @@
         <h2>Table of Contents</h2>
         <ul class="toc">
           <li onclick="goToSection('logs')">1. LOGS <small>Daily Entries, Weekly Summaries, Media</small></li>
-          <li onclick="goToSection('garden')">2. LEXICAL GARDEN <small>Vocabulary, Words, Growth & cool visuals</small></li>
-          <li onclick="goToSection('results')">3. RESULTS <small>Test Scores, Typing, Charts</small></li>
-          <li onclick="goToSection('notes')">4. NOTES <small>Lab Notes, Aha Moments, Research</small></li>
-          <li onclick="goToSection('levels')">5. LEVELS & STATS <small>Skill Levels, Official Scores</small></li>
-          <li onclick="goToSection('graphs')">6. GRAPHS <small>Brain Map, Correlations, Trends</small></li>
+        <li onclick="goToSection('garden')">2. LEXICAL GARDEN <small>Vocabulary, Words, Growth & cool visuals</small></li>
+        <li onclick="goToSection('study')"> STUDY <small>Flashcards, Spaced recall, Plant growth</small></li>
+        <li onclick="goToSection('results')">4. RESULTS <small>Test Scores, Typing, Charts</small></li>
+          <li onclick="goToSection('notes')">5. NOTES <small>Lab Notes, Aha Moments, Research</small></li>
+          <li onclick="goToSection('levels')">6. LEVELS & STATS <small>Skill Levels, Official Scores</small></li>
+          <li onclick="goToSection('graphs')">7. GRAPHS <small>Brain Map, Correlations, Trends</small></li>
         </ul>
 
         <button class="back-btn" onclick="closeBook()">CLOSE BOOK</button>
@@ -218,6 +220,8 @@
 
     <!-- PAGE 8: INDIVIDUAL LANGUAGE PAGE -->
   <div id="language-page" class="page"></div>
+<!-- PAGE 9: FLASHCARD STUDY -->
+<div id="study-page" class="page"></div>
 
   <!-- SETTINGS MODAL -->
   <div id="settings-modal" class="modal-overlay hidden">
@@ -297,6 +301,7 @@
 <script src="js/levels.js"></script>
 <script src="js/log-form.js"></script>
 <script src="js/entry-list.js"></script>
+<script src="js/study.js"></script>
 <script src="js/app.js"></script>
 </body>
 </html>
