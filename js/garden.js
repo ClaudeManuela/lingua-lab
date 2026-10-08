@@ -731,6 +731,50 @@ function openWordCard(id) {
                 <label>Notes:</label>
                 <textarea onchange="updateWordField('${word.id}', 'notes', this.value)">${escapeHtml(word.notes || '')}</textarea>
               </div>
+              <div class="word-card-divider"></div>
+<div class="word-card-section-title">Manage Links</div>
+
+<div class="word-card-field">
+  <label>Parent:</label>
+  <div style="display: flex; gap: 0.5rem; align-items: center;">
+    <span style="font-size: 0.8rem; flex: 1;">
+      ${parent ? `${LANGUAGES[parent.language].flag} ${escapeHtml(parent.word)}` : '(none — this is a root word)'}
+    </span>
+    ${parent ? `<button class="delete-btn" style="font-size: 0.65rem; padding: 0.25rem 0.5rem;" onclick="removeBranch('${parent.id}', '${word.id}')">Remove Parent</button>` : ''}
+    <button class="add-btn" style="font-size: 0.65rem; padding: 0.25rem 0.5rem;" onclick="openChangeParentForm('${word.id}')">Change</button>
+  </div>
+</div>
+
+${(() => {
+  const branches = (word.childIds || []).map(id => DATA.vocabulary.find(x => x.id === id)).filter(Boolean);
+  return branches.length ? `
+    <div class="word-card-field">
+      <label>Branches:</label>
+      <div style="display: flex; flex-direction: column; gap: 0.35rem;">
+        ${branches.map(b => `
+          <div style="display: flex; gap: 0.5rem; align-items: center; font-size: 0.8rem; padding: 0.3rem 0.5rem; background: rgba(0,0,0,0.03); border-left: 3px solid var(--accent-violet);">
+            <span style="flex: 1;">${LANGUAGES[b.language].flag} ${escapeHtml(b.word)} <span style="color: var(--text-dim); font-size: 0.7rem;">— ${escapeHtml(b.meaning || '')}</span></span>
+            <button class="delete-btn" style="font-size: 0.6rem; padding: 0.2rem 0.4rem;" onclick="removeBranch('${word.id}', '${b.id}')">Remove</button>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  ` : '';
+})()}
+
+    ${connections.length ? `
+      <div class="word-card-field">
+        <label>Connections:</label>
+        <div style="display: flex; flex-direction: column; gap: 0.35rem;">
+          ${connections.map(c => `
+            <div style="display: flex; gap: 0.5rem; align-items: center; font-size: 0.8rem; padding: 0.3rem 0.5rem; background: rgba(0,0,0,0.03); border-left: 3px solid var(--accent-blue);">
+              <span style="flex: 1;">${LANGUAGES[c.language].flag} ${escapeHtml(c.word)} <span style="color: var(--text-dim); font-size: 0.7rem;">— ${escapeHtml(c.meaning || '')}</span></span>
+              <button class="delete-btn" style="font-size: 0.6rem; padding: 0.2rem 0.4rem;" onclick="disconnectWord('${word.id}', '${c.id}')">Remove</button>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    ` : ''}
             </div>
           ` : ''}
 
@@ -935,15 +979,15 @@ function toggleFavorite(id) {
 
 function removeBranch(parentId, childId) {
   if (!isEditable()) return;
-  if (!confirm('Remove this branch?')) return;
+  if (!confirm('Remove this branch? The child word will remain in the garden as its own root.')) return;
   const parent = DATA.vocabulary.find(w => w.id === parentId);
   if (!parent) return;
   parent.childIds = (parent.childIds || []).filter(id => id !== childId);
   const child = DATA.vocabulary.find(w => w.id === childId);
   if (child) child.parentId = null;
   saveData(DATA);
-  openWordCard(parentId);
   renderGarden();
+  openWordCard(parentId);
 }
 
 function removeConnection(aId, bId) {
@@ -1349,6 +1393,13 @@ function submitConnection(targetId) {
   const targetWord = DATA.vocabulary.find(w => w.id === targetId);
   if (!sourceWord || !targetWord || sourceWord.id === targetWord.id) return;
 
+  // Check FIRST — before modifying anything
+  if (hasBranchRelation(sourceWord.id, targetWord.id)) {
+    alert('These words are already connected as parent/child. Remove the branch first if you want to connect them instead.');
+    return;
+  }
+
+  // Now safe to add the connection
   sourceWord.connections = sourceWord.connections || [];
   targetWord.connections = targetWord.connections || [];
   if (!sourceWord.connections.includes(targetWord.id)) sourceWord.connections.push(targetWord.id);
@@ -1494,5 +1545,14 @@ function isDescendant(possibleDescendantId, wordId) {
     if (current.id === possibleDescendantId) return true;
     (current.childIds || []).forEach(id => queue.push(id));
   }
+  return false;
+}
+
+function hasBranchRelation(aId, bId) {
+  const a = DATA.vocabulary.find(w => w.id === aId);
+  const b = DATA.vocabulary.find(w => w.id === bId);
+  if (!a || !b) return false;
+  if (a.parentId === bId || b.parentId === aId) return true;
+  if ((a.childIds || []).includes(bId) || (b.childIds || []).includes(aId)) return true;
   return false;
 }

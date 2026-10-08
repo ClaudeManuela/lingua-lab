@@ -1054,3 +1054,11 @@
 .parent-candidate-row:hover {
   background: rgba(0,0,0,0.05);
 }
+.word-card-section-title {
+  font-size: 0.7rem;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--accent-ink);
+  margin: 0.75rem 0 0.5rem;
+  font-weight: bold;
+}
