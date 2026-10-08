@@ -1362,3 +1362,128 @@ function disconnectWord(aId, bId) {
   openWordCard(aId);
   renderGarden();
 }
+
+//change parent as learning goes on
+function openChangeParentForm(wordId) {
+  if (!isEditable()) return;
+  const word = DATA.vocabulary.find(w => w.id === wordId);
+  if (!word) return;
+  window._changeParentTargetId = wordId;
+  window._changeParentSelected = word.parentId || '';
+
+  const content = document.getElementById('word-card-content');
+  content.innerHTML = `
+    <div class="word-card-header">
+      <div class="word-card-header-title">Change Parent for ${escapeHtml(word.word)}</div>
+      <button onclick="closeModal('word-card-modal')" class="remove-btn">X</button>
+    </div>
+    <div class="modal-body" style="padding: 1.5rem;">
+      <div class="word-card-field">
+        <label>Search candidates in ${LANGUAGES[word.language].name}:</label>
+        <input type="text" id="parent-search" placeholder="Type to filter..." 
+               oninput="renderParentCandidates(this.value)" autocomplete="off">
+      </div>
+      <div id="parent-candidates" style="max-height: 320px; overflow-y: auto; border: 2px solid var(--border-main); padding: 0.5rem; background: var(--bg-input); margin-top: 0.5rem;"></div>
+      <div class="modal-footer" style="margin-top: 1rem;">
+        <button class="save-btn" onclick="submitParentChange()">Confirm</button>
+        <button class="cancel-btn" onclick="openWordCard('${wordId}')">Cancel</button>
+      </div>
+    </div>
+  `;
+  renderParentCandidates('');
+  document.getElementById('word-card-modal').classList.remove('hidden');
+}
+
+function renderParentCandidates(query) {
+  const container = document.getElementById('parent-candidates');
+  if (!container) return;
+  const wordId = window._changeParentTargetId;
+  const word = DATA.vocabulary.find(w => w.id === wordId);
+  if (!word) return;
+
+  // Candidates: same language, not self, not descendants of self
+  const candidates = (DATA.vocabulary || []).filter(w => {
+    if (w.language !== word.language) return false;
+    if (w.id === wordId) return false;
+    if (isDescendant(w.id, wordId)) return false;
+    return true;
+  });
+
+  let results;
+  if (candidates.length && typeof fuzzySearch === 'function' && query && query.trim()) {
+    results = fuzzySearch(query, candidates);
+  } else {
+    results = candidates.slice(0, 40);
+  }
+
+  let html = `
+    <div class="parent-candidate-row ${!word.parentId ? 'active' : ''}" data-id=""
+         onclick="selectParentCandidate('')"
+         style="padding: 0.5rem 0.75rem; cursor: pointer; border-bottom: 1px solid var(--border-soft); font-size: 0.8rem; font-style: italic;">
+      (no parent — make root)
+    </div>
+  `;
+
+  html += results.map(w => `
+    <div class="parent-candidate-row ${word.parentId === w.id ? 'active' : ''}" data-id="${w.id}"
+         onclick="selectParentCandidate('${w.id}')"
+         style="padding: 0.5rem 0.75rem; cursor: pointer; border-bottom: 1px solid var(--border-soft); font-size: 0.8rem;">
+      <strong>${escapeHtml(w.word)}</strong>
+      <span style="color: var(--text-dim); font-size: 0.7rem;">— ${escapeHtml(w.meaning || '')}</span>
+    </div>
+  `).join('');
+
+  container.innerHTML = html;
+}
+
+function selectParentCandidate(id) {
+  window._changeParentSelected = id;
+  document.querySelectorAll('.parent-candidate-row').forEach(row => {
+    row.style.background = row.dataset.id === id ? 'var(--accent-ice)' : 'transparent';
+  });
+}
+
+function submitParentChange() {
+  if (!isEditable()) return;
+  const wordId = window._changeParentTargetId;
+  const newParentId = window._changeParentSelected || null;
+  const word = DATA.vocabulary.find(w => w.id === wordId);
+  if (!word) return;
+
+  // Detach from old parent
+  if (word.parentId) {
+    const oldParent = DATA.vocabulary.find(w => w.id === word.parentId);
+    if (oldParent) oldParent.childIds = (oldParent.childIds || []).filter(id => id !== wordId);
+  }
+
+  // Attach to new parent
+  if (newParentId) {
+    const newParent = DATA.vocabulary.find(w => w.id === newParentId);
+    if (newParent) {
+      newParent.childIds = newParent.childIds || [];
+      if (!newParent.childIds.includes(wordId)) newParent.childIds.push(wordId);
+      word.parentId = newParentId;
+    }
+  } else {
+    word.parentId = null;
+  }
+
+  saveData(DATA);
+  renderGarden();
+  openWordCard(wordId);
+}
+
+function isDescendant(possibleDescendantId, wordId) {
+  // Walk down from wordId to see if we hit possibleDescendantId
+  const queue = [wordId];
+  const visited = new Set();
+  while (queue.length) {
+    const current = DATA.vocabulary.find(w => w.id === queue.shift());
+    if (!current) continue;
+    if (visited.has(current.id)) continue;
+    visited.add(current.id);
+    if (current.id === possibleDescendantId) return true;
+    (current.childIds || []).forEach(id => queue.push(id));
+  }
+  return false;
+}
