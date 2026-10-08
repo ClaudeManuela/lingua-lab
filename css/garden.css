@@ -796,7 +796,7 @@
   content: '';
   position: absolute;
   inset: 0;
-  background: #6fabd0;
+  background: rgba(111, 171, 208, 0.5);
   pointer-events: none;
 }
 

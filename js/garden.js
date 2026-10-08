@@ -953,6 +953,10 @@ function removeConnection(aId, bId) {
 // BRANCH FORM
 // ═══════════════════════════════════════════════
 
+// ═══════════════════════════════════════════════
+// BRANCH FORM
+// ═══════════════════════════════════════════════
+
 function openAddBranchForm(parentId) {
   if (!isEditable()) return;
   const parent = DATA.vocabulary.find(w => w.id === parentId);
@@ -960,7 +964,6 @@ function openAddBranchForm(parentId) {
 
   window._branchParentId = parentId;
   window._branchSelected = null;
-  window._branchDirection = 'right';
 
   const content = document.getElementById('word-card-content');
   content.innerHTML = `
@@ -991,16 +994,6 @@ function openAddBranchForm(parentId) {
         </div>
       </div>
 
-      <div class="word-card-field" style="margin-top: 1rem;">
-        <label>Direction:</label>
-        <div class="branch-direction-picker" id="branch-direction-picker">
-          <button data-dir="up" onclick="pickBranchDirection('up')">↑</button>
-          <button data-dir="right" onclick="pickBranchDirection('right')" class="active">→</button>
-          <button data-dir="down" onclick="pickBranchDirection('down')">↓</button>
-          <button data-dir="left" onclick="pickBranchDirection('left')">←</button>
-        </div>
-      </div>
-
       <div class="modal-footer" style="margin-top: 1rem;">
         <button class="save-btn" onclick="submitBranch('${parentId}')">Add Branch</button>
         <button class="cancel-btn" onclick="openWordCard('${parentId}')">Cancel</button>
@@ -1020,67 +1013,52 @@ function renderBranchCandidates(query) {
   const parent = DATA.vocabulary.find(w => w.id === parentId);
   if (!parent) return;
 
-  // Candidates: same language only, exclude self
   const candidates = (DATA.vocabulary || []).filter(w => 
     w.language === parent.language && w.id !== parentId
   );
 
-  if (!candidates.length) {
-    container.innerHTML = `
-      <div style="font-size:0.75rem; color: var(--text-dim); text-align:center; padding: 0.75rem;">
-        No existing words in ${LANGUAGES[parent.language].name}. Create a new one below.
-      </div>
-    `;
-    showNewWordSection();
-    return;
-  }
-
-  // Use fuzzy search
   let results;
-  if (typeof fuzzySearch === 'function' && query && query.trim()) {
+  if (candidates.length && typeof fuzzySearch === 'function' && query && query.trim()) {
     results = fuzzySearch(query, candidates);
   } else {
     results = candidates.slice(0, 40);
   }
 
-  if (!results.length) {
-    container.innerHTML = `
-      <div style="font-size:0.75rem; color: var(--text-dim); text-align:center; padding: 0.75rem;">
-        No matching words. Create a new one below.
+  let html = '';
+
+  if (!candidates.length) {
+    html += `<div style="font-size:0.75rem; color: var(--text-dim); text-align:center; padding: 0.75rem;">No existing words in ${LANGUAGES[parent.language].name}. Create a new one below.</div>`;
+  } else if (!results.length) {
+    html += `<div style="font-size:0.75rem; color: var(--text-dim); text-align:center; padding: 0.75rem;">No matching words. Create a new one below.</div>`;
+  } else {
+    html += results.map(w => `
+      <div class="branch-candidate-row" data-id="${w.id}"
+           onclick="selectBranchCandidate('${w.id}')"
+           style="padding: 0.4rem 0.6rem; cursor: pointer; border-bottom: 1px solid var(--border-soft); font-size: 0.8rem; display:flex; gap:0.5rem; align-items:center;">
+        <strong>${escapeHtml(w.word)}</strong>
+        ${w.reading ? `<span style="color:var(--text-dim); font-size:0.7rem;">(${escapeHtml(w.reading)})</span>` : ''}
+        <span style="color: var(--text-dim); font-size:0.7rem;">— ${escapeHtml(w.meaning || '')}</span>
       </div>
-    `;
-    showNewWordSection();
-    return;
+    `).join('');
   }
 
-    container.innerHTML = results.map(w => `
-    <div class="branch-candidate-row" data-id="${w.id}"
-         onclick="selectBranchCandidate('${w.id}')"
-         style="padding: 0.4rem 0.6rem; cursor: pointer; border-bottom: 1px solid var(--border-soft); font-size: 0.8rem; display:flex; gap:0.5rem; align-items:center;">
-      <strong>${escapeHtml(w.word)}</strong>
-      ${w.reading ? `<span style="color:var(--text-dim); font-size:0.7rem;">(${escapeHtml(w.reading)})</span>` : ''}
-      <span style="color: var(--text-dim); font-size:0.7rem;">— ${escapeHtml(w.meaning || '')}</span>
-    </div>
-  `).join('');
-
-  // Always show the create-new fallback at the bottom
-  const fallbackHtml = `
+  // Always show the create-new fallback
+  html += `
     <div style="padding: 0.6rem; text-align:center; border-top: 1px dashed var(--border-soft); margin-top: 0.5rem;">
       <button class="add-btn" style="font-size:0.7rem;" onclick="showNewWordSection()">
         Not here? Create New Word
       </button>
     </div>
   `;
-  container.insertAdjacentHTML('beforeend', fallbackHtml);
-}
 
+  container.innerHTML = html;
+}
 
 function selectBranchCandidate(id) {
   const word = DATA.vocabulary.find(w => w.id === id);
   if (!word) return;
   window._branchSelected = id;
 
-  // Highlight selection
   document.querySelectorAll('.branch-candidate-row').forEach(row => {
     row.style.background = row.dataset.id === id ? 'var(--accent-ice)' : 'transparent';
   });
@@ -1094,7 +1072,6 @@ function selectBranchCandidate(id) {
     </div>
   `;
 
-  // Hide new word section
   document.getElementById('branch-new-word-section').classList.add('hidden');
 }
 
@@ -1119,31 +1096,22 @@ function submitBranch(parentId) {
   const parent = DATA.vocabulary.find(w => w.id === parentId);
   if (!parent) return;
 
-  const direction = window._branchDirection || 'right';
   const selectedId = window._branchSelected;
-
-  const offsets = {
-    up: { x: 0, y: -120 }, down: { x: 0, y: 120 },
-    left: { x: -140, y: 0 }, right: { x: 140, y: 0 }
-  };
-  const off = offsets[direction];
+  const position = findBranchPosition(parent, selectedId);
 
   if (selectedId) {
-    // Attach an existing word as a branch
     const child = DATA.vocabulary.find(w => w.id === selectedId);
     if (!child) return;
 
-    // Prevent cycle: if child is an ancestor of parent
     if (isAncestor(child.id, parent.id)) {
       alert('Cannot add: this would create a cycle.');
       return;
     }
 
     child.parentId = parentId;
-    child.direction = direction;
-    // Reposition child near the parent
-    child.gardenX = (parent.gardenX || 200) + off.x;
-    child.gardenY = (parent.gardenY || 200) + off.y;
+    child.gardenX = position.x;
+    child.gardenY = position.y;
+    delete child.direction;
 
     parent.childIds = parent.childIds || [];
     if (!parent.childIds.includes(child.id)) parent.childIds.push(child.id);
@@ -1154,7 +1122,6 @@ function submitBranch(parentId) {
     return;
   }
 
-  // Create new word
   const wordText = document.getElementById('branch-new-word')?.value.trim();
   const meaningText = document.getElementById('branch-new-meaning')?.value.trim();
   if (!wordText) {
@@ -1178,11 +1145,10 @@ function submitBranch(parentId) {
     favorite: false,
     notes: '',
     backlog: false,
-    gardenX: (parent.gardenX || 200) + off.x,
-    gardenY: (parent.gardenY || 200) + off.y,
+    gardenX: position.x,
+    gardenY: position.y,
     theme: parent.theme || '',
-    wordType: '',
-    direction: direction
+    wordType: ''
   };
   DATA.vocabulary.push(newWord);
   parent.childIds = parent.childIds || [];
@@ -1192,8 +1158,51 @@ function submitBranch(parentId) {
   openWordCard(parentId);
 }
 
+function findBranchPosition(parent, excludeId) {
+  const parentX = parent.gardenX || 200;
+  const parentY = parent.gardenY || 200;
+
+  // Gather existing sibling positions (children of parent)
+  const siblings = (parent.childIds || [])
+    .filter(id => id !== excludeId)
+    .map(id => DATA.vocabulary.find(w => w.id === id))
+    .filter(Boolean);
+
+  // Available directions with their offsets
+  const directions = [
+    { key: 'up',    dx: 0,   dy: -110 },
+    { key: 'right', dx: 130, dy: 0 },
+    { key: 'down',  dx: 0,   dy: 110 },
+    { key: 'left',  dx: -130, dy: 0 }
+  ];
+
+  // Count how many siblings occupy each direction
+  const counts = { up: 0, right: 0, down: 0, left: 0 };
+  siblings.forEach(s => {
+    const sx = (s.gardenX || 0) - parentX;
+    const sy = (s.gardenY || 0) - parentY;
+    if (Math.abs(sx) < Math.abs(sy)) {
+      counts[sy < 0 ? 'up' : 'down']++;
+    } else {
+      counts[sx < 0 ? 'left' : 'right']++;
+    }
+  });
+
+  // Pick least-used direction
+  const sorted = directions.slice().sort((a, b) => counts[a.key] - counts[b.key]);
+  const chosen = sorted[0];
+
+  // Add a small random jitter to prevent overlap
+  const jitterX = (Math.random() - 0.5) * 30;
+  const jitterY = (Math.random() - 0.5) * 30;
+
+  return {
+    x: parentX + chosen.dx + jitterX,
+    y: parentY + chosen.dy + jitterY
+  };
+}
+
 function isAncestor(possibleAncestorId, wordId) {
-  // Walk up from wordId to see if we hit possibleAncestorId
   let current = DATA.vocabulary.find(w => w.id === wordId);
   const visited = new Set();
   while (current && current.parentId) {
@@ -1204,6 +1213,7 @@ function isAncestor(possibleAncestorId, wordId) {
   }
   return false;
 }
+
 function openAddConnectionForm(wordId) {
   if (!isEditable()) return;
   const word = DATA.vocabulary.find(w => w.id === wordId);
