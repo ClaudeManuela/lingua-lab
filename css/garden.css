@@ -784,7 +784,7 @@
 
 .word-card-left {
   position: relative;
-  background: #8a6a4a;
+  background: #6fabd0;
   background-image: url('../assets/sprites/garden-px.png');
   background-size: cover;
   background-position: center;
@@ -796,7 +796,7 @@
   content: '';
   position: absolute;
   inset: 0;
-  background: rgba(138, 106, 74, 0.85);
+  background: rgba(138, 74, 128, 0.85);
   pointer-events: none;
 }
 
@@ -1008,4 +1008,17 @@
   .word-card-tree-bg {
     min-height: 340px;
   }
+}
+/* ═══ BRANCH / CONNECTION CANDIDATE ROWS ═══ */
+.branch-candidate-row:hover,
+.connection-candidate-row:hover {
+  background: rgba(0, 0, 0, 0.05) !important;
+}
+
+.branch-selected-display {
+  margin-top: 0.75rem;
+}
+
+.branch-selected-display.hidden {
+  display: none;
 }

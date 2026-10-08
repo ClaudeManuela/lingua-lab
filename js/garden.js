@@ -954,6 +954,11 @@ function openAddBranchForm(parentId) {
   if (!isEditable()) return;
   const parent = DATA.vocabulary.find(w => w.id === parentId);
   if (!parent) return;
+
+  window._branchParentId = parentId;
+  window._branchSelected = null;
+  window._branchDirection = 'right';
+
   const content = document.getElementById('word-card-content');
   content.innerHTML = `
     <div class="word-card-header">
@@ -961,15 +966,29 @@ function openAddBranchForm(parentId) {
       <button onclick="closeModal('word-card-modal')" class="remove-btn">X</button>
     </div>
     <div class="modal-body" style="padding: 1.5rem;">
+
       <div class="word-card-field">
-        <label>Branch Word:</label>
-        <input type="text" id="branch-word" placeholder="e.g., 안녕하세요">
+        <label>Search existing words in ${LANGUAGES[parent.language].name}:</label>
+        <input type="text" id="branch-search" placeholder="Type to filter (word, reading, or meaning)..." 
+               oninput="renderBranchCandidates(this.value)" autocomplete="off">
       </div>
-      <div class="word-card-field">
-        <label>Meaning:</label>
-        <input type="text" id="branch-meaning" placeholder="e.g., formal hello">
+
+      <div id="branch-candidates" style="max-height: 280px; overflow-y: auto; border: 2px solid var(--border-main); padding: 0.5rem; background: var(--bg-input); margin-top: 0.5rem;"></div>
+
+      <div id="branch-selected-display" class="branch-selected-display hidden"></div>
+
+      <div id="branch-new-word-section" class="hidden" style="margin-top: 1rem;">
+        <div class="word-card-field">
+          <label>New Word:</label>
+          <input type="text" id="branch-new-word" placeholder="e.g., 안녕하세요">
+        </div>
+        <div class="word-card-field">
+          <label>Meaning:</label>
+          <input type="text" id="branch-new-meaning" placeholder="e.g., formal hello">
+        </div>
       </div>
-      <div class="word-card-field">
+
+      <div class="word-card-field" style="margin-top: 1rem;">
         <label>Direction:</label>
         <div class="branch-direction-picker" id="branch-direction-picker">
           <button data-dir="up" onclick="pickBranchDirection('up')">↑</button>
@@ -978,42 +997,168 @@ function openAddBranchForm(parentId) {
           <button data-dir="left" onclick="pickBranchDirection('left')">←</button>
         </div>
       </div>
-      <div class="modal-footer">
+
+      <div class="modal-footer" style="margin-top: 1rem;">
         <button class="save-btn" onclick="submitBranch('${parentId}')">Add Branch</button>
         <button class="cancel-btn" onclick="openWordCard('${parentId}')">Cancel</button>
       </div>
     </div>
   `;
-  window._branchDirection = 'right';
+
+  renderBranchCandidates('');
   document.getElementById('word-card-modal').classList.remove('hidden');
 }
 
-function pickBranchDirection(dir) {
-  window._branchDirection = dir;
-  document.querySelectorAll('#branch-direction-picker button').forEach(b => {
-    b.classList.toggle('active', b.dataset.dir === dir);
+function renderBranchCandidates(query) {
+  const container = document.getElementById('branch-candidates');
+  if (!container) return;
+
+  const parentId = window._branchParentId;
+  const parent = DATA.vocabulary.find(w => w.id === parentId);
+  if (!parent) return;
+
+  // Candidates: same language only, exclude self
+  const candidates = (DATA.vocabulary || []).filter(w => 
+    w.language === parent.language && w.id !== parentId
+  );
+
+  if (!candidates.length) {
+    container.innerHTML = `
+      <div style="font-size:0.75rem; color: var(--text-dim); text-align:center; padding: 0.75rem;">
+        No existing words in ${LANGUAGES[parent.language].name}. Create a new one below.
+      </div>
+    `;
+    showNewWordSection();
+    return;
+  }
+
+  // Use fuzzy search
+  let results;
+  if (typeof fuzzySearch === 'function' && query && query.trim()) {
+    results = fuzzySearch(query, candidates);
+  } else {
+    results = candidates.slice(0, 40);
+  }
+
+  if (!results.length) {
+    container.innerHTML = `
+      <div style="font-size:0.75rem; color: var(--text-dim); text-align:center; padding: 0.75rem;">
+        No matching words. Create a new one below.
+      </div>
+    `;
+    showNewWordSection();
+    return;
+  }
+
+  container.innerHTML = results.map(w => `
+    <div class="branch-candidate-row" data-id="${w.id}"
+         onclick="selectBranchCandidate('${w.id}')"
+         style="padding: 0.4rem 0.6rem; cursor: pointer; border-bottom: 1px solid var(--border-soft); font-size: 0.8rem; display:flex; gap:0.5rem; align-items:center;">
+      <strong>${escapeHtml(w.word)}</strong>
+      ${w.reading ? `<span style="color:var(--text-dim); font-size:0.7rem;">(${escapeHtml(w.reading)})</span>` : ''}
+      <span style="color: var(--text-dim); font-size:0.7rem;">— ${escapeHtml(w.meaning || '')}</span>
+    </div>
+  `).join('') + `
+    <div style="padding: 0.6rem; text-align:center; border-top: 1px dashed var(--border-soft); margin-top: 0.5rem;">
+      <button class="add-btn" style="font-size:0.7rem;" onclick="showNewWordSection()">
+        Not here? Create New Word
+      </button>
+    </div>
+  `;
+}
+
+function selectBranchCandidate(id) {
+  const word = DATA.vocabulary.find(w => w.id === id);
+  if (!word) return;
+  window._branchSelected = id;
+
+  // Highlight selection
+  document.querySelectorAll('.branch-candidate-row').forEach(row => {
+    row.style.background = row.dataset.id === id ? 'var(--accent-ice)' : 'transparent';
   });
+
+  const display = document.getElementById('branch-selected-display');
+  display.classList.remove('hidden');
+  display.innerHTML = `
+    <div style="padding: 0.5rem 0.75rem; background: var(--accent-ice); border: 2px solid var(--border-main); font-size: 0.8rem;">
+      <strong>Selected:</strong> ${escapeHtml(word.word)} — ${escapeHtml(word.meaning || '')}
+      <button class="remove-btn" style="float:right; width: 20px; height: 20px;" onclick="clearBranchSelection()">X</button>
+    </div>
+  `;
+
+  // Hide new word section
+  document.getElementById('branch-new-word-section').classList.add('hidden');
+}
+
+function clearBranchSelection() {
+  window._branchSelected = null;
+  document.getElementById('branch-selected-display').classList.add('hidden');
+  document.querySelectorAll('.branch-candidate-row').forEach(row => {
+    row.style.background = 'transparent';
+  });
+}
+
+function showNewWordSection() {
+  window._branchSelected = null;
+  const section = document.getElementById('branch-new-word-section');
+  if (section) section.classList.remove('hidden');
+  const display = document.getElementById('branch-selected-display');
+  if (display) display.classList.add('hidden');
 }
 
 function submitBranch(parentId) {
   if (!isEditable()) return;
   const parent = DATA.vocabulary.find(w => w.id === parentId);
   if (!parent) return;
-  const wordText = document.getElementById('branch-word').value.trim();
-  const meaningText = document.getElementById('branch-meaning').value.trim();
-  if (!wordText) return;
 
   const direction = window._branchDirection || 'right';
+  const selectedId = window._branchSelected;
+
   const offsets = {
     up: { x: 0, y: -120 }, down: { x: 0, y: 120 },
     left: { x: -140, y: 0 }, right: { x: 140, y: 0 }
   };
   const off = offsets[direction];
 
+  if (selectedId) {
+    // Attach an existing word as a branch
+    const child = DATA.vocabulary.find(w => w.id === selectedId);
+    if (!child) return;
+
+    // Prevent cycle: if child is an ancestor of parent
+    if (isAncestor(child.id, parent.id)) {
+      alert('Cannot add: this would create a cycle.');
+      return;
+    }
+
+    child.parentId = parentId;
+    child.direction = direction;
+    // Reposition child near the parent
+    child.gardenX = (parent.gardenX || 200) + off.x;
+    child.gardenY = (parent.gardenY || 200) + off.y;
+
+    parent.childIds = parent.childIds || [];
+    if (!parent.childIds.includes(child.id)) parent.childIds.push(child.id);
+
+    saveData(DATA);
+    renderGarden();
+    openWordCard(parentId);
+    return;
+  }
+
+  // Create new word
+  const wordText = document.getElementById('branch-new-word')?.value.trim();
+  const meaningText = document.getElementById('branch-new-meaning')?.value.trim();
+  if (!wordText) {
+    alert('Enter a word or select one from the list.');
+    return;
+  }
+
   const newWord = {
     id: generateUUID(),
     word: wordText,
-    meaning: meaningText,
+    meaning: meaningText || '',
+    reading: '',
     language: parent.language,
     dateAdded: new Date().toISOString().slice(0,10),
     waters: 1,
@@ -1039,28 +1184,43 @@ function submitBranch(parentId) {
   openWordCard(parentId);
 }
 
-// ═══════════════════════════════════════════════
-// CONNECTION FORM (with fuzzy search)
-// ═══════════════════════════════════════════════
-
+function isAncestor(possibleAncestorId, wordId) {
+  // Walk up from wordId to see if we hit possibleAncestorId
+  let current = DATA.vocabulary.find(w => w.id === wordId);
+  const visited = new Set();
+  while (current && current.parentId) {
+    if (visited.has(current.id)) break;
+    visited.add(current.id);
+    if (current.parentId === possibleAncestorId) return true;
+    current = DATA.vocabulary.find(w => w.id === current.parentId);
+  }
+  return false;
+}
 function openAddConnectionForm(wordId) {
   if (!isEditable()) return;
   const word = DATA.vocabulary.find(w => w.id === wordId);
   if (!word) return;
   window._connectionSource = wordId;
+  window._connectionSelected = null;
 
   const content = document.getElementById('word-card-content');
   content.innerHTML = `
     <div class="word-card-header">
-      <div class="word-card-header-title">Connect ${escapeHtml(word.word)}</div>
+      <div class="word-card-header-title">Connect ${escapeHtml(word.word)} (${LANGUAGES[word.language].flag} ${LANGUAGES[word.language].name})</div>
       <button onclick="closeModal('word-card-modal')" class="remove-btn">X</button>
     </div>
     <div class="modal-body" style="padding: 1.5rem;">
+
       <div class="word-card-field">
-        <label>Search:</label>
-        <input type="text" id="connection-search" placeholder="Type to filter (fuzzy search enabled)..." oninput="renderConnectionCandidates(this.value)">
+        <label>Search words in other languages:</label>
+        <input type="text" id="connection-search" placeholder="Type to filter (cross-language results first)..." 
+               oninput="renderConnectionCandidates(this.value)" autocomplete="off">
       </div>
-      <div id="connection-candidates" style="max-height: 340px; overflow-y: auto; border: 2px solid var(--border-main); padding: 0.5rem; background: var(--bg-input); margin-top: 0.75rem;"></div>
+
+      <div id="connection-candidates" style="max-height: 380px; overflow-y: auto; border: 2px solid var(--border-main); padding: 0.5rem; background: var(--bg-input); margin-top: 0.5rem;"></div>
+
+      <div id="connection-selected-display" class="branch-selected-display hidden" style="margin-top: 0.75rem;"></div>
+
       <div class="modal-footer" style="margin-top: 1rem;">
         <button class="cancel-btn" onclick="openWordCard('${wordId}')">Cancel</button>
       </div>
@@ -1073,6 +1233,7 @@ function openAddConnectionForm(wordId) {
 function renderConnectionCandidates(query) {
   const container = document.getElementById('connection-candidates');
   if (!container) return;
+
   const sourceId = window._connectionSource;
   const sourceWord = DATA.vocabulary.find(w => w.id === sourceId);
   if (!sourceWord) return;
@@ -1080,12 +1241,18 @@ function renderConnectionCandidates(query) {
   // Exclude self and already connected
   const existing = new Set(sourceWord.connections || []);
   existing.add(sourceId);
-
   const candidates = (DATA.vocabulary || []).filter(w => !existing.has(w.id));
 
-  // Apply fuzzy search
+  if (!candidates.length) {
+    container.innerHTML = `<div style="font-size:0.75rem; color: var(--text-dim); text-align:center; padding: 1rem;">No candidates available</div>`;
+    return;
+  }
+
+  // Use cross-language prioritized fuzzy search
   let results;
-  if (typeof fuzzySearch === 'function' && query && query.trim()) {
+  if (typeof fuzzySearchCrossLang === 'function') {
+    results = fuzzySearchCrossLang(query, candidates, sourceWord.language);
+  } else if (typeof fuzzySearch === 'function' && query && query.trim()) {
     results = fuzzySearch(query, candidates);
   } else {
     results = candidates.slice(0, 60);
@@ -1096,16 +1263,55 @@ function renderConnectionCandidates(query) {
     return;
   }
 
-  container.innerHTML = results.map(w => `
-    <div style="padding: 0.4rem 0.6rem; cursor: pointer; border-bottom: 1px solid var(--border-soft); font-size: 0.8rem; display:flex; gap:0.5rem; align-items:center;"
-         onmouseover="this.style.background='rgba(0,0,0,0.05)'"
-         onmouseout="this.style.background='transparent'"
-         onclick="submitConnection('${w.id}')">
+  // Group by: cross-language first, then same-language
+  const crossLang = results.filter(w => w.language !== sourceWord.language);
+  const sameLang = results.filter(w => w.language === sourceWord.language);
+
+  let html = '';
+
+  if (crossLang.length) {
+    html += `<div style="font-size:0.65rem; letter-spacing:1.5px; text-transform:uppercase; color:var(--text-dim); padding:0.3rem 0.5rem; border-bottom:1px dashed var(--border-soft);">Cross-language</div>`;
+    html += crossLang.map(w => renderConnectionRow(w)).join('');
+  }
+
+  if (sameLang.length) {
+    html += `<div style="font-size:0.65rem; letter-spacing:1.5px; text-transform:uppercase; color:var(--text-dim); padding:0.5rem 0.5rem 0.3rem; border-bottom:1px dashed var(--border-soft); margin-top:0.5rem;">Same language</div>`;
+    html += sameLang.map(w => renderConnectionRow(w)).join('');
+  }
+
+  container.innerHTML = html;
+}
+
+function renderConnectionRow(w) {
+  return `
+    <div class="connection-candidate-row" data-id="${w.id}"
+         onclick="selectConnectionCandidate('${w.id}')"
+         style="padding: 0.4rem 0.6rem; cursor: pointer; border-bottom: 1px solid var(--border-soft); font-size: 0.8rem; display:flex; gap:0.5rem; align-items:center;">
       <span>${LANGUAGES[w.language].flag}</span>
       <strong>${escapeHtml(w.word)}</strong>
+      ${w.reading ? `<span style="color:var(--text-dim); font-size:0.7rem;">(${escapeHtml(w.reading)})</span>` : ''}
       <span style="color: var(--text-dim); font-size:0.7rem;">— ${escapeHtml(w.meaning || '')}</span>
     </div>
-  `).join('');
+  `;
+}
+
+function selectConnectionCandidate(id) {
+  const word = DATA.vocabulary.find(w => w.id === id);
+  if (!word) return;
+  window._connectionSelected = id;
+
+  document.querySelectorAll('.connection-candidate-row').forEach(row => {
+    row.style.background = row.dataset.id === id ? 'var(--accent-ice)' : 'transparent';
+  });
+
+  const display = document.getElementById('connection-selected-display');
+  display.classList.remove('hidden');
+  display.innerHTML = `
+    <div style="padding: 0.5rem 0.75rem; background: var(--accent-ice); border: 2px solid var(--border-main); font-size: 0.8rem; display:flex; justify-content:space-between; align-items:center; gap:0.5rem;">
+      <span><strong>${LANGUAGES[word.language].flag} ${escapeHtml(word.word)}</strong> — ${escapeHtml(word.meaning || '')}</span>
+      <button class="save-btn" style="font-size:0.7rem; padding: 0.3rem 0.75rem;" onclick="submitConnection('${word.id}')">Connect</button>
+    </div>
+  `;
 }
 
 function submitConnection(targetId) {
