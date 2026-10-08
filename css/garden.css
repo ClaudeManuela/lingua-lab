@@ -1051,3 +1051,6 @@
 .connection-pill-delete:hover {
   background: #a02e48;
 }
+.parent-candidate-row:hover {
+  background: rgba(0,0,0,0.05);
+}

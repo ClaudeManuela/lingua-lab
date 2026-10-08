@@ -710,6 +710,15 @@ function openWordCard(id) {
                   ${typeOptions.map(t => `<option value="${t}" ${word.wordType === t ? 'selected' : ''}>${t}</option>`).join('')}
                 </select>
               </div>
+              <div class="word-card-field">
+                <label>Parent:</label>
+                <div style="display: flex; gap: 0.5rem; align-items: center;">
+                  <span style="font-size: 0.8rem; flex: 1;">
+                    ${parent ? `${LANGUAGES[parent.language].flag} ${escapeHtml(parent.word)}` : '(none — this is a root word)'}
+                  </span>
+                  <button class="add-btn" style="font-size: 0.65rem; padding: 0.3rem 0.6rem;" onclick="openChangeParentForm('${word.id}')">Change</button>
+                </div>
+              </div>
               <div class="word-card-field" id="custom-type-field-${word.id}" style="${word.wordType === 'Other' ? '' : 'display:none;'}">
                 <label>Custom Type Name:</label>
                 <input type="text" placeholder="e.g., Onomatopoeia" onchange="addCustomWordType(this.value, '${word.id}')">
