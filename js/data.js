@@ -35,15 +35,16 @@ function getDefaultData() {
       french:     { reading: 'A0 Low', writing: 'A0 Low', spelling: 'A0 Low', listening: 'A0 Low', speaking: 'A0 Low', official: 'A0 Low', target: 'C2 Low', lastStudied: null, permanentNote: '', skills: null },
       english:    { reading: 'A0 Low', writing: 'A0 Low', spelling: 'A0 Low', listening: 'A0 Low', speaking: 'A0 Low', official: 'A0 Low', target: 'C2 Low', lastStudied: null, permanentNote: '', skills: null }
     },
-  languageTests: [],
-  languageReflections: [],
-  vocabulary: [],
-  studySessions: [],
-studyState: null,
-  seedPoints: {},
-  gardenSessions: [],
-  gardenSpent: {},
-    
+    languageTests: [],
+    languageReflections: [],
+    vocabulary: [],
+    studySessions: [],
+    studyState: null,
+    palaceRooms: [],
+    seedPoints: {},
+    gardenSessions: [],
+    gardenSpent: {},
+
     settings: {
       koreanStudyTargetHours: 60,
       koreanMediaTargetHours: 90,
@@ -54,76 +55,89 @@ studyState: null,
         reverseMode: false,
         dueThreshold: 14
       },
+      lastVocabTab: 'garden',
       hangulAppName: 'Hangul App',
-      customActivities: []
-      
+      customActivities: [],
+      _lastGardenSnapshot: null
     }
   };
 }
 
 // ─── MIGRATION ───────────────────────────────
 function migrateData(data) {
+  // Ensure top-level arrays exist
+  if (!Array.isArray(data.languageTests)) data.languageTests = [];
+  if (!Array.isArray(data.languageReflections)) data.languageReflections = [];
 
-      // Ensure new top-level arrays exist
-    if (!Array.isArray(data.languageTests)) data.languageTests = [];
-    if (!Array.isArray(data.languageReflections)) data.languageReflections = [];
-    //garden array checks
-    if (!Array.isArray(data.vocabulary)) data.vocabulary = [];
-    if (!Array.isArray(data.gardenSessions)) data.gardenSessions = [];
-    if (!data.seedPoints) data.seedPoints = {};
-    if (!data.gardenSpent) data.gardenSpent = {};
-    //garden positionning
-    if (data.settings && data.settings._lastGardenSnapshot === undefined) {
-  data.settings._lastGardenSnapshot = null;
-}
+  // Garden array checks
+  if (!Array.isArray(data.vocabulary)) data.vocabulary = [];
+  if (!Array.isArray(data.gardenSessions)) data.gardenSessions = [];
+  if (!data.seedPoints) data.seedPoints = {};
+  if (!data.gardenSpent) data.gardenSpent = {};
 
-    // Ensure vocabulary entries have position fields
-    (data.vocabulary || []).forEach(w => {
-      if (w.gardenX === undefined) w.gardenX = 100 + Math.random() * 800;
-      if (w.gardenY === undefined) w.gardenY = 100 + Math.random() * 600;
-      if (!w.reading) w.reading = '';
-      if (!w.theme) w.theme = '';
-      if (!Array.isArray(w.childIds)) w.childIds = [];
-      if (!Array.isArray(w.connections)) w.connections = [];
-    });
+  // Ensure settings exists BEFORE any nested guards
+  if (!data.settings) data.settings = {};
 
-          // Study mode additions
-      if (!Array.isArray(data.studySessions)) data.studySessions = [];
-      if (data.studyState === undefined) data.studyState = null;
-      if (!data.settings.study) {
-        data.settings.study = {
-          sessionSize: 25,
-          languageFilter: 'all',
-          reverseMode: false,
-          dueThreshold: 14
-        };
-      }
+  // Last-viewed vocab tab
+  if (!data.settings.lastVocabTab) data.settings.lastVocabTab = 'garden';
 
-    // Migrate language level format (A0 → A0 Low, etc.)
-    const levelMigrate = {
-      'A0': 'A0 Low', 'A1': 'A1 Low', 'A2': 'A2 Low',
-      'B1': 'B1 Low', 'B2': 'B2 Low', 'C1': 'C1 Low', 'C2': 'C2 Low'
+  // Garden placement snapshot
+  if (data.settings._lastGardenSnapshot === undefined) {
+    data.settings._lastGardenSnapshot = null;
+  }
+
+  // Study mode additions
+  if (!Array.isArray(data.studySessions)) data.studySessions = [];
+  if (data.studyState === undefined) data.studyState = null;
+  if (!data.settings.study) {
+    data.settings.study = {
+      sessionSize: 25,
+      languageFilter: 'all',
+      reverseMode: false,
+      dueThreshold: 14
     };
-    Object.keys(data.languageLevels).forEach(slug => {
-      const lang = data.languageLevels[slug];
-      if (levelMigrate[lang.official]) lang.official = levelMigrate[lang.official];
-      if (!lang.target) lang.target = 'C2 Low';
-      if (!lang.permanentNote) lang.permanentNote = '';
-      // Consolidate skills into a nested object
-      if (!lang.skills) {
-        lang.skills = {
-          reading: levelMigrate[lang.reading] || lang.reading || 'A0 Low',
-          writing: levelMigrate[lang.writing] || lang.writing || 'A0 Low',
-          listening: levelMigrate[lang.listening] || lang.listening || 'A0 Low',
-          speaking: levelMigrate[lang.speaking] || lang.speaking || 'A0 Low',
-          spelling: levelMigrate[lang.spelling] || lang.spelling || 'A0 Low'
-        };
-      }
-    });
+  }
+
+  // Palace additions (Phase 5.4 — pre-migrated so no new migration later)
+  if (!Array.isArray(data.palaceRooms)) data.palaceRooms = [];
+
+  // Ensure vocabulary entries have position fields
+  (data.vocabulary || []).forEach(w => {
+    if (w.gardenX === undefined) w.gardenX = 100 + Math.random() * 800;
+    if (w.gardenY === undefined) w.gardenY = 100 + Math.random() * 600;
+    if (!w.reading) w.reading = '';
+    if (!w.theme) w.theme = '';
+    if (!Array.isArray(w.childIds)) w.childIds = [];
+    if (!Array.isArray(w.connections)) w.connections = [];
+  });
+
+  // Migrate language level format (A0 → A0 Low, etc.)
+  const levelMigrate = {
+    'A0': 'A0 Low', 'A1': 'A1 Low', 'A2': 'A2 Low',
+    'B1': 'B1 Low', 'B2': 'B2 Low', 'C1': 'C1 Low', 'C2': 'C2 Low'
+  };
+  Object.keys(data.languageLevels).forEach(slug => {
+    const lang = data.languageLevels[slug];
+    if (levelMigrate[lang.official]) lang.official = levelMigrate[lang.official];
+    if (!lang.target) lang.target = 'C2 Low';
+    if (!lang.permanentNote) lang.permanentNote = '';
+    if (!lang.skills) {
+      lang.skills = {
+        reading: levelMigrate[lang.reading] || lang.reading || 'A0 Low',
+        writing: levelMigrate[lang.writing] || lang.writing || 'A0 Low',
+        listening: levelMigrate[lang.listening] || lang.listening || 'A0 Low',
+        speaking: levelMigrate[lang.speaking] || lang.speaking || 'A0 Low',
+        spelling: levelMigrate[lang.spelling] || lang.spelling || 'A0 Low'
+      };
+    }
+  });
 
   const defaults = getDefaultData();
   data.metadata = { ...defaults.metadata, ...(data.metadata || {}) };
   data.settings = { ...defaults.settings, ...(data.settings || {}) };
+  // Deep merge nested study settings so new fields backfill
+  data.settings.study = { ...defaults.settings.study, ...(data.settings.study || {}) };
+
   if (!Array.isArray(data.settings.customActivities)) data.settings.customActivities = [];
   if (!Array.isArray(data.dailyLogs)) data.dailyLogs = [];
   if (!Array.isArray(data.weeklySummaries)) data.weeklySummaries = [];
@@ -160,7 +174,7 @@ function getCachedData() {
 // ─── CLOUD SYNC ──────────────────────────────
 async function fetchFromCloud() {
   try {
-    const res = await fetch(API_URL + '?t=' + Date.now()); // cache-bust
+    const res = await fetch(API_URL + '?t=' + Date.now());
     if (!res.ok) throw new Error('HTTP ' + res.status);
     const data = await res.json();
     if (data.empty) return null;
@@ -218,9 +232,6 @@ function clearAdminKey() {
 }
 
 // ─── LOAD / SAVE ─────────────────────────────
-// Kept for compatibility with existing code.
-// In cloud mode, loadData() returns the cached copy.
-// App init calls loadFromCloud() for the real fetch.
 function loadData() {
   const cached = getCachedData();
   if (cached) return migrateData(cached);
@@ -230,9 +241,7 @@ function loadData() {
 }
 
 function saveData(data) {
-  // Always cache locally
   cacheData(data);
-  // Fire and forget cloud save (only succeeds in admin mode)
   if (getAdminKey()) {
     saveToCloud(data).then(result => {
       if (result.success) {
@@ -244,7 +253,6 @@ function saveData(data) {
   }
 }
 
-// ─── LOAD FROM CLOUD (called on app init) ────
 async function loadFromCloud() {
   const cloudData = await fetchFromCloud();
   if (cloudData) {

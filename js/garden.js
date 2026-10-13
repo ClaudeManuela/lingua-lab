@@ -30,61 +30,27 @@ const DEFAULT_WORD_TYPES = [
 // MAIN RENDER
 // ═══════════════════════════════════════════════
 
-function renderGarden() {
-  const container = document.getElementById('garden-page');
+function renderGarden(targetId = 'vocab-content') {
+  const container = document.getElementById(targetId);
   if (!container) return;
   const admin = isEditable();
 
   document.querySelectorAll('.garden-modal-root').forEach(el => el.remove());
 
   container.innerHTML = `
-    <div class="garden-layout">
-      <div class="garden-sidebar">
-        <h2 class="garden-sidebar-h2">Lexical Garden</h2>
-        <div class="garden-sidebar-section">
-          <div class="garden-sidebar-title">Languages (hours · points)</div>
-          <div id="seed-points-list"></div>
-        </div>
-        <div class="garden-sidebar-section">
-          <div class="garden-sidebar-title">Study History</div>
-          <div id="study-history-list"></div>
-        </div>
-        <div class="garden-sidebar-section">
-          <div class="garden-sidebar-title">Summary</div>
-          <div id="garden-summary-list"></div>
-        </div>
-        ${admin ? `
-          <div class="garden-sidebar-section">
-            <div class="garden-sidebar-title">Actions</div>
-            <div class="garden-sidebar-actions">
-              <button onclick="openStudyMode()">Study</button>
-              <button onclick="openAddWordsModal()">+ Add Words</button>
-              <button onclick="openBackfillModal()">Backfill</button>
-              <button onclick="rearrangeByTheme()">Cluster by Theme</button>
-              <button onclick="restoreGardenPlacement()"
-                      ${DATA.settings._lastGardenSnapshot?.length ? '' : 'disabled'}>
-                Restore Placement
-              </button>
-            </div>
-          </div>
-        ` : ''}
+    <div class="garden-main-inner">
+      <div class="garden-view-toggle">
+        <button class="${gardenView === 'garden' ? 'active' : ''}" onclick="setGardenView('garden')">Garden</button>
+        <button class="${gardenView === 'list' ? 'active' : ''}" onclick="setGardenView('list')">List</button>
+        <button class="${gardenView === 'gallery' ? 'active' : ''}" onclick="setGardenView('gallery')">Gallery</button>
       </div>
-
-      <div class="garden-main">
-        <div class="garden-view-toggle">
-          <button class="${gardenView === 'garden' ? 'active' : ''}" onclick="setGardenView('garden')">Garden</button>
-          <button class="${gardenView === 'list' ? 'active' : ''}" onclick="setGardenView('list')">List</button>
-          <button class="${gardenView === 'gallery' ? 'active' : ''}" onclick="setGardenView('gallery')">Gallery</button>
-        </div>
-        <div class="garden-tabs" id="garden-tabs"></div>
-        <div id="garden-view-container"></div>
-      </div>
+      <div class="garden-tabs" id="garden-tabs"></div>
+      <div id="garden-view-container"></div>
     </div>
   `;
 
   mountGardenModals(admin);
   mountRotatePrompt();
-  renderGardenSidebar();
   renderGardenTabs();
   renderGardenView();
   checkRotatePrompt();

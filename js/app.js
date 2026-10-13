@@ -95,19 +95,14 @@ function goToSection(section) {
       return;
     }
   }
-  if (section === 'garden') {
-    if (typeof renderGarden === 'function') {
-      showPage('garden-page');
-      renderGarden();
-      return;
-    }
+
+  if (section === 'vocabulary') {
+    if (typeof renderVocabulary === 'function') {
+    renderVocabulary();
+    showPage('vocabulary-page');
+    return;
   }
-  if (section === 'study') {
-    if (typeof openStudyMode === 'function') {
-      openStudyMode();
-      return;
-    }
-  }
+}
   if (section === 'levels') {
     if (typeof renderLevelsIndex === 'function') {
       renderLevelsIndex();

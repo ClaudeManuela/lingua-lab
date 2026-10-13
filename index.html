@@ -13,6 +13,7 @@
   <link rel="stylesheet" href="css/levels.css">
   <link rel="stylesheet" href="css/garden.css">
   <link rel="stylesheet" href="css/study.css">
+  <link rel="stylesheet" href="css/vocabulary.css">
 </head>
 <body>
 
@@ -137,8 +138,7 @@
         <h2>Table of Contents</h2>
         <ul class="toc">
           <li onclick="goToSection('logs')">1. LOGS <small>Daily Entries, Weekly Summaries, Media</small></li>
-        <li onclick="goToSection('garden')">2. LEXICAL GARDEN <small>Vocabulary, Words, Growth & cool visuals</small></li>
-        <li onclick="goToSection('study')"> STUDY <small>Flashcards, Spaced recall, Plant growth</small></li>
+       <li onclick="goToSection('vocabulary')">2. VOCABULARY <small>Study, Garden, Memory Palace</small></li>
         <li onclick="goToSection('results')">4. RESULTS <small>Test Scores, Typing, Charts</small></li>
           <li onclick="goToSection('notes')">5. NOTES <small>Lab Notes, Aha Moments, Research</small></li>
           <li onclick="goToSection('levels')">6. LEVELS & STATS <small>Skill Levels, Official Scores</small></li>
@@ -177,8 +177,8 @@
   <!-- PAGE 3: LOGS -->
   <div id="logs-page" class="page"></div>
 
-  <!-- PAGE 3.5: LEXICAL GARDEN -->
-<div id="garden-page" class="page"></div>
+  <!-- PAGE 3.5: VOCABULARY (Study / Garden / Palace) -->
+<div id="vocabulary-page" class="page"></div>
 
   <!-- PAGE 4: RESULTS -->
   <div id="results-page" class="page">
@@ -220,8 +220,6 @@
 
     <!-- PAGE 8: INDIVIDUAL LANGUAGE PAGE -->
   <div id="language-page" class="page"></div>
-<!-- PAGE 9: FLASHCARD STUDY -->
-<div id="study-page" class="page"></div>
 
   <!-- SETTINGS MODAL -->
   <div id="settings-modal" class="modal-overlay hidden">
@@ -297,6 +295,7 @@
 <script src="js/garden-branches.js"></script>
 <script src="js/garden-drag.js"></script>
 <script src="js/fuzzy-search.js"></script>
+<script src="js/vocabulary.js"></script>
 <script src="js/garden.js"></script>
 <script src="js/levels.js"></script>
 <script src="js/log-form.js"></script>

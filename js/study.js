@@ -1,5 +1,5 @@
 /* ============================================
-   FLASHCARD STUDY MODE — Phase 5.3b
+   FLASHCARD STUDY MODE — Phase 5.3b / 5.3c
    ============================================ */
 
 // ─── STATE ───────────────────────────────────
@@ -19,8 +19,13 @@ function openStudyMode() {
     alert('No words in the garden yet. Add some words first.');
     return;
   }
-  renderStudySetup();
-  showPage('study-page');
+  // ← 5.3c: ensure we're on the Vocabulary page + Study tab
+  if (typeof showPage === 'function') showPage('vocabulary-page');
+  if (typeof vocabTab !== 'undefined' && vocabTab !== 'study') {
+    setVocabTab('study');
+  } else {
+    renderStudySetup('vocab-content');
+  }
 }
 
 function closeStudyMode() {
@@ -30,8 +35,10 @@ function closeStudyMode() {
   }
   clearStudyTimer();
   studySession = null;
-  showPage('garden-page');
-  renderGarden();
+  // ← 5.3c: return to the Garden tab inside Vocabulary
+  if (typeof setVocabTab === 'function') {
+    setVocabTab('garden');
+  }
 }
 
 // ─── TIMER ───────────────────────────────────
@@ -95,7 +102,6 @@ function selectStudyCards() {
     }
   };
 
-  // Priority order per spec
   take(tiers.never, size);
   take(tiers.overdue, size);
   take(tiers.due, size);
@@ -113,8 +119,10 @@ function shuffle(arr) {
 }
 
 // ─── SETUP SCREEN ────────────────────────────
-function renderStudySetup() {
-  const container = document.getElementById('study-page');
+// ← 5.3c: takes optional target container ID
+function renderStudySetup(targetId = 'vocab-content') {
+  const container = document.getElementById(targetId);
+  if (!container) return;
   const s = DATA.settings.study;
   const today = new Date().toISOString().slice(0, 10);
   const daysSince = w => w.lastWatered
@@ -235,11 +243,13 @@ function persistStudyState() {
 }
 
 // ─── CARD RENDER ─────────────────────────────
-function renderStudyCard() {
-  const container = document.getElementById('study-page');
+// ← 5.3c: takes optional target container ID
+function renderStudyCard(targetId = 'vocab-content') {
+  const container = document.getElementById(targetId);
+  if (!container) return;
   const s = studySession;
   const word = DATA.vocabulary.find(w => w.id === s.wordIds[s.currentIndex]);
-  if (!word) { completeStudySession(); return; }
+  if (!word) { completeStudySession(targetId); return; }
 
   const meta = LANGUAGES[word.language];
   const reverse = s.reverseMode;
@@ -342,14 +352,14 @@ function gradeStudyCard(grade) {
 }
 
 // ─── COMPLETE ────────────────────────────────
-function completeStudySession() {
+// ← 5.3c: takes optional target container ID
+function completeStudySession(targetId = 'vocab-content') {
   const s = studySession;
   clearStudyTimer();
   s.complete = true;
   s.elapsedSeconds = studyTick;
   s.durationMinutes = Math.max(1, Math.round(studyTick / 60));
 
-  // Save session history
   DATA.studySessions.push({
     id: s.id,
     date: s.date,
@@ -366,20 +376,18 @@ function completeStudySession() {
     wordChanges: s.wordChanges
   });
 
-  // Add study time to today's daily log
   addStudyTimeToDailyLog(s);
 
   DATA.studyState = null;
   saveData(DATA);
 
-  renderStudyComplete();
+  renderStudyComplete(targetId);
 }
 
 function addStudyTimeToDailyLog(s) {
   const today = s.date;
   let log = DATA.dailyLogs.find(l => l.date === today);
 
-  const langName = s.language === 'all' ? 'Mixed' : LANGUAGES[s.language].name;
   const sessionEntry = {
     startTime: s.startTime,
     endTime: '',
@@ -412,8 +420,9 @@ function addStudyTimeToDailyLog(s) {
   }
 }
 
-function renderStudyComplete() {
-  const container = document.getElementById('study-page');
+function renderStudyComplete(targetId = 'vocab-content') {
+  const container = document.getElementById(targetId);
+  if (!container) return;
   const s = studySession;
   const total = s.wordIds.length;
   const recall = total ? Math.round((s.knew / total) * 100) : 0;
@@ -458,8 +467,11 @@ function renderStudyComplete() {
 }
 
 // ─── KEYBOARD ────────────────────────────────
+// ← 5.3c: only fire when Study tab is active inside Vocabulary
 document.addEventListener('keydown', e => {
-  if (!document.getElementById('study-page')?.classList.contains('active')) return;
+  if (typeof vocabTab === 'undefined' || vocabTab !== 'study') return;
+  const page = document.getElementById('vocabulary-page');
+  if (!page || !page.classList.contains('active')) return;
   if (!studySession || studySession.complete) return;
 
   if (e.key === ' ') { e.preventDefault(); flipStudyCard(); }

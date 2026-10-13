@@ -1,0 +1,203 @@
+/* ============================================
+   VOCABULARY PAGE — Study / Garden / Palace
+   ============================================ */
+
+.vocab-layout {
+  display: grid;
+  grid-template-columns: 30% 70%;
+  max-width: 1250px;
+  margin: 2rem auto;
+  background: var(--paper-bg);
+  border: 5px solid var(--border-main);
+  box-shadow:
+    10px 10px 0 rgba(0,0,0,0.2),
+    inset -5px -5px 0 rgba(0,0,0,0.08),
+    inset 5px 5px 0 rgba(255,255,255,0.6);
+  min-height: 620px;
+  position: relative;
+}
+
+/* ─── Sidebar (shared across modes) ─── */
+.vocab-sidebar {
+  position: relative;
+  padding: 1.25rem 1rem 1.25rem 2.75rem;
+  border-right: 3px solid var(--border-main);
+  background: var(--paper-bg);
+  background-image:
+    repeating-linear-gradient(
+      transparent 0px,
+      transparent 27px,
+      var(--paper-ruling) 27px,
+      var(--paper-ruling) 28px
+    );
+  background-position: 0 40px;
+  color: var(--paper-ink);
+  overflow-y: auto;
+  max-height: calc(100vh - 120px);
+}
+
+.vocab-sidebar::before {
+  content: '';
+  position: absolute;
+  left: 32px;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--paper-margin);
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+/* ─── Main area ─── */
+.vocab-main {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+  min-height: 620px;
+}
+
+.vocab-header {
+  flex: 0 0 auto;
+  padding: 1rem 1rem 0 1rem;
+  background: var(--paper-bg);
+}
+
+.vocab-header-title {
+  font-size: 0.75rem;
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
+  color: var(--paper-ink);
+  font-weight: bold;
+  margin-bottom: 0.75rem;
+}
+
+/* ─── Pills (bookmark flavour) ─── */
+.vocab-tabs {
+  display: flex;
+  gap: 0.35rem;
+  align-items: flex-end;
+  border-bottom: 3px solid var(--border-main);
+  padding-bottom: 0;
+}
+
+.vocab-pill {
+  position: relative;
+  background: var(--paper-bg);
+  border: 2px solid var(--border-main);
+  border-bottom: none;
+  padding: 0.45rem 1.1rem;
+  font-family: var(--font-pixel);
+  font-size: 0.7rem;
+  font-weight: bold;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  cursor: pointer;
+  color: var(--paper-ink);
+  opacity: 0.6;
+  transform: translateY(2px);
+  box-shadow: 2px 0 0 rgba(0,0,0,0.12);
+  border-top-left-radius: 3px;
+  border-top-right-radius: 3px;
+  transition: transform 0.12s, opacity 0.12s, box-shadow 0.12s;
+  margin-bottom: -3px;
+}
+
+.vocab-pill:hover:not(:disabled) {
+  opacity: 0.85;
+  transform: translateY(0);
+}
+
+.vocab-pill.active {
+  opacity: 1;
+  transform: translateY(0);
+  border-width: 3px;
+  box-shadow: 3px -2px 0 rgba(0,0,0,0.18);
+  z-index: 2;
+  padding-bottom: calc(0.45rem + 3px);
+}
+
+.vocab-pill:disabled {
+  cursor: not-allowed;
+  opacity: 0.35;
+}
+
+/* Pill colors */
+.vocab-pill.pill-study  { background: var(--accent-violet); color: var(--text-inverse); border-color: var(--accent-violet); }
+.vocab-pill.pill-garden { background: var(--success);       color: var(--text-inverse); border-color: var(--success); }
+.vocab-pill.pill-palace { background: var(--warning);       color: var(--text-inverse); border-color: var(--warning); }
+
+/* Inactive pills keep a tinted look but lower sat */
+.vocab-pill:not(.active).pill-study  { background: color-mix(in srgb, var(--accent-violet) 30%, var(--paper-bg)); color: var(--paper-ink); border-color: var(--border-main); }
+.vocab-pill:not(.active).pill-garden { background: color-mix(in srgb, var(--success) 30%, var(--paper-bg));       color: var(--paper-ink); border-color: var(--border-main); }
+.vocab-pill:not(.active).pill-palace { background: color-mix(in srgb, var(--warning) 30%, var(--paper-bg));       color: var(--paper-ink); border-color: var(--border-main); }
+
+/* ─── Content slot ─── */
+.vocab-content {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--paper-bg);
+}
+
+.vocab-content > * {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* ─── Garden wrapper inside vocabulary ─── */
+.garden-main-inner {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 1rem;
+  overflow: hidden;
+}
+
+/* ─── Mobile ─── */
+@media (max-width: 900px) {
+  .vocab-layout {
+    display: flex;
+    flex-direction: column;
+    grid-template-columns: none;
+    margin: 1rem auto;
+  }
+
+  .vocab-sidebar {
+    order: 2;
+    border-right: none;
+    border-top: 3px solid var(--border-main);
+    max-height: none;
+    padding: 1rem 1rem 1rem 2.25rem;
+  }
+
+  .vocab-sidebar::before {
+    left: 22px;
+  }
+
+  .vocab-main {
+    order: 1;
+    min-height: auto;
+  }
+
+  .vocab-header {
+    padding: 0.75rem 0.75rem 0 0.75rem;
+  }
+
+  .vocab-pill {
+    padding: 0.35rem 0.7rem;
+    font-size: 0.6rem;
+    letter-spacing: 0.8px;
+  }
+
+  .vocab-header-title {
+    font-size: 0.65rem;
+    letter-spacing: 1.8px;
+  }
+}
