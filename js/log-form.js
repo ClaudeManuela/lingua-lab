@@ -129,6 +129,9 @@ function renderLogForm() {
          <label>Words learned today (comma-separated):
         <textarea id="kor-words-list" rows="2" placeholder="안녕, 감사, 물">${existing?.koreanOutput?.wordsList || ''}</textarea>
       </label>
+      <label>Meanings (comma-separated, matching order):
+        <textarea id="kor-words-meanings" rows="2" placeholder="hello, thanks, water">${existing?.koreanOutput?.wordsMeanings || ''}</textarea>
+      </label>
       </section>
 
       <section class="form-section">
@@ -465,6 +468,7 @@ function saveLog() {
     koreanOutput: {
       newWords: parseInt(document.getElementById('kor-words').value) || 0,
       wordsList: document.getElementById('kor-words-list')?.value || '',
+      wordsMeanings: document.getElementById('kor-words-meanings')?.value || '',   // ← new
       subtitleIgnore: parseInt(document.getElementById('kor-subignore').value) || 0,
       intrusions: parseInt(document.getElementById('kor-intrusions').value) || 0,
       dominantIntruder: document.getElementById('kor-dominant').value,
@@ -477,35 +481,39 @@ function saveLog() {
       })).filter(e => e.language),
     labNote: document.getElementById('lab-note').value
   };
-        // Push Korean words to garden
-      const korWords = parseWordList(entry.koreanOutput.wordsList);
-      korWords.forEach(w => {
-        const existing = DATA.vocabulary.find(v => 
-          v.language === 'korean' && v.word.toLowerCase() === w.toLowerCase()
-        );
-        if (existing) {
-          existing.waters = (existing.waters || 0) + 1;
-          existing.lastWatered = dateStr;
-          updateWordStage(existing);
-        } else {
-          DATA.vocabulary.push({
-            id: generateUUID(),
-            word: w,
-            meaning: '',
-            language: 'korean',
-            dateAdded: dateStr,
-            waters: 1,
-            lastWatered: dateStr,
-            stage: 'sprout',
-            parentId: null,
-            childIds: [],
-            connections: [],
-            favorite: false,
-            notes: '',
-            backlog: formMode === 'backlog'
-          });
-        }
-      });
+      // Push Korean words to garden (with meanings)
+const korWords = parseWordList(entry.koreanOutput.wordsList);
+const korMeanings = parseWordList(document.getElementById('kor-words-meanings')?.value || '');
+korWords.forEach((w, i) => {
+  const meaning = korMeanings[i] || '';
+  const existing = DATA.vocabulary.find(v =>
+    v.language === 'korean' && v.word.toLowerCase() === w.toLowerCase()
+  );
+  if (existing) {
+    existing.waters = (existing.waters || 0) + 1;
+    existing.lastWatered = dateStr;
+    updateWordStage(existing);
+    // Backfill meaning if the word previously had none
+    if (!existing.meaning && meaning) existing.meaning = meaning;
+  } else {
+    DATA.vocabulary.push({
+      id: generateUUID(),
+      word: w,
+      meaning: meaning,
+      language: 'korean',
+      dateAdded: dateStr,
+      waters: 1,
+      lastWatered: dateStr,
+      stage: 'sprout',
+      parentId: null,
+      childIds: [],
+      connections: [],
+      favorite: false,
+      notes: '',
+      backlog: formMode === 'backlog'
+    });
+  }
+});
 
       // Push other-language words to garden
       document.querySelectorAll('#other-words-container .session-card').forEach(card => {

@@ -45,7 +45,7 @@ function renderGarden() {
           <div class="garden-sidebar-title">Languages (hours · points)</div>
           <div id="seed-points-list"></div>
         </div>
-          <div class="garden-sidebar-section">
+        <div class="garden-sidebar-section">
           <div class="garden-sidebar-title">Study History</div>
           <div id="study-history-list"></div>
         </div>
@@ -67,15 +67,17 @@ function renderGarden() {
               </button>
             </div>
           </div>
-` : ''}
+        ` : ''}
       </div>
+
       <div class="garden-main">
         <div class="garden-view-toggle">
           <button class="${gardenView === 'garden' ? 'active' : ''}" onclick="setGardenView('garden')">Garden</button>
           <button class="${gardenView === 'list' ? 'active' : ''}" onclick="setGardenView('list')">List</button>
+          <button class="${gardenView === 'gallery' ? 'active' : ''}" onclick="setGardenView('gallery')">Gallery</button>
         </div>
         <div class="garden-tabs" id="garden-tabs"></div>
-        <div id="garden-view-container" style="flex:1; display:flex; overflow:hidden; position:relative;"></div>
+        <div id="garden-view-container"></div>
       </div>
     </div>
   `;
@@ -251,9 +253,13 @@ function setGardenView(view) {
 function renderGardenView() {
   const container = document.getElementById('garden-view-container');
   if (!container) return;
+
   if (gardenView === 'list') {
     container.innerHTML = `<div class="garden-list-view" id="garden-list-view"></div>`;
     renderGardenList();
+  } else if (gardenView === 'gallery') {
+    container.innerHTML = `<div class="garden-gallery-view" id="garden-gallery-view"></div>`;
+    renderGardenGallery();
   } else {
     container.innerHTML = `
       <div class="garden-zoom-controls">
@@ -276,6 +282,88 @@ function renderGardenView() {
   }
   checkRotatePrompt();
 }
+
+// ─── GALLERY ─────────────────────────────────
+let gardenGallerySort = 'newest';
+
+function setGallerySort(val) {
+  gardenGallerySort = val;
+  renderGardenGallery();
+}
+
+function renderGardenGallery() {
+  const container = document.getElementById('garden-gallery-view');
+  if (!container) return;
+
+  const words = getFilteredWords();
+  if (!words.length) {
+    container.innerHTML = `<div class="lang-empty">No words in this garden yet</div>`;
+    return;
+  }
+
+  // Sort
+  const sorted = [...words];
+  if (gardenGallerySort === 'waters') {
+    sorted.sort((a, b) => (b.waters || 0) - (a.waters || 0));
+  } else if (gardenGallerySort === 'alpha') {
+    sorted.sort((a, b) => (a.word || '').localeCompare(b.word || ''));
+  } else if (gardenGallerySort === 'theme') {
+    sorted.sort((a, b) => (a.theme || 'zzz').localeCompare(b.theme || 'zzz'));
+  } else {
+    sorted.sort((a, b) => new Date(b.dateAdded || 0) - new Date(a.dateAdded || 0));
+  }
+
+  // Header stats
+  const avgWaters = (words.reduce((a, w) => a + (w.waters || 0), 0) / words.length).toFixed(1);
+  const flowering = words.filter(w => (w.waters || 0) >= STAGE_THRESHOLDS.flowering).length;
+  const label = GARDEN_LANGUAGES.includes(gardenTab)
+    ? `${LANGUAGES[gardenTab].flag} ${LANGUAGES[gardenTab].name}`
+    : gardenTab === 'favorites' ? '★ Favorites'
+    : gardenTab === 'recent' ? '🕐 Recent'
+    : '🌍 All languages';
+
+  container.innerHTML = `
+    <div class="gallery-header">
+      <div class="gallery-header-title">${label}</div>
+      <div class="gallery-header-stats">
+        <span><strong>${words.length}</strong> words</span>
+        <span>avg <strong>${avgWaters}</strong> waters</span>
+        <span><strong>${flowering}</strong> flowering</span>
+      </div>
+      <select class="gallery-sort" onchange="setGallerySort(this.value)">
+        <option value="newest" ${gardenGallerySort === 'newest' ? 'selected' : ''}>Newest</option>
+        <option value="waters" ${gardenGallerySort === 'waters' ? 'selected' : ''}>Most watered</option>
+        <option value="alpha" ${gardenGallerySort === 'alpha' ? 'selected' : ''}>A → Z</option>
+        <option value="theme" ${gardenGallerySort === 'theme' ? 'selected' : ''}>By theme</option>
+      </select>
+    </div>
+    <div class="gallery-grid">
+      ${sorted.map(renderGalleryCard).join('')}
+    </div>
+  `;
+}
+
+function renderGalleryCard(w) {
+  const meta = LANGUAGES[w.language];
+  if (!meta) return '';
+  const waters = w.waters || 0;
+  const pips = Math.min(20, waters); // cap so long words don't stretch the card
+
+  return `
+    <div class="gallery-card" onclick="openWordCard('${w.id}')" style="--lang-accent: ${meta.accent};">
+      <div class="gallery-card-flag">${meta.flag}</div>
+      <div class="gallery-card-word">${escapeHtml(w.word)}</div>
+      ${w.reading ? `<div class="gallery-card-reading">(${escapeHtml(w.reading)})</div>` : ''}
+      <div class="gallery-card-meaning">${escapeHtml(w.meaning || '—')}</div>
+      <div class="gallery-card-pips">
+        ${'<span class="gallery-pip"></span>'.repeat(pips)}
+        ${waters > 20 ? `<span class="gallery-pip-more">+${waters - 20}</span>` : ''}
+      </div>
+      <div class="gallery-card-stage">${w.stage || 'seed'}</div>
+    </div>
+  `;
+}
+
 
 function applyZoom() {
   const canvas = document.getElementById('garden-canvas');
