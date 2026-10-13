@@ -139,6 +139,7 @@ function getRecencyColor(daysSince) {
 
 const THEMES = [
   { slug: 'time',        label: 'Time',         icon: '⏱' },
+  { slug: 'event',       label: 'Event',        icon: '🎉' },
   { slug: 'people',      label: 'People',       icon: '👥' },
   { slug: 'family',      label: 'Family',       icon: '🏠' },
   { slug: 'body',        label: 'Body',         icon: '🫀' },
