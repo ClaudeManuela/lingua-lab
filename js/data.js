@@ -50,11 +50,12 @@ function getDefaultData() {
       koreanMediaTargetHours: 90,
       editMode: false,
       study: {
-        sessionSize: 25,
-        languageFilter: 'all',
-        reverseMode: false,
-        dueThreshold: 14
-      },
+            sessionSize: 25,
+            languageFilter: 'all',
+            themeFilter: null,
+            reverseMode: false,
+            dueThreshold: 14
+          },
       lastVocabTab: 'garden',
       hangulAppName: 'Hangul App',
       customActivities: [],
@@ -90,13 +91,16 @@ function migrateData(data) {
   if (!Array.isArray(data.studySessions)) data.studySessions = [];
   if (data.studyState === undefined) data.studyState = null;
   if (!data.settings.study) {
-    data.settings.study = {
-      sessionSize: 25,
-      languageFilter: 'all',
-      reverseMode: false,
-      dueThreshold: 14
-    };
-  }
+      data.settings.study = {
+    sessionSize: 25,
+    languageFilter: 'all',
+    themeFilter: null,
+    reverseMode: false,
+    dueThreshold: 14
+  };
+} else if (data.settings.study.themeFilter === undefined) {
+  data.settings.study.themeFilter = null;
+}
 
   // Palace additions (Phase 5.4 — pre-migrated so no new migration later)
   if (!Array.isArray(data.palaceRooms)) data.palaceRooms = [];
@@ -107,6 +111,9 @@ function migrateData(data) {
     if (w.gardenY === undefined) w.gardenY = 100 + Math.random() * 600;
     if (!w.reading) w.reading = '';
     if (!w.theme) w.theme = '';
+    // Normalize theme to canonical slug
+    w.theme = normalizeTheme(w.theme) || '';
+    
     if (!Array.isArray(w.childIds)) w.childIds = [];
     if (!Array.isArray(w.connections)) w.connections = [];
   });

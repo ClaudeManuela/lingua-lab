@@ -69,12 +69,14 @@ function formatStudyTime(sec) {
 function selectStudyCards() {
   const settings = DATA.settings.study;
   const filter = settings.languageFilter;
+  const themeFilter = settings.themeFilter;
   const threshold = settings.dueThreshold;
   const size = settings.sessionSize;
   const today = new Date().toISOString().slice(0, 10);
 
   let pool = DATA.vocabulary.filter(w =>
-    filter === 'all' || w.language === filter
+    (filter === 'all' || w.language === filter) &&
+    (!themeFilter || w.theme === themeFilter)
   );
 
   const daysSince = w => {
@@ -130,8 +132,10 @@ function renderStudySetup(targetId = 'vocab-content') {
     : null;
 
   const pool = DATA.vocabulary.filter(w =>
-    s.languageFilter === 'all' || w.language === s.languageFilter
-  );
+  (s.languageFilter === 'all' || w.language === s.languageFilter) &&
+  (!s.themeFilter || w.theme === s.themeFilter)
+);
+
   const never = pool.filter(w => !w.lastWatered).length;
   const overdue = pool.filter(w => w.lastWatered && daysSince(w) >= s.dueThreshold).length;
   const due = pool.filter(w => w.lastWatered && daysSince(w) >= 7 && daysSince(w) < s.dueThreshold).length;
@@ -151,6 +155,33 @@ function renderStudySetup(targetId = 'vocab-content') {
       const label = slug === 'all' ? 'All (mixed)' : `${LANGUAGES[slug].flag} ${LANGUAGES[slug].name}`;
       return `<option value="${slug}" ${s.languageFilter === slug ? 'selected' : ''}>${label}</option>`;
     }).join('');
+    const themeCounts = {};
+DATA.vocabulary.forEach(w => {
+  if (w.theme && (s.languageFilter === 'all' || w.language === s.languageFilter)) {
+    themeCounts[w.theme] = (themeCounts[w.theme] || 0) + 1;
+  }
+});
+const themesPresent = Object.keys(themeCounts).sort((a, b) => themeCounts[b] - themeCounts[a]);
+
+// Inside the setup card, after the language row:
+`
+  ${themesPresent.length ? `
+    <div class="study-theme-filter">
+      <label>Theme filter:</label>
+      <div class="gallery-theme-chips">
+        <button class="theme-chip ${!s.themeFilter ? 'active' : ''}"
+                onclick="setStudyThemeFilter(null)">All</button>
+        ${themesPresent.map(slug => `
+          <button class="theme-chip ${s.themeFilter === slug ? 'active' : ''}"
+                  onclick="setStudyThemeFilter('${slug}')">
+            ${THEME_MAP[slug].icon} ${THEME_MAP[slug].label}
+            <span class="theme-chip-count">${themeCounts[slug]}</span>
+          </button>
+        `).join('')}
+      </div>
+    </div>
+  ` : ''}
+`
 
   container.innerHTML = `
     <div class="study-setup-wrap">
@@ -507,4 +538,10 @@ function renderStudyHistory() {
     <div class="garden-sidebar-title" style="margin-top:0.75rem;">Recent</div>
     ${recent}
   `;
+}
+//theme selector for study mode
+function setStudyThemeFilter(slug) {
+  DATA.settings.study.themeFilter = slug;
+  saveData(DATA);
+  renderStudySetup('vocab-content');
 }

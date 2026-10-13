@@ -106,6 +106,10 @@ function renderVocabSidebar() {
       <div class="garden-sidebar-title">Summary</div>
       <div id="garden-summary-list"></div>
     </div>
+        <div class="garden-sidebar-section">
+    <div class="garden-sidebar-title">Themes</div>
+    <div id="theme-clusters-list"></div>
+    </div>
 
     <div class="garden-sidebar-section" id="vocab-mode-actions">
       <div class="garden-sidebar-title">Actions</div>
@@ -117,6 +121,27 @@ function renderVocabSidebar() {
   if (typeof renderGardenSidebar === 'function') {
     renderGardenSidebar();
   }
+  const themesList = document.getElementById('theme-clusters-list');
+if (themesList) {
+  const counts = {};
+  (DATA.vocabulary || []).forEach(w => {
+    if (w.theme) counts[w.theme] = (counts[w.theme] || 0) + 1;
+  });
+  const sorted = Object.keys(counts).sort((a, b) => counts[b] - counts[a]);
+  if (!sorted.length) {
+    themesList.innerHTML = `<div class="lang-empty" style="font-size:0.7rem;">No themed words yet.</div>`;
+  } else {
+    themesList.innerHTML = sorted.map(slug => {
+      const t = THEME_MAP[slug];
+      if (!t) return '';
+      return `<div class="garden-sidebar-row theme-sidebar-row"
+                   onclick="jumpToTheme('${slug}')">
+        <span>${t.icon} ${t.label}</span>
+        <strong>${counts[slug]}</strong>
+      </div>`;
+    }).join('');
+  }
+}
 
   // Populate mode-specific actions
   const actions = document.getElementById('vocab-actions-list');
@@ -142,4 +167,28 @@ function renderVocabSidebar() {
       ? renderPalaceSidebarActions(admin)
       : '';
   }
+}
+
+//study by theme
+function jumpToTheme(slug) {
+  // Ensure Garden tab is active — set state without triggering a render
+  const wasOnGarden = vocabTab === 'garden';
+  if (!wasOnGarden) {
+    vocabTab = 'garden';
+    if (DATA.settings) {
+      DATA.settings.lastVocabTab = 'garden';
+      saveData(DATA);
+    }
+    document.querySelectorAll('.vocab-pill').forEach(btn => {
+      btn.classList.toggle('active', btn.classList.contains('pill-garden'));
+    });
+    renderVocabSidebar();
+  }
+
+  // Force Gallery view + apply the theme filter BEFORE rendering
+  if (typeof gardenView !== 'undefined') gardenView = 'gallery';
+  if (typeof gardenThemeFilter !== 'undefined') gardenThemeFilter = slug;
+
+  // Render once, with everything already set
+  renderGarden('vocab-content');
 }

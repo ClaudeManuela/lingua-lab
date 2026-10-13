@@ -131,3 +131,60 @@ function getRecencyColor(daysSince) {
   if (daysSince <= 21) return '#d99b3d';
   return '#c73e5c';
 }
+
+/* ============================================
+   THEMES — Canonical taxonomy for vocabulary grouping
+   slug is the internal ID; label is what shows in the UI
+   ============================================ */
+
+const THEMES = [
+  { slug: 'time',        label: 'Time',         icon: '⏱' },
+  { slug: 'people',      label: 'People',       icon: '👥' },
+  { slug: 'family',      label: 'Family',       icon: '🏠' },
+  { slug: 'body',        label: 'Body',         icon: '🫀' },
+  { slug: 'food',        label: 'Food',         icon: '🍚' },
+  { slug: 'drink',       label: 'Drink',        icon: '🍵' },
+  { slug: 'market',      label: 'Market',       icon: '🛒' },
+  { slug: 'money',       label: 'Money',        icon: '💰' },
+  { slug: 'school',      label: 'School',       icon: '🎓' },
+  { slug: 'work',        label: 'Work',         icon: '💼' },
+  { slug: 'home',        label: 'Home',         icon: '🏡' },
+  { slug: 'kitchen',     label: 'Kitchen',      icon: '🍳' },
+  { slug: 'bathroom',    label: 'Bathroom',     icon: '🚿' },
+  { slug: 'clothing',    label: 'Clothing',     icon: '👕' },
+  { slug: 'transport',   label: 'Transport',    icon: '🚌' },
+  { slug: 'travel',      label: 'Travel',       icon: '✈️' },
+  { slug: 'city',        label: 'City',         icon: '🏙' },
+  { slug: 'nature',      label: 'Nature',       icon: '🌳' },
+  { slug: 'weather',     label: 'Weather',      icon: '🌤' },
+  { slug: 'animals',     label: 'Animals',      icon: '🐈' },
+  { slug: 'colors',      label: 'Colors',       icon: '🎨' },
+  { slug: 'numbers',     label: 'Numbers',      icon: '🔢' },
+  { slug: 'emotions',    label: 'Emotions',     icon: '💭' },
+  { slug: 'health',      label: 'Health',       icon: '💊' },
+  { slug: 'tech',        label: 'Tech',         icon: '💻' },
+  { slug: 'media',       label: 'Media',        icon: '🎬' },
+  { slug: 'music',       label: 'Music',        icon: '🎵' },
+  { slug: 'sports',      label: 'Sports',       icon: '⚽' },
+  { slug: 'hobbies',     label: 'Hobbies',      icon: '🎮' },
+  { slug: 'greetings',   label: 'Greetings',    icon: '👋' },
+  { slug: 'grammar',     label: 'Grammar',      icon: '📐' },
+  { slug: 'phrases',     label: 'Phrases',      icon: '💬' },
+  { slug: 'abstract',    label: 'Abstract',     icon: '🌀' },
+  { slug: 'other',       label: 'Other',        icon: '📦' }
+];
+
+const THEME_MAP = Object.fromEntries(THEMES.map(t => [t.slug, t]));
+
+// Normalize a free-text theme to a canonical slug (or null if unknown)
+function normalizeTheme(raw) {
+  if (!raw) return null;
+  const s = String(raw).trim().toLowerCase();
+  if (!s) return null;
+  // Direct slug match
+  if (THEME_MAP[s]) return s;
+  // Label match
+  const byLabel = THEMES.find(t => t.label.toLowerCase() === s);
+  if (byLabel) return byLabel.slug;
+  return null;
+}

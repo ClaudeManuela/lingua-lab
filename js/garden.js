@@ -7,6 +7,13 @@ let gardenTab = 'all';
 let gardenView = 'garden';
 let currentZoom = 1.0;
 
+let gardenThemeFilter = null;
+
+function setGalleryThemeFilter(slug) {
+  gardenThemeFilter = slug;
+  renderGardenView();   // ← re-renders whichever view is active
+}
+
 const GARDEN_LANGUAGES = ['korean', 'portuguese', 'italian', 'arabic', 'japanese', 'spanish'];
 
 const STAGE_THRESHOLDS = {
@@ -227,19 +234,25 @@ function renderGardenView() {
     container.innerHTML = `<div class="garden-gallery-view" id="garden-gallery-view"></div>`;
     renderGardenGallery();
   } else {
-    container.innerHTML = `
-      <div class="garden-zoom-controls">
-        <button onclick="zoomIn()">+</button>
-        <button onclick="zoomOut()">−</button>
-        <button onclick="resetZoom()">⟲</button>
-        <span class="garden-zoom-label" id="zoom-label">100%</span>
-      </div>
-      <div class="garden-canvas-wrap" id="garden-canvas-wrap">
-        <div class="garden-canvas" id="garden-canvas">
-          <svg class="garden-branches-svg" id="garden-branches-svg"></svg>
-        </div>
-      </div>
-    `;
+   container.innerHTML = `
+  ${gardenThemeFilter ? `
+              <div class="garden-filter-badge">
+                <span>Filtered: <strong>${THEME_MAP[gardenThemeFilter]?.icon || ''} ${THEME_MAP[gardenThemeFilter]?.label || gardenThemeFilter}</strong></span>
+                <button onclick="setGalleryThemeFilter(null)" title="Clear filter">×</button>
+              </div>
+            ` : ''}
+            <div class="garden-zoom-controls">
+              <button onclick="zoomIn()">+</button>
+              <button onclick="zoomOut()">−</button>
+              <button onclick="resetZoom()">⟲</button>
+              <span class="garden-zoom-label" id="zoom-label">100%</span>
+            </div>
+            <div class="garden-canvas-wrap" id="garden-canvas-wrap">
+              <div class="garden-canvas" id="garden-canvas">
+                <svg class="garden-branches-svg" id="garden-branches-svg"></svg>
+              </div>
+            </div>
+          `;
     applyZoom();
     renderGardenPlants();
     if (typeof renderGardenBranches === 'function') renderGardenBranches();
@@ -261,13 +274,41 @@ function renderGardenGallery() {
   const container = document.getElementById('garden-gallery-view');
   if (!container) return;
 
+  // Chips are computed from the pool BEFORE theme filtering
+  const poolForChips = [...(DATA.vocabulary || [])].filter(w => {
+    if (GARDEN_LANGUAGES.includes(gardenTab)) return w.language === gardenTab;
+    if (gardenTab === 'favorites') return w.favorite;
+    return true;
+  });
+  const themeCounts = {};
+  poolForChips.forEach(w => {
+    if (w.theme) themeCounts[w.theme] = (themeCounts[w.theme] || 0) + 1;
+  });
+  const themesPresent = Object.keys(themeCounts).sort((a, b) => themeCounts[b] - themeCounts[a]);
+
+  // Now the actual visible set (theme filter already applied)
   const words = getFilteredWords();
+
   if (!words.length) {
-    container.innerHTML = `<div class="lang-empty">No words in this garden yet</div>`;
+    container.innerHTML = `
+      ${themesPresent.length ? `
+        <div class="gallery-theme-chips">
+          <button class="theme-chip ${!gardenThemeFilter ? 'active' : ''}"
+                  onclick="setGalleryThemeFilter(null)">All</button>
+          ${themesPresent.map(slug => `
+            <button class="theme-chip ${gardenThemeFilter === slug ? 'active' : ''}"
+                    onclick="setGalleryThemeFilter('${slug}')">
+              ${THEME_MAP[slug] ? THEME_MAP[slug].icon + ' ' + THEME_MAP[slug].label : slug}
+              <span class="theme-chip-count">${themeCounts[slug]}</span>
+            </button>
+          `).join('')}
+        </div>
+      ` : ''}
+      <div class="lang-empty">No words match this theme.</div>
+    `;
     return;
   }
 
-  // Sort
   const sorted = [...words];
   if (gardenGallerySort === 'waters') {
     sorted.sort((a, b) => (b.waters || 0) - (a.waters || 0));
@@ -279,7 +320,6 @@ function renderGardenGallery() {
     sorted.sort((a, b) => new Date(b.dateAdded || 0) - new Date(a.dateAdded || 0));
   }
 
-  // Header stats
   const avgWaters = (words.reduce((a, w) => a + (w.waters || 0), 0) / words.length).toFixed(1);
   const flowering = words.filter(w => (w.waters || 0) >= STAGE_THRESHOLDS.flowering).length;
   const label = GARDEN_LANGUAGES.includes(gardenTab)
@@ -303,6 +343,21 @@ function renderGardenGallery() {
         <option value="theme" ${gardenGallerySort === 'theme' ? 'selected' : ''}>By theme</option>
       </select>
     </div>
+
+    ${themesPresent.length ? `
+      <div class="gallery-theme-chips">
+        <button class="theme-chip ${!gardenThemeFilter ? 'active' : ''}"
+                onclick="setGalleryThemeFilter(null)">All</button>
+        ${themesPresent.map(slug => `
+          <button class="theme-chip ${gardenThemeFilter === slug ? 'active' : ''}"
+                  onclick="setGalleryThemeFilter('${slug}')">
+            ${THEME_MAP[slug] ? THEME_MAP[slug].icon + ' ' + THEME_MAP[slug].label : slug}
+            <span class="theme-chip-count">${themeCounts[slug]}</span>
+          </button>
+        `).join('')}
+      </div>
+    ` : ''}
+
     <div class="gallery-grid">
       ${sorted.map(renderGalleryCard).join('')}
     </div>
@@ -352,6 +407,10 @@ function getFilteredWords() {
   } else if (gardenTab === 'recent') {
     words = words.sort((a, b) => new Date(b.dateAdded) - new Date(a.dateAdded)).slice(0, 100);
   }
+  // Theme filter applies everywhere (canvas, list, gallery)
+  if (gardenThemeFilter) {
+    words = words.filter(w => w.theme === gardenThemeFilter);
+  }
   return words;
 }
 
@@ -362,11 +421,43 @@ function getFilteredWords() {
 function renderGardenList() {
   const container = document.getElementById('garden-list-view');
   if (!container) return;
-  const words = getFilteredWords();
+
+  // Compute theme chips from the unfiltered pool so counts stay accurate
+  const poolForChips = [...(DATA.vocabulary || [])].filter(w => {
+    if (GARDEN_LANGUAGES.includes(gardenTab)) return w.language === gardenTab;
+    if (gardenTab === 'favorites') return w.favorite;
+    return true;
+  });
+  const themeCounts = {};
+  poolForChips.forEach(w => {
+    if (w.theme) themeCounts[w.theme] = (themeCounts[w.theme] || 0) + 1;
+  });
+  const themesPresent = Object.keys(themeCounts).sort((a, b) => themeCounts[b] - themeCounts[a]);
+
+  const chipRow = themesPresent.length ? `
+    <div class="gallery-theme-chips">
+      <button class="theme-chip ${!gardenThemeFilter ? 'active' : ''}"
+              onclick="setGalleryThemeFilter(null)">All</button>
+      ${themesPresent.map(slug => `
+        <button class="theme-chip ${gardenThemeFilter === slug ? 'active' : ''}"
+                onclick="setGalleryThemeFilter('${slug}')">
+          ${THEME_MAP[slug] ? THEME_MAP[slug].icon + ' ' + THEME_MAP[slug].label : slug}
+          <span class="theme-chip-count">${themeCounts[slug]}</span>
+        </button>
+      `).join('')}
+    </div>
+  ` : '';
+
+  const words = getFilteredWords();  // already theme-filtered
+
   if (!words.length) {
-    container.innerHTML = `<div class="lang-empty">No words in this garden yet</div>`;
+    container.innerHTML = `
+      ${chipRow}
+      <div class="lang-empty">${gardenThemeFilter ? 'No words match this theme.' : 'No words in this garden yet'}</div>
+    `;
     return;
   }
+
   const stages = ['flowering', 'trunk', 'sapling', 'seedling', 'sprout', 'seed'];
   const groups = {};
   stages.forEach(s => groups[s] = []);
@@ -382,7 +473,8 @@ function renderGardenList() {
     sprout: 'Sprout (1-2)',
     seed: 'Seed (0)'
   };
-  container.innerHTML = stages.map(stage => {
+
+  const groupsHtml = stages.map(stage => {
     if (!groups[stage].length) return '';
     return `
       <div class="garden-stage-group">
@@ -393,6 +485,8 @@ function renderGardenList() {
       </div>
     `;
   }).join('');
+
+  container.innerHTML = chipRow + groupsHtml;
 }
 
 function renderWordRow(w) {
@@ -824,8 +918,16 @@ function openWordCard(id) {
               </div>
               <div class="word-card-field">
                 <label>Theme:</label>
-                <input type="text" value="${escapeHtml(word.theme || '')}" onchange="updateWordField('${word.id}', 'theme', this.value)">
+                <select onchange="updateWordTheme('${word.id}', this.value)">
+                  <option value="">— none —</option>
+                  ${THEMES.map(t => `
+                    <option value="${t.slug}" ${word.theme === t.slug ? 'selected' : ''}>
+                      ${t.icon} ${t.label}
+                    </option>
+                  `).join('')}
+                </select>
               </div>
+              
               <div class="word-card-field">
                 <label>Notes:</label>
                 <textarea onchange="updateWordField('${word.id}', 'notes', this.value)">${escapeHtml(word.notes || '')}</textarea>
@@ -1052,6 +1154,15 @@ function updateWordField(id, key, value) {
   const word = DATA.vocabulary.find(w => w.id === id);
   if (!word) return;
   word[key] = value;
+  saveData(DATA);
+}
+
+//changing the theme
+function updateWordTheme(id, slug) {
+  if (!isEditable()) return;
+  const word = DATA.vocabulary.find(w => w.id === id);
+  if (!word) return;
+  word.theme = slug || '';
   saveData(DATA);
 }
 

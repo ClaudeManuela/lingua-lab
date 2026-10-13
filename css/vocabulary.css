@@ -201,3 +201,127 @@
     letter-spacing: 1.8px;
   }
 }
+/* ═══ THEME CHIPS ═══ */
+.gallery-theme-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px dashed var(--paper-ruling);
+}
+
+.theme-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  background: var(--paper-bg);
+  border: 2px solid var(--border-main);
+  padding: 0.25rem 0.55rem;
+  font-family: var(--font-pixel);
+  font-size: 0.65rem;
+  font-weight: bold;
+  letter-spacing: 0.3px;
+  cursor: pointer;
+  color: var(--paper-ink);
+  box-shadow: 2px 2px 0 rgba(0,0,0,0.1);
+  white-space: nowrap;
+}
+
+.theme-chip:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 3px 3px 0 rgba(0,0,0,0.15);
+}
+
+.theme-chip.active {
+  background: var(--accent-violet);
+  color: var(--text-inverse);
+  border-color: var(--accent-violet);
+}
+
+.theme-chip-count {
+  background: rgba(0,0,0,0.15);
+  padding: 0 0.3rem;
+  border-radius: 6px;
+  font-size: 0.55rem;
+  min-width: 1.1rem;
+  text-align: center;
+}
+
+.theme-chip.active .theme-chip-count {
+  background: rgba(255,255,255,0.25);
+}
+
+/* ═══ SIDEBAR THEME ROWS ═══ */
+.theme-sidebar-row {
+  cursor: pointer;
+  transition: background 0.1s;
+  padding: 0.2rem 0.3rem;
+  border-radius: 2px;
+}
+
+.theme-sidebar-row:hover {
+  background: var(--accent-ice);
+}
+
+/* ═══ STUDY SETUP THEME FILTER ═══ */
+.study-theme-filter {
+  margin: 0.75rem 0;
+  padding: 0.5rem 0;
+  border-top: 1px dashed var(--paper-ruling);
+}
+
+.study-theme-filter > label {
+  display: block;
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-weight: bold;
+  color: var(--paper-ink-soft);
+  margin-bottom: 0.4rem;
+}
+
+/* Reuse gallery-theme-chips inside study setup */
+.study-theme-filter .gallery-theme-chips {
+  margin: 0;
+  padding: 0;
+  border: none;
+}
+/* ═══ GARDEN FILTER BADGE (canvas view) ═══ */
+.garden-filter-badge {
+  position: absolute;
+  top: 0.5rem;
+  left: 0.5rem;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: var(--warning);
+  color: var(--text-inverse);
+  border: 2px solid var(--border-main);
+  padding: 0.3rem 0.5rem;
+  font-family: var(--font-pixel);
+  font-size: 0.65rem;
+  font-weight: bold;
+  box-shadow: 3px 3px 0 rgba(0,0,0,0.25);
+}
+
+.garden-filter-badge button {
+  background: rgba(0,0,0,0.25);
+  border: 1px solid rgba(255,255,255,0.5);
+  color: white;
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  font-family: var(--font-pixel);
+  font-size: 0.75rem;
+  line-height: 1;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.garden-filter-badge button:hover {
+  background: rgba(0,0,0,0.4);
+}
