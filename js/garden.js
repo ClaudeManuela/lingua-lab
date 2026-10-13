@@ -9,9 +9,27 @@ let currentZoom = 1.0;
 
 let gardenThemeFilter = null;
 
+// ─── INCOMPLETE-WORD HELPERS ─────────────────
+// Returns array of missing fields for a word:
+//   'theme' | 'meaning' | 'type' (empty array = complete)
+function isIncomplete(w) {
+  const missing = [];
+  if (!w.theme || !String(w.theme).trim()) missing.push('theme');
+  if (!w.meaning || !String(w.meaning).trim()) missing.push('meaning');
+  if (!w.wordType || !String(w.wordType).trim()) missing.push('type');
+  return missing;
+}
+
+function isIncompleteWord(w) {
+  return isIncomplete(w).length > 0;
+}
+
+// The special filter slug used for the "Incomplete" chip
+const INCOMPLETE_SLUG = '__incomplete__';
+
 function setGalleryThemeFilter(slug) {
   gardenThemeFilter = slug;
-  renderGardenView();   // ← re-renders whichever view is active
+  renderGardenView();
 }
 
 const GARDEN_LANGUAGES = ['korean', 'portuguese', 'italian', 'arabic', 'japanese', 'spanish'];
@@ -173,11 +191,16 @@ function renderGardenSidebar() {
   const totalWaters = words.reduce((a, w) => a + (w.waters || 0), 0);
   const backlogCount = words.filter(w => w.backlog).length;
   document.getElementById('garden-summary-list').innerHTML = `
-    <div class="garden-sidebar-row"><span>Total words</span><strong>${words.length}</strong></div>
-    <div class="garden-sidebar-row"><span>Total waters</span><strong>${totalWaters}</strong></div>
-    <div class="garden-sidebar-row"><span>Backfilled</span><strong>${backlogCount}</strong></div>
-  `;
-
+  <div class="garden-sidebar-row"><span>Total words</span><strong>${words.length}</strong></div>
+  <div class="garden-sidebar-row"><span>Total waters</span><strong>${totalWaters}</strong></div>
+  <div class="garden-sidebar-row"><span>Backfilled</span><strong>${backlogCount}</strong></div>
+  <div class="garden-sidebar-row theme-sidebar-row"
+       onclick="jumpToIncomplete()"
+       style="color: var(--danger);">
+    <span>⚠ Incomplete words</span>
+    <strong>${words.filter(isIncompleteWord).length}</strong>
+  </div>
+`;
   const historyEl = document.getElementById('study-history-list');
   if (historyEl) historyEl.innerHTML = renderStudyHistory();
 }
@@ -274,37 +297,49 @@ function renderGardenGallery() {
   const container = document.getElementById('garden-gallery-view');
   if (!container) return;
 
-  // Chips are computed from the pool BEFORE theme filtering
+  // Chips computed from the pool BEFORE theme filtering
   const poolForChips = [...(DATA.vocabulary || [])].filter(w => {
     if (GARDEN_LANGUAGES.includes(gardenTab)) return w.language === gardenTab;
     if (gardenTab === 'favorites') return w.favorite;
     return true;
   });
+
   const themeCounts = {};
   poolForChips.forEach(w => {
     if (w.theme) themeCounts[w.theme] = (themeCounts[w.theme] || 0) + 1;
   });
   const themesPresent = Object.keys(themeCounts).sort((a, b) => themeCounts[b] - themeCounts[a]);
 
-  // Now the actual visible set (theme filter already applied)
-  const words = getFilteredWords();
+  const incompleteCount = poolForChips.filter(isIncompleteWord).length;
+  const showIncomplete = gardenThemeFilter === INCOMPLETE_SLUG;
+
+  const chipRow = (themesPresent.length || incompleteCount) ? `
+    <div class="gallery-theme-chips">
+      <button class="theme-chip ${!gardenThemeFilter ? 'active' : ''}"
+              onclick="setGalleryThemeFilter(null)">All</button>
+      ${themesPresent.map(slug => `
+        <button class="theme-chip ${gardenThemeFilter === slug ? 'active' : ''}"
+                onclick="setGalleryThemeFilter('${slug}')">
+          ${THEME_MAP[slug] ? THEME_MAP[slug].icon + ' ' + THEME_MAP[slug].label : slug}
+          <span class="theme-chip-count">${themeCounts[slug]}</span>
+        </button>
+      `).join('')}
+      ${incompleteCount ? `
+        <button class="theme-chip theme-chip-incomplete ${showIncomplete ? 'active' : ''}"
+                onclick="setGalleryThemeFilter('${INCOMPLETE_SLUG}')">
+          ⚠ Incomplete
+          <span class="theme-chip-count">${incompleteCount}</span>
+        </button>
+      ` : ''}
+    </div>
+  ` : '';
+
+  const words = getFilteredWords();  // already theme/incomplete-filtered
 
   if (!words.length) {
     container.innerHTML = `
-      ${themesPresent.length ? `
-        <div class="gallery-theme-chips">
-          <button class="theme-chip ${!gardenThemeFilter ? 'active' : ''}"
-                  onclick="setGalleryThemeFilter(null)">All</button>
-          ${themesPresent.map(slug => `
-            <button class="theme-chip ${gardenThemeFilter === slug ? 'active' : ''}"
-                    onclick="setGalleryThemeFilter('${slug}')">
-              ${THEME_MAP[slug] ? THEME_MAP[slug].icon + ' ' + THEME_MAP[slug].label : slug}
-              <span class="theme-chip-count">${themeCounts[slug]}</span>
-            </button>
-          `).join('')}
-        </div>
-      ` : ''}
-      <div class="lang-empty">No words match this theme.</div>
+      ${chipRow}
+      <div class="lang-empty">No words match this filter.</div>
     `;
     return;
   }
@@ -344,19 +379,7 @@ function renderGardenGallery() {
       </select>
     </div>
 
-    ${themesPresent.length ? `
-      <div class="gallery-theme-chips">
-        <button class="theme-chip ${!gardenThemeFilter ? 'active' : ''}"
-                onclick="setGalleryThemeFilter(null)">All</button>
-        ${themesPresent.map(slug => `
-          <button class="theme-chip ${gardenThemeFilter === slug ? 'active' : ''}"
-                  onclick="setGalleryThemeFilter('${slug}')">
-            ${THEME_MAP[slug] ? THEME_MAP[slug].icon + ' ' + THEME_MAP[slug].label : slug}
-            <span class="theme-chip-count">${themeCounts[slug]}</span>
-          </button>
-        `).join('')}
-      </div>
-    ` : ''}
+    ${chipRow}
 
     <div class="gallery-grid">
       ${sorted.map(renderGalleryCard).join('')}
@@ -368,7 +391,11 @@ function renderGalleryCard(w) {
   const meta = LANGUAGES[w.language];
   if (!meta) return '';
   const waters = w.waters || 0;
-  const pips = Math.min(20, waters); // cap so long words don't stretch the card
+  const pips = Math.min(20, waters);
+  const missing = isIncomplete(w);
+  const badge = missing.length
+    ? `<div class="gallery-card-badge" title="Missing: ${missing.join(', ')}">⚠ ${missing.join(', ')}</div>`
+    : '';
 
   return `
     <div class="gallery-card" onclick="openWordCard('${w.id}')" style="--lang-accent: ${meta.accent};">
@@ -381,6 +408,7 @@ function renderGalleryCard(w) {
         ${waters > 20 ? `<span class="gallery-pip-more">+${waters - 20}</span>` : ''}
       </div>
       <div class="gallery-card-stage">${w.stage || 'seed'}</div>
+      ${badge}
     </div>
   `;
 }
@@ -398,6 +426,8 @@ function zoomIn() { currentZoom = Math.min(3, currentZoom + 0.15); applyZoom(); 
 function zoomOut() { currentZoom = Math.max(0.4, currentZoom - 0.15); applyZoom(); }
 function resetZoom() { currentZoom = 1.0; applyZoom(); }
 
+//get filtered words with incomplete filter
+
 function getFilteredWords() {
   let words = [...(DATA.vocabulary || [])];
   if (GARDEN_LANGUAGES.includes(gardenTab)) {
@@ -407,10 +437,15 @@ function getFilteredWords() {
   } else if (gardenTab === 'recent') {
     words = words.sort((a, b) => new Date(b.dateAdded) - new Date(a.dateAdded)).slice(0, 100);
   }
-  // Theme filter applies everywhere (canvas, list, gallery)
-  if (gardenThemeFilter) {
+
+  // Theme filter applies everywhere (canvas, list, gallery).
+  // Special slug '__incomplete__' shows words missing theme/meaning/type.
+  if (gardenThemeFilter === INCOMPLETE_SLUG) {
+    words = words.filter(isIncompleteWord);
+  } else if (gardenThemeFilter) {
     words = words.filter(w => w.theme === gardenThemeFilter);
   }
+
   return words;
 }
 
@@ -422,19 +457,23 @@ function renderGardenList() {
   const container = document.getElementById('garden-list-view');
   if (!container) return;
 
-  // Compute theme chips from the unfiltered pool so counts stay accurate
+  // Chips computed from the pool BEFORE theme filtering
   const poolForChips = [...(DATA.vocabulary || [])].filter(w => {
     if (GARDEN_LANGUAGES.includes(gardenTab)) return w.language === gardenTab;
     if (gardenTab === 'favorites') return w.favorite;
     return true;
   });
+
   const themeCounts = {};
   poolForChips.forEach(w => {
     if (w.theme) themeCounts[w.theme] = (themeCounts[w.theme] || 0) + 1;
   });
   const themesPresent = Object.keys(themeCounts).sort((a, b) => themeCounts[b] - themeCounts[a]);
 
-  const chipRow = themesPresent.length ? `
+  const incompleteCount = poolForChips.filter(isIncompleteWord).length;
+  const showIncomplete = gardenThemeFilter === INCOMPLETE_SLUG;
+
+  const chipRow = (themesPresent.length || incompleteCount) ? `
     <div class="gallery-theme-chips">
       <button class="theme-chip ${!gardenThemeFilter ? 'active' : ''}"
               onclick="setGalleryThemeFilter(null)">All</button>
@@ -445,15 +484,22 @@ function renderGardenList() {
           <span class="theme-chip-count">${themeCounts[slug]}</span>
         </button>
       `).join('')}
+      ${incompleteCount ? `
+        <button class="theme-chip theme-chip-incomplete ${showIncomplete ? 'active' : ''}"
+                onclick="setGalleryThemeFilter('${INCOMPLETE_SLUG}')">
+          ⚠ Incomplete
+          <span class="theme-chip-count">${incompleteCount}</span>
+        </button>
+      ` : ''}
     </div>
   ` : '';
 
-  const words = getFilteredWords();  // already theme-filtered
+  const words = getFilteredWords();  // already theme/incomplete-filtered
 
   if (!words.length) {
     container.innerHTML = `
       ${chipRow}
-      <div class="lang-empty">${gardenThemeFilter ? 'No words match this theme.' : 'No words in this garden yet'}</div>
+      <div class="lang-empty">${gardenThemeFilter ? 'No words match this filter.' : 'No words in this garden yet'}</div>
     `;
     return;
   }
@@ -493,10 +539,14 @@ function renderWordRow(w) {
   const meta = LANGUAGES[w.language];
   if (!meta) return '';
   const typeLabel = w.wordType ? `<span class="garden-word-type">${escapeHtml(w.wordType)}</span>` : '';
+  const missing = isIncomplete(w);
+  const warn = missing.length
+    ? `<span class="garden-word-warn" title="Missing: ${missing.join(', ')}">⚠</span>`
+    : '';
   return `
     <div class="garden-word-row" onclick="openWordCard('${w.id}')">
       <span>${meta.flag}</span>
-      <span class="garden-word-text">${escapeHtml(w.word)}${typeLabel}</span>
+      <span class="garden-word-text">${escapeHtml(w.word)}${typeLabel}${warn}</span>
       <span class="garden-word-meaning">${escapeHtml(w.meaning || '')}</span>
       <span class="garden-word-waters">${w.waters || 0}</span>
       ${w.favorite ? '<span class="garden-word-star">*</span>' : ''}

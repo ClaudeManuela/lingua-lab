@@ -46,6 +46,26 @@ function renderVocabulary() {
   renderVocabContent();
 }
 
+//incomplete function for sidebar
+
+function jumpToIncomplete() {
+  const wasOnGarden = vocabTab === 'garden';
+  if (!wasOnGarden) {
+    vocabTab = 'garden';
+    if (DATA.settings) {
+      DATA.settings.lastVocabTab = 'garden';
+      saveData(DATA);
+    }
+    document.querySelectorAll('.vocab-pill').forEach(btn => {
+      btn.classList.toggle('active', btn.classList.contains('pill-garden'));
+    });
+    renderVocabSidebar();
+  }
+  gardenView = 'gallery';
+  gardenThemeFilter = '__incomplete__';
+  renderGarden('vocab-content');
+}
+
 function setVocabTab(tab) {
   if (tab === 'palace' && typeof renderPalace !== 'function') return;
   vocabTab = tab;

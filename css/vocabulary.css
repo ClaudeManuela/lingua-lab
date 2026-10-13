@@ -325,3 +325,51 @@
 .garden-filter-badge button:hover {
   background: rgba(0,0,0,0.4);
 }
+
+/* ═══ INCOMPLETE-WORD INDICATORS ═══ */
+
+/* Chip in the theme row */
+.theme-chip-incomplete {
+  color: var(--danger);
+  border-color: var(--danger);
+}
+
+.theme-chip-incomplete:hover {
+  background: rgba(199, 62, 92, 0.1);
+}
+
+.theme-chip-incomplete.active {
+  background: var(--danger);
+  color: var(--text-inverse);
+  border-color: var(--danger);
+}
+
+/* Small "⚠" badge next to word text in List view */
+.garden-word-warn {
+  display: inline-block;
+  margin-left: 0.35rem;
+  color: var(--danger);
+  font-weight: bold;
+  font-size: 0.75rem;
+  vertical-align: middle;
+}
+
+/* Badge on gallery cards */
+.gallery-card-badge {
+  position: absolute;
+  bottom: 0.35rem;
+  right: 0.5rem;
+  font-size: 0.55rem;
+  font-weight: bold;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  color: var(--danger);
+  background: rgba(199, 62, 92, 0.12);
+  border: 1px solid var(--danger);
+  padding: 0.1rem 0.35rem;
+  border-radius: 2px;
+  max-width: 80%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
