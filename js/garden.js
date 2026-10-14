@@ -45,7 +45,7 @@ const STAGE_THRESHOLDS = {
 
 const DEFAULT_WORD_TYPES = [
   'Noun','Proper Noun', 'Verb', 'Adjective', 'Adverb', 'Pronoun', 'Particle',
-  'Conjunction', 'Preposition', 'Interjection',
+  'Question', 'Conjunction', 'Preposition', 'Interjection',
   'Subject Marker', 'Topic Marker',
   'Idiom / Expression', 'Filler word', 'Counter',
   'Number', 'Phrase / Sentence', 'Other'

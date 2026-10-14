@@ -389,7 +389,7 @@ function saveLog() {
   const dayNumber = daysBetween(DATA.metadata.experimentStartDate, dateStr) + 1;
 
   // Gather sessions
-  const sessions = Array.from(document.querySelectorAll('.session-card')).map(card => {
+  const sessions = Array.from(document.querySelectorAll('#sessions-container .session-card')).map(card => {
     const start = card.querySelector('.sess-start').value;
     const end = card.querySelector('.sess-end').value;
     let duration = 0;
@@ -428,8 +428,7 @@ function saveLog() {
   });
 
   // Gather media
-  const mediaConsumed = Array.from(document.querySelectorAll('.media-card')).map(card => {
-    const audio = card.querySelector('.med-audio').value;
+const mediaConsumed = Array.from(document.querySelectorAll('#media-container .media-card')).map(card => {    const audio = card.querySelector('.med-audio').value;
     const sub = card.querySelector('.med-sub').value;
     const modeCode = buildModeCode(audio, sub);
     return {
