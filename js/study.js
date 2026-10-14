@@ -274,7 +274,7 @@ function persistStudyState() {
 }
 
 // ─── CARD RENDER ─────────────────────────────
-// ← 5.3c: takes optional target container ID
+
 function renderStudyCard(targetId = 'vocab-content') {
   const container = document.getElementById(targetId);
   if (!container) return;
@@ -282,29 +282,31 @@ function renderStudyCard(targetId = 'vocab-content') {
   const word = DATA.vocabulary.find(w => w.id === s.wordIds[s.currentIndex]);
   if (!word) { completeStudySession(targetId); return; }
 
-  
-const cluster = renderWordCluster(word).filter(f => f.text);
-const clusterInline = cluster.map(formatFormEntry).join(' / ');
-const meta = LANGUAGES[word.language];
+  const reverse = s.reverseMode;
+  const cluster = renderWordCluster(word).filter(f => f.text);
+  const clusterInline = cluster.map(formatFormEntry).join(' / ');
+  const meta = LANGUAGES[word.language];
+  const total = s.wordIds.length;                  // ← ADD this line
 
-const front = reverse
-  ? `<div class="study-card-meaning">${escapeHtml(word.meaning || '—')}</div>`
-  : `<div class="study-card-word">${meta.flag} ${escapeHtml(clusterInline)}</div>
-     ${word.reading ? `<div class="study-card-reading">(${escapeHtml(word.reading)})</div>` : ''}`;
+  const front = reverse
+    ? `<div class="study-card-meaning">${escapeHtml(word.meaning || '—')}</div>`
+    : `<div class="study-card-word">${meta.flag} ${escapeHtml(clusterInline)}</div>
+       ${word.reading ? `<div class="study-card-reading">(${escapeHtml(word.reading)})</div>` : ''}`;
 
-const back = `
-  <div class="study-card-back-inner">
-    <div class="study-card-word">${meta.flag} ${escapeHtml(clusterInline)}</div>
-    ${word.reading ? `<div class="study-card-reading">(${escapeHtml(word.reading)})</div>` : ''}
-    <div class="study-card-divider"></div>
-    <div class="study-card-meaning">${escapeHtml(word.meaning || '—')}</div>
-    <div class="study-card-meta">
-      <span>Type: ${escapeHtml(word.wordType || '—')}</span>
-      <span>Theme: ${escapeHtml(word.theme || '—')}</span>
-      <span>Waters: ${word.waters || 0}</span>
+  const back = `
+    <div class="study-card-back-inner">
+      <div class="study-card-word">${meta.flag} ${escapeHtml(clusterInline)}</div>
+      ${word.reading ? `<div class="study-card-reading">(${escapeHtml(word.reading)})</div>` : ''}
+      <div class="study-card-divider"></div>
+      <div class="study-card-meaning">${escapeHtml(word.meaning || '—')}</div>
+      <div class="study-card-meta">
+        <span>Type: ${escapeHtml(word.wordType || '—')}</span>
+        <span>Theme: ${escapeHtml(word.theme || '—')}</span>
+        <span>Waters: ${word.waters || 0}</span>
+      </div>
     </div>
-  </div>
-`;
+  `;
+
   container.innerHTML = `
     <div class="study-session-wrap">
       <div class="study-session-header">
