@@ -1,0 +1,520 @@
+/* ============================================
+   MEMORY PALACE — Phase 5.5a
+   ============================================ */
+
+/* ═══ ROOM PICKER ═══ */
+.palace-picker {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1.25rem 1.5rem;
+}
+
+.palace-picker-header {
+  margin-bottom: 1.25rem;
+}
+
+.palace-picker-header h2 {
+  font-size: 1rem;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--paper-ink);
+  border-bottom: 2px solid var(--paper-ink);
+  padding-bottom: 0.4rem;
+  display: inline-block;
+  padding-right: 1rem;
+  margin-bottom: 0.4rem;
+}
+
+.palace-picker-hint {
+  font-size: 0.75rem;
+  color: var(--paper-ink-soft);
+  font-style: italic;
+  max-width: 600px;
+  line-height: 1.5;
+}
+
+.palace-room-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 1rem;
+}
+
+.palace-room-card {
+  background: var(--paper-bg);
+  border: 3px solid var(--border-main);
+  box-shadow: 4px 4px 0 rgba(0,0,0,0.15);
+  cursor: pointer;
+  transition: transform 0.12s, box-shadow 0.12s;
+}
+
+.palace-room-card:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 6px 6px 0 rgba(0,0,0,0.2);
+}
+
+.palace-room-thumb {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-bottom: 3px solid var(--border-main);
+  overflow: hidden;
+}
+
+.palace-room-thumb::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: repeating-linear-gradient(
+    45deg,
+    rgba(0,0,0,0.06) 0px,
+    rgba(0,0,0,0.06) 10px,
+    transparent 10px,
+    transparent 20px
+  );
+}
+
+.palace-room-thumb-icon {
+  font-size: 3rem;
+  position: relative;
+  z-index: 1;
+}
+
+.palace-room-thumb-count {
+  position: absolute;
+  bottom: 0.4rem;
+  right: 0.5rem;
+  background: rgba(0,0,0,0.6);
+  color: white;
+  font-family: var(--font-pixel);
+  font-size: 0.6rem;
+  font-weight: bold;
+  padding: 0.15rem 0.4rem;
+  border-radius: 2px;
+  z-index: 1;
+}
+
+.palace-room-card-body {
+  padding: 0.6rem 0.75rem 0.7rem;
+}
+
+.palace-room-name {
+  font-size: 0.85rem;
+  font-weight: bold;
+  letter-spacing: 1px;
+  color: var(--paper-ink);
+  margin-bottom: 0.4rem;
+}
+
+.palace-room-fill-bar {
+  display: flex;
+  height: 8px;
+  border: 1px solid var(--border-main);
+  overflow: hidden;
+  margin-bottom: 0.3rem;
+}
+
+.palace-lang-seg {
+  display: block;
+  min-width: 1px;
+}
+
+.palace-lang-seg.empty {
+  background: rgba(0,0,0,0.08);
+}
+
+.palace-room-pct {
+  font-size: 0.65rem;
+  color: var(--paper-ink-soft);
+  font-style: italic;
+}
+
+/* ═══ ROOM VIEW ═══ */
+.palace-room-view {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-height: 0;
+}
+
+.palace-room-toolbar {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  border-bottom: 2px solid var(--border-main);
+  background: var(--paper-bg);
+}
+
+.palace-back-btn {
+  background: var(--paper-bg);
+  border: 2px solid var(--border-main);
+  padding: 0.3rem 0.6rem;
+  font-family: var(--font-pixel);
+  font-size: 0.7rem;
+  font-weight: bold;
+  cursor: pointer;
+  color: var(--paper-ink);
+  box-shadow: 2px 2px 0 rgba(0,0,0,0.12);
+}
+
+.palace-back-btn:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 3px 3px 0 rgba(0,0,0,0.18);
+}
+
+.palace-room-title {
+  flex: 1;
+  font-size: 0.85rem;
+  font-weight: bold;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--paper-ink);
+}
+
+.palace-room-actions {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.palace-btn {
+  background: var(--accent-violet);
+  color: var(--text-inverse);
+  border: 2px solid var(--border-main);
+  padding: 0.3rem 0.7rem;
+  font-family: var(--font-pixel);
+  font-size: 0.7rem;
+  font-weight: bold;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  box-shadow: 2px 2px 0 rgba(0,0,0,0.2);
+}
+
+.palace-btn.active {
+  background: var(--success);
+}
+
+.palace-btn.disabled,
+.palace-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ═══ SCENE ═══ */
+.palace-room-body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  gap: 0;
+  overflow: hidden;
+}
+
+.palace-scene-wrap {
+  flex: 1;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background: var(--paper-bg);
+  overflow: auto;
+}
+
+.palace-scene {
+  position: relative;
+  width: 100%;
+  max-width: 1200px;
+  aspect-ratio: 16 / 9;
+  border: 3px solid var(--border-main);
+  box-shadow: 4px 4px 0 rgba(0,0,0,0.15);
+  background-size: cover;
+  background-position: center;
+  cursor: crosshair;
+}
+
+.palace-scene:not(:has(.palace-add-slot-banner)) {
+  /* Remove crosshair when not adding */
+}
+
+.palace-slot {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  cursor: grab;
+  z-index: 10;
+  user-select: none;
+}
+
+.palace-slot.dragging {
+  cursor: grabbing;
+  z-index: 100;
+}
+
+.palace-slot-dot {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--slot-color, #4a9d6e);
+  border: 3px solid rgba(255,255,255,0.85);
+  box-shadow:
+    0 0 0 2px rgba(0,0,0,0.4),
+    0 2px 6px rgba(0,0,0,0.35);
+  transition: transform 0.12s, box-shadow 0.12s;
+}
+
+.palace-slot:hover .palace-slot-dot {
+  transform: scale(1.2);
+}
+
+.palace-slot.selected .palace-slot-dot {
+  transform: scale(1.3);
+  box-shadow:
+    0 0 0 3px var(--accent-violet),
+    0 0 0 5px rgba(255,255,255,0.9),
+    0 2px 8px rgba(0,0,0,0.4);
+}
+
+.palace-slot-label {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 0.6rem;
+  background: rgba(0,0,0,0.7);
+  color: white;
+  padding: 0.1rem 0.35rem;
+  white-space: nowrap;
+  border-radius: 2px;
+  pointer-events: none;
+}
+
+.palace-add-slot-banner {
+  position: absolute;
+  top: 0.75rem;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--warning);
+  color: var(--text-inverse);
+  border: 2px solid var(--border-main);
+  padding: 0.4rem 0.75rem;
+  font-family: var(--font-pixel);
+  font-size: 0.7rem;
+  font-weight: bold;
+  box-shadow: 3px 3px 0 rgba(0,0,0,0.25);
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.palace-add-slot-banner button {
+  background: rgba(0,0,0,0.3);
+  border: 1px solid white;
+  color: white;
+  padding: 0.15rem 0.5rem;
+  font-family: var(--font-pixel);
+  font-size: 0.65rem;
+  cursor: pointer;
+}
+
+/* ═══ EDIT SIDEBAR ═══ */
+.palace-edit-sidebar {
+  flex: 0 0 280px;
+  border-left: 3px solid var(--border-main);
+  background: var(--paper-bg);
+  overflow-y: auto;
+  padding: 1rem 0.9rem;
+  background-image:
+    repeating-linear-gradient(
+      transparent 0px,
+      transparent 27px,
+      var(--paper-ruling) 27px,
+      var(--paper-ruling) 28px
+    );
+  background-position: 0 40px;
+}
+
+.palace-sidebar-section {
+  margin-bottom: 1.25rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px dashed var(--paper-ruling);
+}
+
+.palace-sidebar-section:last-child {
+  border-bottom: none;
+}
+
+.palace-sidebar-title {
+  font-size: 0.65rem;
+  letter-spacing: 1.8px;
+  text-transform: uppercase;
+  font-weight: bold;
+  color: var(--paper-ink);
+  margin-bottom: 0.5rem;
+}
+
+.palace-sidebar-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.7rem;
+  color: var(--paper-ink);
+  padding: 0.15rem 0;
+}
+
+.palace-sidebar-row strong {
+  color: var(--accent-ink);
+}
+
+.palace-slot-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.palace-slot-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.35rem 0.5rem;
+  background: var(--paper-bg);
+  border: 2px solid var(--border-soft);
+  cursor: pointer;
+  font-size: 0.75rem;
+  color: var(--paper-ink);
+  transition: background 0.1s;
+}
+
+.palace-slot-row:hover {
+  background: var(--accent-ice);
+}
+
+.palace-slot-row.selected {
+  border-color: var(--accent-violet);
+  background: var(--accent-ice);
+}
+
+.palace-slot-swatch {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 2px solid rgba(0,0,0,0.5);
+  flex-shrink: 0;
+}
+
+.palace-slot-row-label {
+  flex: 1;
+  font-weight: bold;
+}
+
+.palace-slot-delete {
+  background: var(--danger);
+  color: white;
+  border: 1px solid var(--border-main);
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  font-family: var(--font-pixel);
+  font-size: 0.7rem;
+  font-weight: bold;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.palace-empty-msg {
+  font-size: 0.7rem;
+  color: var(--paper-ink-soft);
+  font-style: italic;
+  padding: 0.5rem 0;
+}
+
+.palace-add-slot-btn {
+  margin-top: 0.5rem;
+  background: var(--accent-violet);
+  color: var(--text-inverse);
+  border: 2px solid var(--border-main);
+  padding: 0.4rem 0.75rem;
+  font-family: var(--font-pixel);
+  font-size: 0.7rem;
+  font-weight: bold;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  box-shadow: 2px 2px 0 rgba(0,0,0,0.2);
+  width: 100%;
+}
+
+.palace-add-slot-btn:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 3px 3px 0 rgba(0,0,0,0.25);
+}
+
+.palace-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-bottom: 0.6rem;
+  font-size: 0.65rem;
+  color: var(--paper-ink-soft);
+  font-weight: bold;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.palace-field input {
+  background: var(--bg-input);
+  color: var(--text-main);
+  border: 2px solid var(--border-main);
+  padding: 0.35rem;
+  font-family: var(--font-pixel);
+  font-size: 0.8rem;
+  text-transform: none;
+  font-weight: normal;
+}
+
+.palace-color-picker {
+  display: flex;
+  gap: 0.25rem;
+  flex-wrap: wrap;
+}
+
+.palace-color-swatch {
+  width: 22px;
+  height: 22px;
+  border: 2px solid var(--border-main);
+  cursor: pointer;
+  padding: 0;
+}
+
+.palace-color-swatch.active {
+  box-shadow: 0 0 0 2px var(--accent-violet);
+  transform: scale(1.1);
+}
+
+/* ═══ MOBILE ═══ */
+@media (max-width: 900px) {
+  .palace-room-body {
+    flex-direction: column;
+  }
+
+  .palace-edit-sidebar {
+    flex: 0 0 auto;
+    border-left: none;
+    border-top: 3px solid var(--border-main);
+    max-height: 45vh;
+  }
+
+  .palace-scene-wrap {
+    padding: 0.5rem;
+  }
+
+  .palace-room-toolbar {
+    flex-wrap: wrap;
+  }
+
+  .palace-room-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+}

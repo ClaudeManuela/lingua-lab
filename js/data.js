@@ -102,8 +102,28 @@ function migrateData(data) {
   data.settings.study.themeFilter = null;
 }
 
-  // Palace additions (Phase 5.4 — pre-migrated)
-  if (!Array.isArray(data.palaceRooms)) data.palaceRooms = [];
+  
+      // Palace additions (Phase 5.5) — palaceRooms is now an OBJECT keyed by room id
+      if (!data.palaceRooms || Array.isArray(data.palaceRooms)) {
+        data.palaceRooms = {};
+      }
+      PALACE_ROOMS.forEach(room => {
+        if (!data.palaceRooms[room.id]) {
+          data.palaceRooms[room.id] = { slots: [] };
+        }
+        if (!Array.isArray(data.palaceRooms[room.id].slots)) {
+          data.palaceRooms[room.id].slots = [];
+        }
+        // Sanitize slot fields
+        data.palaceRooms[room.id].slots.forEach(s => {
+          if (!s.id) s.id = 'slot-' + Math.random().toString(36).slice(2, 10);
+          if (!s.label) s.label = 'Slot';
+          if (typeof s.x !== 'number') s.x = 50;
+          if (typeof s.y !== 'number') s.y = 50;
+          if (!s.color) s.color = SLOT_COLORS[0];
+          if (!s.words || typeof s.words !== 'object') s.words = {};
+        });
+      });
 
     // Ensure vocabulary entries have position fields
   (data.vocabulary || []).forEach(w => {

@@ -30,10 +30,9 @@ function renderVocabulary() {
                     onclick="setVocabTab('study')">Study</button>
             <button class="vocab-pill pill-garden ${vocabTab === 'garden' ? 'active' : ''}"
                     onclick="setVocabTab('garden')">Garden</button>
-            <button class="vocab-pill pill-palace ${vocabTab === 'palace' ? 'active' : ''}"
-                    onclick="setVocabTab('palace')"
-                    ${typeof renderPalace === 'function' ? '' : 'disabled title="Coming soon"'}>
-              Memory Palace
+                    <button class="vocab-pill pill-palace ${vocabTab === 'palace' ? 'active' : ''}"
+                    onclick="setVocabTab('palace')">
+            Memory Palace
             </button>
           </div>
         </div>
@@ -96,11 +95,11 @@ function renderVocabContent() {
     if (typeof renderGarden === 'function') {
       renderGarden('vocab-content');
     }
-  } else if (vocabTab === 'palace') {
-    if (typeof renderPalace === 'function') {
-      renderPalace('vocab-content');
-    }
-  }
+        } else if (vocabTab === 'palace') {
+        if (typeof renderPalace === 'function') {
+            renderPalace('vocab-content');
+        }
+        }
 }
 
 function renderVocabSidebar() {
