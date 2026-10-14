@@ -20,7 +20,7 @@ function renderVocabulary() {
   document.querySelectorAll('.garden-modal-root').forEach(el => el.remove());
 
   container.innerHTML = `
-    <div class="vocab-layout">
+<div class="vocab-layout ${vocabTab === 'palace' ? 'palace-active' : ''}">
       <div class="vocab-sidebar" id="vocab-sidebar"></div>
       <div class="vocab-main">
         <div class="vocab-header">
@@ -67,6 +67,15 @@ function jumpToIncomplete() {
 
 function setVocabTab(tab) {
   if (tab === 'palace' && typeof renderPalace !== 'function') return;
+
+  // Abandon any running palace session when leaving the Palace tab
+  if (typeof palaceStudySession !== 'undefined' && palaceStudySession &&
+      !palaceStudySession.complete && tab !== 'palace') {
+    clearPalaceTimer();
+    palaceStudySession = null;
+    palaceTick = 0;
+  }
+
   vocabTab = tab;
   if (DATA.settings) {
     DATA.settings.lastVocabTab = tab;
@@ -74,9 +83,13 @@ function setVocabTab(tab) {
   }
 
   document.querySelectorAll('.vocab-pill').forEach(btn => {
-    btn.classList.toggle('active',
-      btn.classList.contains('pill-' + tab));
+    btn.classList.toggle('active', btn.classList.contains('pill-' + tab));
   });
+
+  const layout = document.querySelector('.vocab-layout');
+  if (layout) {
+    layout.classList.toggle('palace-active', tab === 'palace');
+  }
 
   renderVocabSidebar();
   renderVocabContent();

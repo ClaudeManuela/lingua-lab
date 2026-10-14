@@ -509,3 +509,23 @@
   display: inline-flex;
   align-items: stretch;
 }
+
+/* ═══ PALACE LAYOUT — hide shared sidebar, full-width content ═══ */
+.vocab-layout.palace-active {
+  grid-template-columns: 100%;
+}
+
+.vocab-layout.palace-active .vocab-sidebar {
+  display: none;
+}
+
+.vocab-layout.palace-active .vocab-main {
+  grid-column: 1 / -1;
+}
+
+/* On mobile, same behavior */
+@media (max-width: 900px) {
+  .vocab-layout.palace-active .vocab-sidebar {
+    display: none;
+  }
+}
