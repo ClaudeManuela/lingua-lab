@@ -189,3 +189,104 @@ function normalizeTheme(raw) {
   if (byLabel) return byLabel.slug;
   return null;
 }
+
+/* ============================================
+   WORD FORM HELPERS — Phase 5.4
+   Gender, number, cluster rendering
+   ============================================ */
+
+// Languages that use gendered articles / pronouns
+const GENDERED_LANGUAGES = ['italian', 'french', 'portuguese', 'spanish', 'arabic'];
+
+function languageHasGender(slug) {
+  return GENDERED_LANGUAGES.includes(slug);
+}
+
+// Option lists for the word card dropdowns
+const GENDER_OPTIONS = [
+  { value: '',        label: '— not set —' },
+  { value: 'fem',     label: '♀ Feminine' },
+  { value: 'masc',    label: '♂ Masculine' },
+  { value: 'both',    label: '♀♂ Both' },
+  { value: 'neither', label: '◦ Neither' }
+];
+
+const NUMBER_OPTIONS = [
+  { value: '',     label: '— not set —' },
+  { value: 'sing', label: 'Singular' },
+  { value: 'plur', label: 'Plural' },
+  { value: 'both', label: 'Both' }
+];
+
+// Small icon for a form's gender
+function genderIcon(gender) {
+  switch (gender) {
+    case 'fem':  return '♀';
+    case 'masc': return '♂';
+    case 'both': return '♀♂';
+    default:     return '';
+  }
+}
+
+function numberLabel(number) {
+  switch (number) {
+    case 'sing': return 'Singular';
+    case 'plur': return 'Plural';
+    case 'both': return 'Both';
+    default:     return '';
+  }
+}
+
+// Return the full cluster for a word: [baseForm, ...altForms]
+// Each entry is a plain object; no mutation of the source.
+function renderWordCluster(w) {
+  const out = [{
+    text: w.word || '',
+    article: w.article || '',
+    gender: w.gender || '',
+    number: w.number || '',
+    isBase: true
+  }];
+  (w.forms || []).forEach(f => {
+    out.push({
+      text: f.text || '',
+      article: f.article || '',
+      gender: f.gender || '',
+      number: f.number || '',
+      isBase: false
+    });
+  });
+  return out;
+}
+
+// Single form → "(la) professoressa"
+function formatFormEntry(entry) {
+  if (!entry.text) return '';
+  return entry.article ? `(${entry.article}) ${entry.text}` : entry.text;
+}
+
+// Whole cluster → "(la) professoressa / (il) professore"
+function formatClusterInline(w) {
+  return renderWordCluster(w)
+    .filter(e => e.text)
+    .map(formatFormEntry)
+    .join(' / ');
+}
+
+// Compact cluster for garden plant label — base only
+function formatClusterShort(w) {
+  const first = renderWordCluster(w)[0];
+  return first ? formatFormEntry(first) : '';
+}
+
+// Escape helper for safety in HTML — already exists elsewhere but
+// declared here so lang-data.js is self-contained.
+if (typeof escapeHtml !== 'function') {
+  window.escapeHtml = function (str) {
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  };
+}

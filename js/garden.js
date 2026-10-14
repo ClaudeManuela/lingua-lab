@@ -396,12 +396,13 @@ function renderGalleryCard(w) {
   const badge = missing.length
     ? `<div class="gallery-card-badge" title="Missing: ${missing.join(', ')}">⚠ ${missing.join(', ')}</div>`
     : '';
+  const cluster = renderWordCluster(w).filter(f => f.text);
+  const inline = cluster.map(formatFormEntry).join(' / ');
 
   return `
     <div class="gallery-card" onclick="openWordCard('${w.id}')" style="--lang-accent: ${meta.accent};">
       <div class="gallery-card-flag">${meta.flag}</div>
-      <div class="gallery-card-word">${escapeHtml(w.word)}</div>
-      ${w.reading ? `<div class="gallery-card-reading">(${escapeHtml(w.reading)})</div>` : ''}
+      <div class="gallery-card-word">${escapeHtml(inline)}</div>
       <div class="gallery-card-meaning">${escapeHtml(w.meaning || '—')}</div>
       <div class="gallery-card-pips">
         ${'<span class="gallery-pip"></span>'.repeat(pips)}
@@ -412,7 +413,6 @@ function renderGalleryCard(w) {
     </div>
   `;
 }
-
 
 function applyZoom() {
   const canvas = document.getElementById('garden-canvas');
@@ -543,10 +543,11 @@ function renderWordRow(w) {
   const warn = missing.length
     ? `<span class="garden-word-warn" title="Missing: ${missing.join(', ')}">⚠</span>`
     : '';
+  const inline = formatClusterInline(w) || w.word;
   return `
     <div class="garden-word-row" onclick="openWordCard('${w.id}')">
       <span>${meta.flag}</span>
-      <span class="garden-word-text">${escapeHtml(w.word)}${typeLabel}${warn}</span>
+      <span class="garden-word-text">${escapeHtml(inline)}${typeLabel}${warn}</span>
       <span class="garden-word-meaning">${escapeHtml(w.meaning || '')}</span>
       <span class="garden-word-waters">${w.waters || 0}</span>
       ${w.favorite ? '<span class="garden-word-star">*</span>' : ''}
@@ -591,8 +592,8 @@ function createPlantElement(w, admin) {
     <svg class="garden-plant-svg" viewBox="0 0 ${size} ${size}" width="${size}" height="${size}">
       ${renderPlantSVG(stage, size)}
     </svg>
-    <div class="garden-plant-label">${escapeHtml(w.word)}</div>
-  `;
+  <div class="garden-plant-label">${escapeHtml(formatClusterShort(w) || w.word)}</div>
+    `;
   el.addEventListener('click', () => {
     if (el.dataset.dragged === 'true') {
       el.dataset.dragged = 'false';
@@ -842,6 +843,18 @@ function getWordTypeOptions() {
   return [...new Set([...DEFAULT_WORD_TYPES, ...custom])];
 }
 
+// ═══════════════════════════════════════════════
+// WORD CARD — Phase 5.4 (display / edit modes)
+// ═══════════════════════════════════════════════
+
+let wordCardEditMode = false;
+
+function toggleWordCardEdit() {
+  wordCardEditMode = !wordCardEditMode;
+  const id = document.getElementById('word-card-modal')?.dataset.wordId;
+  if (id) openWordCard(id);
+}
+
 function openWordCard(id) {
   const word = DATA.vocabulary.find(w => w.id === id);
   if (!word) return;
@@ -849,14 +862,31 @@ function openWordCard(id) {
   const meta = LANGUAGES[word.language];
   const admin = isEditable();
   const content = document.getElementById('word-card-content');
+  const modal = document.getElementById('word-card-modal');
   const typeOptions = getWordTypeOptions();
   const parent = word.parentId ? DATA.vocabulary.find(w => w.id === word.parentId) : null;
   const connections = (word.connections || []).map(cid => DATA.vocabulary.find(w => w.id === cid)).filter(Boolean);
+  const branches = (word.childIds || []).map(id => DATA.vocabulary.find(w => w.id === id)).filter(Boolean);
+
+  // Reset edit mode when opening a new card
+  if (modal?.dataset.wordId !== id) wordCardEditMode = false;
+  if (modal) modal.dataset.wordId = id;
+
+  const editing = wordCardEditMode && admin;
+  const cluster = renderWordCluster(word);
+  const headerTitle = formatClusterInline(word) || word.word;
 
   content.innerHTML = `
     <div class="word-card-header">
-      <div class="word-card-header-title">${meta.flag} ${escapeHtml(word.word)}</div>
-      <button onclick="closeModal('word-card-modal')" class="remove-btn">X</button>
+      <div class="word-card-header-title">${meta.flag} ${escapeHtml(headerTitle)}</div>
+      <div class="word-card-header-actions">
+        ${admin ? `<button class="word-card-edit-btn ${editing ? 'active' : ''}"
+                          onclick="toggleWordCardEdit()"
+                          title="${editing ? 'Done editing' : 'Edit word'}">
+          ${editing ? '✓ Done' : '✏ Edit'}
+        </button>` : ''}
+        <button onclick="closeModal('word-card-modal')" class="remove-btn">X</button>
+      </div>
     </div>
 
     <div class="word-card-body">
@@ -869,163 +899,79 @@ function openWordCard(id) {
       <div class="word-card-right">
         <div class="word-card-ruled">
 
-          <div class="word-card-line">
-            <span class="word-card-label">Meaning</span>
-            <span class="word-card-value">${escapeHtml(word.meaning || '—')}</span>
-          </div>
+          ${renderWordCardFormsSection(word, editing, admin)}
 
-          <div class="word-card-line">
-            <span class="word-card-label">Type</span>
-            <span class="word-card-value">${escapeHtml(word.wordType || '—')}</span>
-          </div>
+          <div class="word-card-divider"></div>
+          <div class="word-card-section-title">Details</div>
 
-          <div class="word-card-line">
-            <span class="word-card-label">Theme</span>
-            <span class="word-card-value">${escapeHtml(word.theme || '—')}</span>
-          </div>
+          ${renderWordCardField(word, editing, 'Meaning', 'meaning', escapeHtml(word.meaning || '—'))}
+          ${renderWordCardSelect(word, editing, 'Type', 'wordType', typeOptions, word.wordType)}
+          ${renderWordCardThemeSelect(word, editing, word.theme)}
+          ${renderWordCardField(word, editing, 'Reading', 'reading', escapeHtml(word.reading || '—'))}
+          ${renderWordCardTextarea(word, editing, 'Notes', 'notes', escapeHtml(word.notes || ''))}
+
+          <div class="word-card-divider"></div>
+          <div class="word-card-section-title">Stats</div>
 
           <div class="word-card-line">
             <span class="word-card-label">Stage</span>
             <span class="word-card-value">${word.stage || 'seed'}</span>
           </div>
-
           <div class="word-card-line">
             <span class="word-card-label">Waters</span>
             <span class="word-card-value">${word.waters || 0}</span>
           </div>
-
           <div class="word-card-line">
             <span class="word-card-label">Added</span>
-            <span class="word-card-value">${word.dateAdded}</span>
+            <span class="word-card-value">${word.dateAdded || '—'}</span>
           </div>
-
           <div class="word-card-line">
             <span class="word-card-label">Last watered</span>
             <span class="word-card-value">${word.lastWatered || '—'}</span>
           </div>
 
           <div class="word-card-divider"></div>
+          <div class="word-card-section-title">Connections</div>
 
-          <div class="word-card-line-full">
-            <span class="word-card-label">Connections</span>
-            <div class="word-card-connections">
-          ${connections.length ? connections.map(c => `
-            <span class="connection-pill-wrap">
-              <button class="connection-pill" onclick="openWordCard('${c.id}')">
-                ${LANGUAGES[c.language].flag} ${escapeHtml(c.word)}
-              </button>
-              ${admin ? `<button class="connection-pill-delete" onclick="event.stopPropagation(); disconnectWord('${word.id}', '${c.id}')" title="Remove connection">×</button>` : ''}
-            </span>
-          `).join('') : '<span class="word-card-empty">— none yet —</span>'}
-        </div>
+          <div class="word-card-connections">
+            ${connections.length ? connections.map(c => `
+              <span class="connection-pill-wrap">
+                <button class="connection-pill" onclick="openWordCard('${c.id}')">
+                  ${LANGUAGES[c.language].flag} ${escapeHtml(c.word)}
+                </button>
+                ${admin ? `<button class="connection-pill-delete"
+                                    onclick="event.stopPropagation(); disconnectWord('${word.id}', '${c.id}')"
+                                    title="Remove connection">×</button>` : ''}
+              </span>
+            `).join('') : '<span class="word-card-empty">— none yet —</span>'}
           </div>
+          ${admin ? `<div class="word-card-inline-add">
+            <button class="add-btn small" onclick="openAddConnectionForm('${word.id}')">+ Connect</button>
+          </div>` : ''}
+
+          <div class="word-card-divider"></div>
+          <div class="word-card-section-title">Branches</div>
+
+          <div class="word-card-branch-list">
+            ${branches.length ? branches.map(b => `
+              <div class="word-card-branch-item">
+                <button class="connection-pill" onclick="openWordCard('${b.id}')">
+                  ${LANGUAGES[b.language].flag} ${escapeHtml(b.word)}
+                </button>
+                ${admin ? `<button class="connection-pill-delete"
+                                    onclick="event.stopPropagation(); removeBranch('${word.id}', '${b.id}')"
+                                    title="Remove branch">×</button>` : ''}
+              </div>
+            `).join('') : '<span class="word-card-empty">— none yet —</span>'}
+          </div>
+          ${admin ? `<div class="word-card-inline-add">
+            <button class="add-btn small" onclick="openAddBranchForm('${word.id}')">+ Branch</button>
+          </div>` : ''}
 
           ${admin ? `
             <div class="word-card-actions">
               <button class="add-btn" onclick="waterWord('${word.id}')">Water +1</button>
               <button class="add-btn" onclick="toggleFavorite('${word.id}')">${word.favorite ? 'Unfavorite' : 'Favorite'}</button>
-              <button class="add-btn" onclick="openAddBranchForm('${word.id}')">+ Branch</button>
-              <button class="add-btn" onclick="openAddConnectionForm('${word.id}')">+ Connect</button>
-            </div>
-
-            <div class="word-card-edit-toggle" onclick="toggleEditSection()">
-              <span>Edit</span>
-              <span id="edit-toggle-icon">▼</span>
-            </div>
-
-            <div class="word-card-edit-section hidden" id="edit-section">
-              <div class="word-card-field">
-                <label>Word:</label>
-                <input type="text" value="${escapeHtml(word.word)}" onchange="updateWordField('${word.id}', 'word', this.value)">
-              </div>
-              <div class="word-card-field">
-                <label>Meaning:</label>
-                <input type="text" value="${escapeHtml(word.meaning || '')}" onchange="updateWordField('${word.id}', 'meaning', this.value)">
-              </div>
-              <div class="word-card-field">
-                <label>Reading:</label>
-                <input type="text" value="${escapeHtml(word.reading || '')}" onchange="updateWordField('${word.id}', 'reading', this.value)">
-              </div>
-              <div class="word-card-field">
-                <label>Word Type:</label>
-                <select onchange="onWordTypeChange('${word.id}', this.value)">
-                  <option value="">— pick —</option>
-                  ${typeOptions.map(t => `<option value="${t}" ${word.wordType === t ? 'selected' : ''}>${t}</option>`).join('')}
-                </select>
-              </div>
-              <div class="word-card-field">
-                <label>Parent:</label>
-                <div style="display: flex; gap: 0.5rem; align-items: center;">
-                  <span style="font-size: 0.8rem; flex: 1;">
-                    ${parent ? `${LANGUAGES[parent.language].flag} ${escapeHtml(parent.word)}` : '(none — this is a root word)'}
-                  </span>
-                  <button class="add-btn" style="font-size: 0.65rem; padding: 0.3rem 0.6rem;" onclick="openChangeParentForm('${word.id}')">Change</button>
-                </div>
-              </div>
-              <div class="word-card-field" id="custom-type-field-${word.id}" style="${word.wordType === 'Other' ? '' : 'display:none;'}">
-                <label>Custom Type Name:</label>
-                <input type="text" placeholder="e.g., Onomatopoeia" onchange="addCustomWordType(this.value, '${word.id}')">
-              </div>
-              <div class="word-card-field">
-                <label>Theme:</label>
-                <select onchange="updateWordTheme('${word.id}', this.value)">
-                  <option value="">— none —</option>
-                  ${THEMES.map(t => `
-                    <option value="${t.slug}" ${word.theme === t.slug ? 'selected' : ''}>
-                      ${t.icon} ${t.label}
-                    </option>
-                  `).join('')}
-                </select>
-              </div>
-              
-              <div class="word-card-field">
-                <label>Notes:</label>
-                <textarea onchange="updateWordField('${word.id}', 'notes', this.value)">${escapeHtml(word.notes || '')}</textarea>
-              </div>
-              <div class="word-card-divider"></div>
-<div class="word-card-section-title">Manage Links</div>
-
-<div class="word-card-field">
-  <label>Parent:</label>
-  <div style="display: flex; gap: 0.5rem; align-items: center;">
-    <span style="font-size: 0.8rem; flex: 1;">
-      ${parent ? `${LANGUAGES[parent.language].flag} ${escapeHtml(parent.word)}` : '(none — this is a root word)'}
-    </span>
-    ${parent ? `<button class="delete-btn" style="font-size: 0.65rem; padding: 0.25rem 0.5rem;" onclick="removeBranch('${parent.id}', '${word.id}')">Remove Parent</button>` : ''}
-    <button class="add-btn" style="font-size: 0.65rem; padding: 0.25rem 0.5rem;" onclick="openChangeParentForm('${word.id}')">Change</button>
-  </div>
-</div>
-
-${(() => {
-  const branches = (word.childIds || []).map(id => DATA.vocabulary.find(x => x.id === id)).filter(Boolean);
-  return branches.length ? `
-    <div class="word-card-field">
-      <label>Branches:</label>
-      <div style="display: flex; flex-direction: column; gap: 0.35rem;">
-        ${branches.map(b => `
-          <div style="display: flex; gap: 0.5rem; align-items: center; font-size: 0.8rem; padding: 0.3rem 0.5rem; background: rgba(0,0,0,0.03); border-left: 3px solid var(--accent-violet);">
-            <span style="flex: 1;">${LANGUAGES[b.language].flag} ${escapeHtml(b.word)} <span style="color: var(--text-dim); font-size: 0.7rem;">— ${escapeHtml(b.meaning || '')}</span></span>
-            <button class="delete-btn" style="font-size: 0.6rem; padding: 0.2rem 0.4rem;" onclick="removeBranch('${word.id}', '${b.id}')">Remove</button>
-          </div>
-        `).join('')}
-      </div>
-    </div>
-  ` : '';
-})()}
-
-    ${connections.length ? `
-      <div class="word-card-field">
-        <label>Connections:</label>
-        <div style="display: flex; flex-direction: column; gap: 0.35rem;">
-          ${connections.map(c => `
-            <div style="display: flex; gap: 0.5rem; align-items: center; font-size: 0.8rem; padding: 0.3rem 0.5rem; background: rgba(0,0,0,0.03); border-left: 3px solid var(--accent-blue);">
-              <span style="flex: 1;">${LANGUAGES[c.language].flag} ${escapeHtml(c.word)} <span style="color: var(--text-dim); font-size: 0.7rem;">— ${escapeHtml(c.meaning || '')}</span></span>
-              <button class="delete-btn" style="font-size: 0.6rem; padding: 0.2rem 0.4rem;" onclick="disconnectWord('${word.id}', '${c.id}')">Remove</button>
-            </div>
-          `).join('')}
-        </div>
-      </div>
-    ` : ''}
             </div>
           ` : ''}
 
@@ -1035,9 +981,223 @@ ${(() => {
     </div>
   `;
 
-  document.getElementById('word-card-modal').classList.remove('hidden');
-
+  modal.classList.remove('hidden');
   setTimeout(() => drawWordCardTree(word, parent), 60);
+}
+
+// ─── RENDER HELPERS ─────────────────────────
+
+function renderWordCardFormsSection(w, editing, admin) {
+  const forms = renderWordCluster(w);
+
+  if (!editing) {
+    // Display mode — clean list of forms with markers
+    return `
+      <div class="word-card-section-title">Forms</div>
+      <div class="word-card-forms-display">
+        ${forms.map(f => `
+          <div class="word-card-form-row">
+            <span class="word-card-form-text">${escapeHtml(formatFormEntry(f))}</span>
+            <span class="word-card-form-markers">
+              ${f.gender ? `<span class="form-gender" title="${f.gender}">${genderIcon(f.gender)}</span>` : ''}
+              ${f.number ? `<span class="form-number">${numberLabel(f.number)}</span>` : ''}
+            </span>
+          </div>
+        `).join('')}
+      </div>
+    `;
+  }
+
+  // Edit mode — inputs for base + each alt
+  return `
+    <div class="word-card-section-title">Forms</div>
+
+    <div class="word-card-form-edit">
+      <div class="word-card-form-edit-label">Base form</div>
+
+      <div class="word-card-field">
+        <label>Word:</label>
+        <input type="text" value="${escapeHtml(w.word || '')}"
+               onchange="updateWordField('${w.id}', 'word', this.value)">
+      </div>
+
+      <div class="word-card-field-row">
+        <div class="word-card-field">
+          <label>Gender:</label>
+          <select onchange="updateWordField('${w.id}', 'gender', this.value)">
+            ${GENDER_OPTIONS.map(o => `<option value="${o.value}" ${w.gender === o.value ? 'selected' : ''}>${o.label}</option>`).join('')}
+          </select>
+        </div>
+        <div class="word-card-field">
+          <label>Number:</label>
+          <select onchange="updateWordField('${w.id}', 'number', this.value)">
+            ${NUMBER_OPTIONS.map(o => `<option value="${o.value}" ${w.number === o.value ? 'selected' : ''}>${o.label}</option>`).join('')}
+          </select>
+        </div>
+      </div>
+
+      <div class="word-card-field">
+        <label>Article / Pronoun:</label>
+        <input type="text" value="${escapeHtml(w.article || '')}"
+               placeholder="e.g., la / el / elle"
+               onchange="updateWordField('${w.id}', 'article', this.value)">
+      </div>
+    </div>
+
+    ${(w.forms || []).map((f, i) => `
+      <div class="word-card-form-edit alt">
+        <div class="word-card-form-edit-label">
+          Alt form ${i + 1}
+          <button class="form-remove-btn"
+                  onclick="removeWordForm('${w.id}', ${i})"
+                  title="Remove this form">×</button>
+        </div>
+
+        <div class="word-card-field">
+          <label>Word:</label>
+          <input type="text" value="${escapeHtml(f.text || '')}"
+                 onchange="updateWordFormField('${w.id}', ${i}, 'text', this.value)">
+        </div>
+
+        <div class="word-card-field-row">
+          <div class="word-card-field">
+            <label>Gender:</label>
+            <select onchange="updateWordFormField('${w.id}', ${i}, 'gender', this.value)">
+              ${GENDER_OPTIONS.map(o => `<option value="${o.value}" ${f.gender === o.value ? 'selected' : ''}>${o.label}</option>`).join('')}
+            </select>
+          </div>
+          <div class="word-card-field">
+            <label>Number:</label>
+            <select onchange="updateWordFormField('${w.id}', ${i}, 'number', this.value)">
+              ${NUMBER_OPTIONS.map(o => `<option value="${o.value}" ${f.number === o.value ? 'selected' : ''}>${o.label}</option>`).join('')}
+            </select>
+          </div>
+        </div>
+
+        <div class="word-card-field">
+          <label>Article / Pronoun:</label>
+          <input type="text" value="${escapeHtml(f.article || '')}"
+                 placeholder="e.g., il / lo / lui"
+                 onchange="updateWordFormField('${w.id}', ${i}, 'article', this.value)">
+        </div>
+      </div>
+    `).join('')}
+
+    <div class="word-card-inline-add">
+      <button class="add-btn small" onclick="addWordForm('${w.id}')">+ Add alt form</button>
+    </div>
+  `;
+}
+
+function renderWordCardField(word, editing, label, key, displayValue) {
+  if (!editing) {
+    return `
+      <div class="word-card-line">
+        <span class="word-card-label">${label}</span>
+        <span class="word-card-value">${displayValue}</span>
+      </div>
+    `;
+  }
+  return `
+    <div class="word-card-field">
+      <label>${label}:</label>
+      <input type="text" value="${escapeHtml(word[key] || '')}"
+             onchange="updateWordField('${word.id}', '${key}', this.value)">
+    </div>
+  `;
+}
+
+function renderWordCardTextarea(word, editing, label, key, displayValue) {
+  if (!editing) {
+    return `
+      <div class="word-card-line">
+        <span class="word-card-label">${label}</span>
+        <span class="word-card-value">${displayValue || '—'}</span>
+      </div>
+    `;
+  }
+  return `
+    <div class="word-card-field">
+      <label>${label}:</label>
+      <textarea onchange="updateWordField('${word.id}', '${key}', this.value)">${escapeHtml(word[key] || '')}</textarea>
+    </div>
+  `;
+}
+
+function renderWordCardSelect(word, editing, label, key, options, current) {
+  if (!editing) {
+    return `
+      <div class="word-card-line">
+        <span class="word-card-label">${label}</span>
+        <span class="word-card-value">${escapeHtml(current || '—')}</span>
+      </div>
+    `;
+  }
+  return `
+    <div class="word-card-field">
+      <label>${label}:</label>
+      <select onchange="onWordTypeChange('${word.id}', this.value)">
+        <option value="">— pick —</option>
+        ${options.map(t => `<option value="${t}" ${current === t ? 'selected' : ''}>${t}</option>`).join('')}
+      </select>
+    </div>
+  `;
+}
+
+function renderWordCardThemeSelect(word, editing, current) {
+  if (!editing) {
+    const t = current ? THEME_MAP[current] : null;
+    const label = t ? `${t.icon} ${t.label}` : '—';
+    return `
+      <div class="word-card-line">
+        <span class="word-card-label">Theme</span>
+        <span class="word-card-value">${label}</span>
+      </div>
+    `;
+  }
+  return `
+    <div class="word-card-field">
+      <label>Theme:</label>
+      <select onchange="updateWordTheme('${word.id}', this.value)">
+        <option value="">— none —</option>
+        ${THEMES.map(t => `
+          <option value="${t.slug}" ${current === t.slug ? 'selected' : ''}>
+            ${t.icon} ${t.label}
+          </option>
+        `).join('')}
+      </select>
+    </div>
+  `;
+}
+
+// ─── FORM MUTATIONS ────────────────────────
+
+function addWordForm(id) {
+  if (!isEditable()) return;
+  const word = DATA.vocabulary.find(w => w.id === id);
+  if (!word) return;
+  if (!Array.isArray(word.forms)) word.forms = [];
+  word.forms.push({ text: '', gender: '', number: '', article: '', notes: '' });
+  saveData(DATA);
+  openWordCard(id);
+}
+
+function removeWordForm(id, index) {
+  if (!isEditable()) return;
+  const word = DATA.vocabulary.find(w => w.id === id);
+  if (!word || !Array.isArray(word.forms)) return;
+  if (!confirm('Remove this alt form?')) return;
+  word.forms.splice(index, 1);
+  saveData(DATA);
+  openWordCard(id);
+}
+
+function updateWordFormField(id, index, key, value) {
+  if (!isEditable()) return;
+  const word = DATA.vocabulary.find(w => w.id === id);
+  if (!word || !word.forms || !word.forms[index]) return;
+  word.forms[index][key] = value;
+  saveData(DATA);
 }
 
 function toggleEditSection() {

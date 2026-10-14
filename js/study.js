@@ -282,29 +282,29 @@ function renderStudyCard(targetId = 'vocab-content') {
   const word = DATA.vocabulary.find(w => w.id === s.wordIds[s.currentIndex]);
   if (!word) { completeStudySession(targetId); return; }
 
-  const meta = LANGUAGES[word.language];
-  const reverse = s.reverseMode;
-  const total = s.wordIds.length;
+  
+const cluster = renderWordCluster(word).filter(f => f.text);
+const clusterInline = cluster.map(formatFormEntry).join(' / ');
+const meta = LANGUAGES[word.language];
 
-  const front = reverse
-    ? `<div class="study-card-meaning">${escapeHtml(word.meaning || '—')}</div>`
-    : `<div class="study-card-word">${meta.flag} ${escapeHtml(word.word)}</div>
-       ${word.reading ? `<div class="study-card-reading">(${escapeHtml(word.reading)})</div>` : ''}`;
+const front = reverse
+  ? `<div class="study-card-meaning">${escapeHtml(word.meaning || '—')}</div>`
+  : `<div class="study-card-word">${meta.flag} ${escapeHtml(clusterInline)}</div>
+     ${word.reading ? `<div class="study-card-reading">(${escapeHtml(word.reading)})</div>` : ''}`;
 
-  const back = `
-    <div class="study-card-back-inner">
-      <div class="study-card-word">${meta.flag} ${escapeHtml(word.word)}</div>
-      ${word.reading ? `<div class="study-card-reading">(${escapeHtml(word.reading)})</div>` : ''}
-      <div class="study-card-divider"></div>
-      <div class="study-card-meaning">${escapeHtml(word.meaning || '—')}</div>
-      <div class="study-card-meta">
-        <span>Type: ${escapeHtml(word.wordType || '—')}</span>
-        <span>Theme: ${escapeHtml(word.theme || '—')}</span>
-        <span>Waters: ${word.waters || 0}</span>
-      </div>
+const back = `
+  <div class="study-card-back-inner">
+    <div class="study-card-word">${meta.flag} ${escapeHtml(clusterInline)}</div>
+    ${word.reading ? `<div class="study-card-reading">(${escapeHtml(word.reading)})</div>` : ''}
+    <div class="study-card-divider"></div>
+    <div class="study-card-meaning">${escapeHtml(word.meaning || '—')}</div>
+    <div class="study-card-meta">
+      <span>Type: ${escapeHtml(word.wordType || '—')}</span>
+      <span>Theme: ${escapeHtml(word.theme || '—')}</span>
+      <span>Waters: ${word.waters || 0}</span>
     </div>
-  `;
-
+  </div>
+`;
   container.innerHTML = `
     <div class="study-session-wrap">
       <div class="study-session-header">
@@ -464,11 +464,11 @@ function renderStudyComplete(targetId = 'vocab-content') {
 
   const changesHtml = topChanges.length
     ? topChanges.map(c => `
-        <div class="study-change-row">
-          🌱 ${escapeHtml(c.word)} (${c.oldWaters} → ${c.newWaters})
-          → ${STAGE_LABELS[c.newStage] || c.newStage}
-        </div>
-      `).join('')
+  <div class="study-change-row">
+    🌱 ${escapeHtml(c.word)} (${c.oldWaters} → ${c.newWaters})
+    → ${STAGE_LABELS[c.newStage] || c.newStage}
+  </div>
+`).join('')
     : '<div class="study-change-empty">No stage changes this session.</div>';
 
   container.innerHTML = `

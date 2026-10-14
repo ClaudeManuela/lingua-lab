@@ -102,18 +102,30 @@ function migrateData(data) {
   data.settings.study.themeFilter = null;
 }
 
-  // Palace additions (Phase 5.4 — pre-migrated so no new migration later)
+  // Palace additions (Phase 5.4 — pre-migrated)
   if (!Array.isArray(data.palaceRooms)) data.palaceRooms = [];
 
-  // Ensure vocabulary entries have position fields
+    // Ensure vocabulary entries have position fields
   (data.vocabulary || []).forEach(w => {
     if (w.gardenX === undefined) w.gardenX = 100 + Math.random() * 800;
     if (w.gardenY === undefined) w.gardenY = 100 + Math.random() * 600;
     if (!w.reading) w.reading = '';
     if (!w.theme) w.theme = '';
-    // Normalize theme to canonical slug
     w.theme = normalizeTheme(w.theme) || '';
-    
+
+    // Phase 5.4 — form / gender / number additions
+    if (w.gender === undefined) w.gender = '';
+    if (w.number === undefined) w.number = '';
+    if (w.article === undefined) w.article = '';
+    if (!Array.isArray(w.forms)) w.forms = [];
+    w.forms.forEach(f => {
+      if (f.text === undefined) f.text = '';
+      if (f.gender === undefined) f.gender = '';
+      if (f.number === undefined) f.number = '';
+      if (f.article === undefined) f.article = '';
+      if (f.notes === undefined) f.notes = '';
+    });
+
     if (!Array.isArray(w.childIds)) w.childIds = [];
     if (!Array.isArray(w.connections)) w.connections = [];
   });

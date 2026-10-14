@@ -373,3 +373,139 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+/* ═══ WORD CARD — edit changes*/
+
+.word-card-header-actions {
+  display: flex;
+  gap: 0.4rem;
+  align-items: center;
+}
+
+.word-card-edit-btn {
+  background: var(--accent-violet);
+  color: var(--text-inverse);
+  border: 2px solid var(--border-main);
+  padding: 0.3rem 0.7rem;
+  font-family: var(--font-pixel);
+  font-size: 0.7rem;
+  font-weight: bold;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  box-shadow: 2px 2px 0 rgba(0,0,0,0.2);
+}
+
+.word-card-edit-btn.active {
+  background: var(--success);
+}
+
+.word-card-edit-btn:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 3px 3px 0 rgba(0,0,0,0.25);
+}
+
+/* Forms section — display mode */
+.word-card-forms-display {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  margin-bottom: 0.5rem;
+}
+
+.word-card-form-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  line-height: 1.6;
+  padding: 0.15rem 0;
+}
+
+.word-card-form-text {
+  font-weight: bold;
+  color: var(--paper-ink);
+  word-break: break-word;
+}
+
+.word-card-form-markers {
+  display: flex;
+  gap: 0.5rem;
+  font-size: 0.65rem;
+  color: var(--paper-ink-soft);
+  flex-shrink: 0;
+}
+
+.form-gender {
+  font-weight: bold;
+  color: var(--accent-violet);
+}
+
+.form-number {
+  font-style: italic;
+}
+
+/* Forms section — edit mode */
+.word-card-form-edit {
+  background: rgba(0, 0, 0, 0.03);
+  border: 2px solid var(--border-soft);
+  padding: 0.6rem 0.75rem;
+  margin-bottom: 0.6rem;
+}
+
+.word-card-form-edit.alt {
+  border-left: 4px solid var(--accent-violet);
+}
+
+.word-card-form-edit-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.65rem;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  font-weight: bold;
+  color: var(--paper-ink-soft);
+  margin-bottom: 0.5rem;
+}
+
+.form-remove-btn {
+  background: var(--danger);
+  color: white;
+  border: 2px solid var(--border-main);
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  font-family: var(--font-pixel);
+  font-size: 0.8rem;
+  font-weight: bold;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.word-card-field-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+}
+
+.word-card-inline-add {
+  margin: 0.5rem 0;
+}
+
+.add-btn.small {
+  font-size: 0.65rem;
+  padding: 0.3rem 0.6rem;
+}
+
+/* Branch list styling */
+.word-card-branch-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-bottom: 0.4rem;
+}
+
+.word-card-branch-item {
+  display: inline-flex;
+  align-items: stretch;
+}
