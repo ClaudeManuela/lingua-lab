@@ -1489,22 +1489,16 @@ function renderPalaceLearnRunning() {
 
       ${revealBlock}
 
-      <div class="palace-task-timer" id="palace-session-timer">${formatPalaceTime(palaceTick)}</div>
+           <div class="palace-task-timer" id="palace-session-timer">${formatPalaceTime(palaceTick)}</div>
 
       <div class="palace-task-actions">
-          ${isPalaceMobile() ? `
-      <div class="palace-task-actions">
-        <button class="palace-btn" onclick="togglePalaceFullscreen()">
-          ${palaceMobileFullscreen ? '⛶ Exit fullscreen' : '⛶ Fullscreen'}
-        </button>
+        ${isPalaceMobile() ? `
+          <button class="palace-btn" onclick="togglePalaceFullscreen()">
+            ${palaceMobileFullscreen ? '⛶ Exit fullscreen' : '⛶ Fullscreen'}
+          </button>
+        ` : ''}
         <button class="cancel-btn" onclick="requestAbandonPalaceSession()">Abandon</button>
       </div>
-    ` : `
-      <div class="palace-task-actions">
-        <button class="cancel-btn" onclick="requestAbandonPalaceSession()">Abandon</button>
-      </div>
-    `}
-<button class="cancel-btn" onclick="requestAbandonPalaceSession()">Abandon</button>      </div>
     </div>
   `;
 }
@@ -1560,24 +1554,18 @@ function renderPalaceTestRunning() {
 
       <div class="palace-test-list">${listHtml}</div>
 
-      <div class="palace-task-timer ${isSprint ? 'sprint' : ''}" id="palace-session-timer">
+          <div class="palace-task-timer ${isSprint ? 'sprint' : ''}" id="palace-session-timer">
         ${formatPalaceTime(palaceTick)}
       </div>
 
       <div class="palace-task-actions">
-      ${isPalaceMobile() ? `
-  <div class="palace-task-actions">
-    <button class="palace-btn" onclick="togglePalaceFullscreen()">
-      ${palaceMobileFullscreen ? '⛶ Exit fullscreen' : '⛶ Fullscreen'}
-    </button>
-    <button class="cancel-btn" onclick="requestAbandonPalaceSession()">Abandon</button>
-  </div>
-` : `
-  <div class="palace-task-actions">
-    <button class="cancel-btn" onclick="requestAbandonPalaceSession()">Abandon</button>
-  </div>
-`}
-<button class="cancel-btn" onclick="requestAbandonPalaceSession()">Abandon</button>      </div>
+        ${isPalaceMobile() ? `
+          <button class="palace-btn" onclick="togglePalaceFullscreen()">
+            ${palaceMobileFullscreen ? '⛶ Exit fullscreen' : '⛶ Fullscreen'}
+          </button>
+        ` : ''}
+        <button class="cancel-btn" onclick="requestAbandonPalaceSession()">Abandon</button>
+      </div>
     </div>
   `;
 }
