@@ -1044,3 +1044,246 @@
   height: auto !important;
   align-self: center !important;
 }
+/* ═══ PLANT SWAY ANIMATION ═══ */
+.garden-plant-sway .garden-plant-svg {
+  transform-origin: center bottom;
+  animation: plant-sway 3.6s ease-in-out infinite;
+}
+
+@keyframes plant-sway {
+  0%, 100% {
+    transform: rotate(0deg) translateY(0);
+  }
+  25% {
+    transform: rotate(-0.8deg) translateY(-0.5px);
+  }
+  75% {
+    transform: rotate(0.8deg) translateY(-0.5px);
+  }
+}
+
+/* Pine trees stay still — no sway class applied in JS */
+
+/* Hub words get a subtle glow to draw attention */
+.garden-plant[data-hub="true"] .garden-plant-svg {
+  filter: drop-shadow(0 0 2px rgba(240, 168, 192, 0.4));
+}
+/* ═══ AMBIENT LAYER ═══ */
+.garden-ambient-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.garden-ambient-sprite {
+  position: absolute;
+  image-rendering: pixelated;
+  opacity: 0.85;
+  transition: opacity 0.2s;
+  pointer-events: none;
+}
+
+/* Fade ambient when zoomed out for readability */
+.garden-canvas.zoomed-out .garden-ambient-sprite {
+  opacity: 0.5;
+}
+
+/* ═══ THEME REGIONS LAYER ═══ */
+.garden-regions-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.garden-region {
+  position: absolute;
+  border: 3px dashed;
+  border-radius: 12px;
+  pointer-events: auto;
+  cursor: move;
+  transition: box-shadow 0.15s;
+}
+
+.garden-region:hover {
+  box-shadow: 0 0 0 2px rgba(255,255,255,0.5) inset;
+}
+
+.garden-region-label {
+  position: absolute;
+  top: -28px;
+  left: 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.25rem 0.6rem;
+  font-family: var(--font-pixel);
+  font-size: 0.7rem;
+  font-weight: bold;
+  letter-spacing: 0.5px;
+  border: 2px solid var(--border-main);
+  border-radius: 6px;
+  box-shadow: 2px 2px 0 rgba(0,0,0,0.2);
+  cursor: pointer;
+  white-space: nowrap;
+  user-select: none;
+}
+
+.garden-region-count {
+  opacity: 0.7;
+  font-size: 0.65rem;
+}
+
+.garden-region-zoom {
+  background: rgba(0,0,0,0.15);
+  border: none;
+  border-radius: 3px;
+  color: inherit;
+  font-size: 0.7rem;
+  font-weight: bold;
+  cursor: pointer;
+  padding: 0 0.3rem;
+  line-height: 1;
+}
+
+.garden-region-zoom:hover {
+  background: rgba(0,0,0,0.3);
+}
+
+.garden-region-resize {
+  position: absolute;
+  right: -6px;
+  bottom: -6px;
+  width: 16px;
+  height: 16px;
+  background: var(--paper-bg);
+  border: 3px solid var(--border-main);
+  border-radius: 3px;
+  cursor: nwse-resize;
+  z-index: 5;
+}
+
+.garden-region-resize:hover {
+  background: var(--accent-violet);
+}
+
+/* ═══ EDIT MODE BANNER ═══ */
+.garden-edit-banner {
+  position: absolute;
+  top: 0.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 30;
+  background: var(--warning);
+  color: var(--text-inverse);
+  border: 2px solid var(--border-main);
+  padding: 0.35rem 0.75rem;
+  font-family: var(--font-pixel);
+  font-size: 0.7rem;
+  font-weight: bold;
+  letter-spacing: 0.5px;
+  box-shadow: 3px 3px 0 rgba(0,0,0,0.25);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  max-width: 90%;
+}
+
+.garden-edit-banner .cancel-btn.small {
+  font-size: 0.6rem;
+  padding: 0.15rem 0.45rem;
+}
+
+/* ═══ UNTHEMED WORDS LIST ═══ */
+.garden-unthemed-row {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.25rem 0.35rem;
+  font-size: 0.7rem;
+  border-bottom: 1px dashed var(--paper-ruling);
+  color: var(--paper-ink);
+}
+
+.garden-unthemed-row:hover {
+  background: var(--accent-ice);
+}
+
+.garden-unthemed-flag {
+  font-size: 0.85rem;
+  flex-shrink: 0;
+}
+
+.garden-unthemed-word {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: bold;
+}
+
+.garden-unthemed-place {
+  background: var(--accent-violet);
+  color: var(--text-inverse);
+  border: 1.5px solid var(--border-main);
+  padding: 0.15rem 0.45rem;
+  font-family: var(--font-pixel);
+  font-size: 0.6rem;
+  font-weight: bold;
+  cursor: pointer;
+  border-radius: 3px;
+}
+
+.garden-unthemed-place:hover:not(:disabled) {
+  transform: translate(-1px, -1px);
+  box-shadow: 1px 1px 0 rgba(0,0,0,0.2);
+}
+
+.garden-unthemed-place:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.garden-unthemed-more {
+  text-align: center;
+  font-size: 0.65rem;
+  color: var(--paper-ink-soft);
+  font-style: italic;
+  padding: 0.4rem 0;
+}
+
+/* ═══ SIDEBAR EDIT TOGGLE ACTIVE STATE ═══ */
+.garden-sidebar-actions button.active {
+  background: var(--warning);
+  color: var(--text-inverse);
+}
+/* ═══ REGION DELETE BUTTON ═══ */
+.garden-region-delete {
+  background: rgba(199, 62, 92, 0.85);
+  color: white;
+  border: none;
+  border-radius: 3px;
+  font-size: 0.75rem;
+  font-weight: bold;
+  cursor: pointer;
+  padding: 0 0.35rem;
+  line-height: 1.4;
+  margin-left: 0.2rem;
+}
+
+.garden-region-delete:hover {
+  background: var(--danger);
+}
+
+/* ═══ REGION DRAWING STATE ═══ */
+.garden-region.drawing {
+  border-style: dashed;
+  opacity: 0.9;
+  pointer-events: none;
+}
+
+.garden-regions-layer.drawing-active {
+  pointer-events: auto;
+  cursor: crosshair;
+}

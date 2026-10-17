@@ -41,6 +41,7 @@ function getDefaultData() {
     studySessions: [],
     studyState: null,
     palaceRooms: [],
+    gardenThemeRegions: {}, 
     seedPoints: {},
     gardenSessions: [],
     gardenSpent: {},
@@ -59,6 +60,8 @@ function getDefaultData() {
       lastVocabTab: 'garden',
       hangulAppName: 'Hangul App',
       customActivities: [],
+      galleryThemesHidden: false,
+      gardenEditMode: false,
       _lastGardenSnapshot: null
     }
   };
@@ -87,6 +90,9 @@ function migrateData(data) {
     data.settings._lastGardenSnapshot = null;
   }
 
+  if (data.settings.galleryThemesHidden === undefined) {
+  data.settings.galleryThemesHidden = false;
+}
   // Study mode additions
   if (!Array.isArray(data.studySessions)) data.studySessions = [];
   if (data.studyState === undefined) data.studyState = null;
@@ -124,6 +130,18 @@ function migrateData(data) {
           if (!s.words || typeof s.words !== 'object') s.words = {};
         });
       });
+      // Garden theme regions
+        if (!data.gardenThemeRegions || typeof data.gardenThemeRegions !== 'object') {
+          data.gardenThemeRegions = {};
+        }
+        // Sanitize any existing regions
+        Object.keys(data.gardenThemeRegions).forEach(themeSlug => {
+          const r = data.gardenThemeRegions[themeSlug];
+          if (typeof r.x !== 'number') r.x = 200;
+          if (typeof r.y !== 'number') r.y = 200;
+          if (typeof r.w !== 'number') r.w = 400;
+          if (typeof r.h !== 'number') r.h = 300;
+        });
 
     // Ensure vocabulary entries have position fields
   (data.vocabulary || []).forEach(w => {
@@ -148,6 +166,7 @@ function migrateData(data) {
 
     if (!Array.isArray(w.childIds)) w.childIds = [];
     if (!Array.isArray(w.connections)) w.connections = [];
+    if (!w.plantType) w.plantType = 'leafy';  // existing words default to leafy
   });
 
   // Migrate language level format (A0 → A0 Low, etc.)
@@ -176,6 +195,9 @@ function migrateData(data) {
   data.settings = { ...defaults.settings, ...(data.settings || {}) };
   // Deep merge nested study settings so new fields backfill
   data.settings.study = { ...defaults.settings.study, ...(data.settings.study || {}) };
+  if (data.settings.gardenEditMode === undefined) {
+  data.settings.gardenEditMode = false;
+}
 
   if (!Array.isArray(data.settings.customActivities)) data.settings.customActivities = [];
   if (!Array.isArray(data.dailyLogs)) data.dailyLogs = [];

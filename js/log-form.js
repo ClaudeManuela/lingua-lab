@@ -509,7 +509,8 @@ korWords.forEach((w, i) => {
       connections: [],
       favorite: false,
       notes: '',
-      backlog: formMode === 'backlog'
+      backlog: formMode === 'backlog',
+        plantType: 'flowering'
     });
   }
 });

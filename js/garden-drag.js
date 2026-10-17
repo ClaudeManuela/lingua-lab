@@ -98,9 +98,37 @@ function onDragEnd() {
   if (moved) {
     const word = DATA.vocabulary.find(w => w.id === id);
     if (word) {
-      word.gardenX = parseInt(plant.style.left) || 100;
-      word.gardenY = parseInt(plant.style.top) || 100;
+      const oldX = word.gardenX || 100;
+      const oldY = word.gardenY || 100;
+      const newX = parseInt(plant.style.left) || 100;
+      const newY = parseInt(plant.style.top) || 100;
+
+      const dx = newX - oldX;
+      const dy = newY - oldY;
+
+      // Move the primary word
+      word.gardenX = newX;
+      word.gardenY = newY;
+
+      // Recursively move all descendants by the same delta
+      const descendants = collectDescendants(word.id);
+      descendants.forEach(d => {
+        d.gardenX = (d.gardenX || 100) + dx;
+        d.gardenY = (d.gardenY || 100) + dy;
+        // Also update the DOM element if it exists
+        const el = document.querySelector(`.garden-plant[data-id="${d.id}"]`);
+        if (el) {
+          el.style.left = d.gardenX + 'px';
+          el.style.top = d.gardenY + 'px';
+        }
+      });
+
       saveData(DATA);
+
+      // Re-render branch lines
+      if (typeof renderGardenBranches === 'function') {
+        renderGardenBranches();
+      }
     }
   }
 
@@ -110,6 +138,33 @@ function onDragEnd() {
   document.removeEventListener('touchend', onDragEnd);
 
   dragState = null;
+}
+
+function collectDescendants(wordId) {
+  const result = [];
+  const visited = new Set();
+  const queue = [wordId];
+
+  while (queue.length) {
+    const currentId = queue.shift();
+    if (visited.has(currentId)) continue;
+    visited.add(currentId);
+
+    const current = DATA.vocabulary.find(w => w.id === currentId);
+    if (!current) continue;
+
+    (current.childIds || []).forEach(childId => {
+      if (!visited.has(childId)) {
+        const child = DATA.vocabulary.find(w => w.id === childId);
+        if (child) {
+          result.push(child);
+          queue.push(childId);
+        }
+      }
+    });
+  }
+
+  return result;
 }
 
 // ═══════════════════════════════════════════════

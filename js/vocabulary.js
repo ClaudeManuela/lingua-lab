@@ -147,6 +147,11 @@ function renderVocabSidebar() {
       <div class="garden-sidebar-title">Actions</div>
       <div class="garden-sidebar-actions" id="vocab-actions-list"></div>
     </div>
+
+    <div class="garden-sidebar-section" id="garden-unthemed-section" style="display:none;">
+  <div class="garden-sidebar-title">Unthemed words</div>
+  <div id="garden-unthemed-list"></div>
+</div>
   `;
 
   // Populate shared sidebar sections (reuse garden's logic)
@@ -184,21 +189,46 @@ if (themesList) {
       <button onclick="openStudyMode()">Start / Resume Study</button>
     `;
   } else if (vocabTab === 'garden') {
-    actions.innerHTML = admin ? `
-      <button onclick="openStudyMode()">Study</button>
-      <button onclick="openAddWordsModal()">+ Add Words</button>
-      <button onclick="openBackfillModal()">Backfill</button>
-      <button onclick="rearrangeByTheme()">Cluster by Theme</button>
-      <button onclick="restoreGardenPlacement()"
-              ${DATA.settings._lastGardenSnapshot?.length ? '' : 'disabled'}>
-        Restore Placement
-      </button>
-    ` : '';
+  const canPlaceRegion = gardenEditMode && isEditable();
+  actions.innerHTML = admin ? `
+    <button onclick="openStudyMode()">Study</button>
+    <button onclick="openAddWordsModal()">+ Add Words</button>
+    <button onclick="openBackfillModal()">Backfill</button>
+    <button onclick="toggleGardenEditMode()"
+            class="${gardenEditMode ? 'active' : ''}">
+      ${gardenEditMode ? '✓ Done editing' : '🗺️ Edit Garden'}
+    </button>
+    ${canPlaceRegion ? `
+      <button onclick="openNewRegionFlow()">+ New Region</button>
+      <button onclick="tidyBranches()">Tidy Branches</button>
+    ` : ''}
+    <button onclick="restoreGardenPlacement()"
+            ${DATA.settings._lastGardenSnapshot?.length ? '' : 'disabled'}>
+      Restore Placement
+    </button>
+  ` : '';
+
+  // Also render the unthemed words list if edit mode is on
+  const unthemedSection = document.getElementById('garden-unthemed-list');
+  if (unthemedSection) {
+    unthemedSection.innerHTML = gardenEditMode ? renderUnthemedWordsList() : '';
+    unthemedSection.parentElement.style.display = gardenEditMode ? '' : 'none';
+  }
+
   } else if (vocabTab === 'palace') {
     actions.innerHTML = typeof renderPalaceSidebarActions === 'function'
       ? renderPalaceSidebarActions(admin)
       : '';
   }
+        // Toggle unthemed section visibility based on garden edit mode
+      const unthemedSection = document.getElementById('garden-unthemed-section');
+      if (unthemedSection) {
+        unthemedSection.style.display = (vocabTab === 'garden' && gardenEditMode) ? '' : 'none';
+      }
+      const unthemedList = document.getElementById('garden-unthemed-list');
+      if (unthemedList && gardenEditMode) {
+        unthemedList.innerHTML = renderUnthemedWordsList();
+      }
 }
 
 //study by theme
@@ -223,4 +253,12 @@ function jumpToTheme(slug) {
 
   // Render once, with everything already set
   renderGarden('vocab-content');
+}
+// garden edit mode toggle
+function toggleGardenEditMode() {
+  gardenEditMode = !gardenEditMode;
+  DATA.settings.gardenEditMode = gardenEditMode;
+  saveData(DATA);
+  renderVocabSidebar();
+  renderGarden();
 }

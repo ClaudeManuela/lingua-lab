@@ -1008,6 +1008,7 @@ function openPalaceCreateWord() {
     gender: '',
     number: '',
     article: '',
+    plantType: 'flowering',
     forms: []
   };
   DATA.vocabulary.push(newWord);

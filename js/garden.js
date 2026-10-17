@@ -8,6 +8,16 @@ let gardenView = 'garden';
 let currentZoom = 1.0;
 
 let gardenThemeFilter = null;
+let gardenGallerySort = 'newest';
+let gardenThemesHidden = (typeof DATA !== 'undefined' && DATA?.settings?.galleryThemesHidden) || false;
+let wordCardEditMode = false;
+
+let gardenEditMode = false;
+let gardenAmbientSprites = [];          // cached list of {src, x, y, rot, scale}
+let gardenAmbientGenerated = false;     // has ambient been generated this session
+let gardenRegionDrag = null;            // {slug, startX, startY, origX, origY}
+let gardenPendingPlacement = null;      // {wordId} — user clicked "Place" and is choosing a point
+let gardenPendingRegionSlug = null;
 
 // ─── INCOMPLETE-WORD HELPERS ─────────────────
 // Returns array of missing fields for a word:
@@ -176,7 +186,6 @@ function mountRotatePrompt() {
 // ═══════════════════════════════════════════════
 // SIDEBAR
 // ═══════════════════════════════════════════════
-
 function renderGardenSidebar() {
   const points = calculateSeedPoints();
   document.getElementById('seed-points-list').innerHTML = GARDEN_LANGUAGES.map(slug => {
@@ -191,19 +200,21 @@ function renderGardenSidebar() {
   const totalWaters = words.reduce((a, w) => a + (w.waters || 0), 0);
   const backlogCount = words.filter(w => w.backlog).length;
   document.getElementById('garden-summary-list').innerHTML = `
-  <div class="garden-sidebar-row"><span>Total words</span><strong>${words.length}</strong></div>
-  <div class="garden-sidebar-row"><span>Total waters</span><strong>${totalWaters}</strong></div>
-  <div class="garden-sidebar-row"><span>Backfilled</span><strong>${backlogCount}</strong></div>
-  <div class="garden-sidebar-row theme-sidebar-row"
-       onclick="jumpToIncomplete()"
-       style="color: var(--danger);">
-    <span>⚠ Incomplete words</span>
-    <strong>${words.filter(isIncompleteWord).length}</strong>
-  </div>
-`;
+    <div class="garden-sidebar-row"><span>Total words</span><strong>${words.length}</strong></div>
+    <div class="garden-sidebar-row"><span>Total waters</span><strong>${totalWaters}</strong></div>
+    <div class="garden-sidebar-row"><span>Backfilled</span><strong>${backlogCount}</strong></div>
+    <div class="garden-sidebar-row theme-sidebar-row"
+         onclick="jumpToIncomplete()"
+         style="color: var(--danger);">
+      <span>⚠ Incomplete words</span>
+      <strong>${words.filter(isIncompleteWord).length}</strong>
+    </div>
+  `;
+
   const historyEl = document.getElementById('study-history-list');
   if (historyEl) historyEl.innerHTML = renderStudyHistory();
 }
+
 //gamification and what not
 
 function calculateSeedPoints() {
@@ -245,7 +256,6 @@ function setGardenView(view) {
   gardenView = view;
   renderGarden();
 }
-
 function renderGardenView() {
   const container = document.getElementById('garden-view-container');
   if (!container) return;
@@ -257,36 +267,56 @@ function renderGardenView() {
     container.innerHTML = `<div class="garden-gallery-view" id="garden-gallery-view"></div>`;
     renderGardenGallery();
   } else {
-   container.innerHTML = `
-  ${gardenThemeFilter ? `
-              <div class="garden-filter-badge">
-                <span>Filtered: <strong>${THEME_MAP[gardenThemeFilter]?.icon || ''} ${THEME_MAP[gardenThemeFilter]?.label || gardenThemeFilter}</strong></span>
-                <button onclick="setGalleryThemeFilter(null)" title="Clear filter">×</button>
-              </div>
-            ` : ''}
-            <div class="garden-zoom-controls">
-              <button onclick="zoomIn()">+</button>
-              <button onclick="zoomOut()">−</button>
-              <button onclick="resetZoom()">⟲</button>
-              <span class="garden-zoom-label" id="zoom-label">100%</span>
-            </div>
-            <div class="garden-canvas-wrap" id="garden-canvas-wrap">
-              <div class="garden-canvas" id="garden-canvas">
-                <svg class="garden-branches-svg" id="garden-branches-svg"></svg>
-              </div>
-            </div>
-          `;
+    // Canvas view
+    container.innerHTML = `
+      ${gardenThemeFilter ? `
+        <div class="garden-filter-badge">
+          <span>Filtered: <strong>${THEME_MAP[gardenThemeFilter]?.icon || ''} ${THEME_MAP[gardenThemeFilter]?.label || gardenThemeFilter}</strong></span>
+          <button onclick="setGalleryThemeFilter(null)" title="Clear filter">×</button>
+        </div>
+      ` : ''}
+      <div class="garden-zoom-controls">
+        <button onclick="zoomIn()">+</button>
+        <button onclick="zoomOut()">−</button>
+        <button onclick="resetZoom()">⟲</button>
+        <span class="garden-zoom-label" id="zoom-label">100%</span>
+      </div>
+      ${gardenEditMode ? `
+        <div class="garden-edit-banner">
+          <span>🗺️ Edit mode: drag regions · ${gardenPendingPlacement ? 'click canvas to place word' : 'use sidebar to place unthemed words'}</span>
+          ${gardenPendingPlacement ? `
+            <button class="cancel-btn small" onclick="cancelGardenPlacement()">Cancel</button>
+          ` : ''}
+        </div>
+      ` : ''}
+      <div class="garden-canvas-wrap" id="garden-canvas-wrap">
+        <div class="garden-canvas" id="garden-canvas">
+          <div class="garden-ambient-layer" id="garden-ambient-layer"></div>
+          <div class="garden-regions-layer" id="garden-regions-layer"></div>
+          <svg class="garden-branches-svg" id="garden-branches-svg"></svg>
+        </div>
+      </div>
+    `;
     applyZoom();
+    renderGardenAmbient();
+    renderGardenRegions();
     renderGardenPlants();
     if (typeof renderGardenBranches === 'function') renderGardenBranches();
     if (typeof initGardenZoom === 'function') initGardenZoom();
     if (typeof initGardenDrag === 'function') initGardenDrag();
+    if (typeof initGardenRegionDrag === 'function') initGardenRegionDrag();
   }
   checkRotatePrompt();
 }
 
 // ─── GALLERY ─────────────────────────────────
-let gardenGallerySort = 'newest';
+
+function toggleGardenThemes() {
+  gardenThemesHidden = !gardenThemesHidden;
+  DATA.settings.galleryThemesHidden = gardenThemesHidden;
+  saveData(DATA);
+  renderGardenGallery();
+}
 
 function setGallerySort(val) {
   gardenGallerySort = val;
@@ -313,7 +343,14 @@ function renderGardenGallery() {
   const incompleteCount = poolForChips.filter(isIncompleteWord).length;
   const showIncomplete = gardenThemeFilter === INCOMPLETE_SLUG;
 
-  const chipRow = (themesPresent.length || incompleteCount) ? `
+ const chipRow = (themesPresent.length || incompleteCount) ? `
+  <div class="gallery-theme-chips-header">
+    <button class="theme-chips-toggle"
+            onclick="toggleGardenThemes()">
+      ${gardenThemesHidden ? '▸ Show themes' : '▾ Hide themes'}
+    </button>
+  </div>
+  ${!gardenThemesHidden ? `
     <div class="gallery-theme-chips">
       <button class="theme-chip ${!gardenThemeFilter ? 'active' : ''}"
               onclick="setGalleryThemeFilter(null)">All</button>
@@ -332,7 +369,8 @@ function renderGardenGallery() {
         </button>
       ` : ''}
     </div>
-  ` : '';
+  ` : ''}
+` : '';
 
   const words = getFilteredWords();  // already theme/incomplete-filtered
 
@@ -581,19 +619,33 @@ function renderGardenPlants() {
 function createPlantElement(w, admin) {
   const meta = LANGUAGES[w.language];
   const stage = w.stage || 'seed';
-  const size = getPlantSize(stage);
+  const plantType = w.plantType || 'leafy';
+
+  // Hub words (have children) render 15% larger
+  const isHub = (w.childIds || []).length > 0;
+  const baseSize = getPlantSize(stage);
+  const size = isHub ? Math.round(baseSize * 1.15) : baseSize;
+
   const el = document.createElement('div');
   el.className = 'garden-plant';
+  if (plantType === 'leafy' || plantType === 'flowering') {
+    el.classList.add('garden-plant-sway');
+  }
   el.dataset.id = w.id;
+  el.dataset.plantType = plantType;
+  if (isHub) el.dataset.hub = 'true';
+
   el.style.left = (w.gardenX || 100) + 'px';
   el.style.top = (w.gardenY || 100) + 'px';
   el.style.width = size + 'px';
+
   el.innerHTML = `
     <svg class="garden-plant-svg" viewBox="0 0 ${size} ${size}" width="${size}" height="${size}">
-      ${renderPlantSVG(stage, size)}
+      ${renderPlantSVG(stage, size, plantType)}
     </svg>
-  <div class="garden-plant-label">${escapeHtml(formatClusterShort(w) || w.word)}</div>
-    `;
+    <div class="garden-plant-label">${escapeHtml(formatClusterShort(w) || w.word)}</div>
+  `;
+
   el.addEventListener('click', () => {
     if (el.dataset.dragged === 'true') {
       el.dataset.dragged = 'false';
@@ -601,6 +653,7 @@ function createPlantElement(w, admin) {
     }
     openWordCard(w.id);
   });
+
   return el;
 }
 
@@ -615,46 +668,253 @@ function getPlantSize(stage) {
   }
 }
 
-function renderPlantSVG(stage, size) {
+function renderPlantSVG(stage, size, plantType = 'leafy') {
+  const fn = {
+    flowering: renderFloweringPlant,
+    pine: renderPineTree,
+    leafy: renderLeafyTree
+  }[plantType] || renderLeafyTree;
+  return fn(stage, size);
+}
+
+// ─── SHARED PALETTE ──────────────────────────
+const PLANT_PALETTE = {
+  soilDark:   '#4a2e1e',
+  trunkDark:  '#6b4522',
+  trunkMid:   '#a07850',
+  trunkLight: '#c19a68',
+  leafDark:   '#3d6b2a',
+  leafMid:    '#5a8d3a',
+  leafLight:  '#7aad52',
+  pineDark:   '#2e4d24',
+  pineMid:    '#4a7238',
+  pineLight:  '#6a9248',
+  blossom1:   '#f0a8c0',
+  blossom2:   '#e888a8',
+  blossom3:   '#ffffff',
+  blossomCtr: '#f5d878'
+};
+
+// ═══════════════════════════════════════════
+// FLOWERING PLANT — soft, bushy, blooms
+// ═══════════════════════════════════════════
+function renderFloweringPlant(stage, size) {
   const c = size / 2;
-  const soilBrown = '#5a3a2a';
-  const trunkBrown = '#a07850';
-  const sproutGreen = '#6a9d4a';
-  const leafGreen = '#5a8d3a';
+  const P = PLANT_PALETTE;
+
   switch (stage) {
     case 'seed':
-      return `<circle cx="${c}" cy="${c + 3}" r="2" fill="${soilBrown}"/>`;
+      return `
+        <ellipse cx="${c}" cy="${c + size * 0.15}" rx="${size * 0.14}" ry="${size * 0.09}" fill="${P.soilDark}"/>
+        <ellipse cx="${c - size * 0.03}" cy="${c + size * 0.13}" rx="${size * 0.04}" ry="${size * 0.03}" fill="${P.trunkMid}" opacity="0.6"/>
+      `;
+
     case 'sprout':
       return `
-        <rect x="${c - 1}" y="${c}" width="2" height="6" fill="${sproutGreen}"/>
-        <ellipse cx="${c - 2}" cy="${c}" rx="2" ry="1.5" fill="${sproutGreen}"/>
-        <ellipse cx="${c + 2}" cy="${c}" rx="2" ry="1.5" fill="${sproutGreen}"/>
+        <rect x="${c - size * 0.03}" y="${c - size * 0.02}" width="${size * 0.06}" height="${size * 0.22}" fill="${P.leafMid}"/>
+        <ellipse cx="${c - size * 0.11}" cy="${c - size * 0.04}" rx="${size * 0.11}" ry="${size * 0.06}" fill="${P.leafMid}"/>
+        <ellipse cx="${c + size * 0.11}" cy="${c - size * 0.06}" rx="${size * 0.11}" ry="${size * 0.06}" fill="${P.leafLight}"/>
       `;
+
     case 'seedling':
       return `
-        <rect x="${c - 1}" y="${c - 2}" width="2" height="10" fill="${trunkBrown}"/>
-        <ellipse cx="${c - 4}" cy="${c - 4}" rx="4" ry="2" fill="${leafGreen}"/>
-        <ellipse cx="${c + 4}" cy="${c - 6}" rx="4" ry="2" fill="${leafGreen}"/>
+        <rect x="${c - size * 0.04}" y="${c - size * 0.06}" width="${size * 0.08}" height="${size * 0.3}" fill="${P.trunkMid}"/>
+        <ellipse cx="${c - size * 0.2}" cy="${c - size * 0.12}" rx="${size * 0.16}" ry="${size * 0.09}" fill="${P.leafMid}"/>
+        <ellipse cx="${c + size * 0.2}" cy="${c - size * 0.16}" rx="${size * 0.16}" ry="${size * 0.09}" fill="${P.leafLight}"/>
+        <ellipse cx="${c}" cy="${c - size * 0.26}" rx="${size * 0.14}" ry="${size * 0.1}" fill="${P.leafMid}"/>
       `;
+
     case 'sapling':
       return `
-        <rect x="${c - 2}" y="${c - 4}" width="4" height="14" fill="${trunkBrown}"/>
-        <ellipse cx="${c - 6}" cy="${c - 6}" rx="5" ry="3" fill="${leafGreen}"/>
-        <ellipse cx="${c + 6}" cy="${c - 8}" rx="5" ry="3" fill="${leafGreen}"/>
-        <ellipse cx="${c}" cy="${c - 12}" rx="5" ry="3" fill="${leafGreen}"/>
+        <rect x="${c - size * 0.05}" y="${c - size * 0.12}" width="${size * 0.1}" height="${size * 0.44}" fill="${P.trunkMid}"/>
+        <ellipse cx="${c - size * 0.28}" cy="${c - size * 0.22}" rx="${size * 0.2}" ry="${size * 0.12}" fill="${P.leafMid}"/>
+        <ellipse cx="${c + size * 0.28}" cy="${c - size * 0.28}" rx="${size * 0.2}" ry="${size * 0.12}" fill="${P.leafLight}"/>
+        <ellipse cx="${c}" cy="${c - size * 0.4}" rx="${size * 0.22}" ry="${size * 0.14}" fill="${P.leafMid}"/>
+        <ellipse cx="${c - size * 0.12}" cy="${c - size * 0.5}" rx="${size * 0.14}" ry="${size * 0.09}" fill="${P.leafDark}"/>
+        <ellipse cx="${c + size * 0.14}" cy="${c - size * 0.48}" rx="${size * 0.14}" ry="${size * 0.09}" fill="${P.leafLight}"/>
       `;
+
     case 'trunk':
+      return `
+        <rect x="${c - size * 0.07}" y="${c - size * 0.2}" width="${size * 0.14}" height="${size * 0.6}" fill="${P.trunkMid}"/>
+        <rect x="${c - size * 0.07}" y="${c - size * 0.2}" width="${size * 0.06}" height="${size * 0.6}" fill="${P.trunkLight}" opacity="0.5"/>
+        <ellipse cx="${c - size * 0.35}" cy="${c - size * 0.28}" rx="${size * 0.24}" ry="${size * 0.14}" fill="${P.leafMid}"/>
+        <ellipse cx="${c + size * 0.35}" cy="${c - size * 0.32}" rx="${size * 0.24}" ry="${size * 0.14}" fill="${P.leafLight}"/>
+        <ellipse cx="${c}" cy="${c - size * 0.5}" rx="${size * 0.28}" ry="${size * 0.16}" fill="${P.leafMid}"/>
+        <ellipse cx="${c - size * 0.18}" cy="${c - size * 0.62}" rx="${size * 0.16}" ry="${size * 0.1}" fill="${P.leafDark}"/>
+        <ellipse cx="${c + size * 0.18}" cy="${c - size * 0.6}" rx="${size * 0.16}" ry="${size * 0.1}" fill="${P.leafLight}"/>
+      `;
+
     case 'flowering':
       return `
-        <rect x="${c - 3}" y="${c - 6}" width="6" height="18" fill="${trunkBrown}"/>
-        <ellipse cx="${c - 8}" cy="${c - 8}" rx="6" ry="3" fill="${leafGreen}"/>
-        <ellipse cx="${c + 8}" cy="${c - 10}" rx="6" ry="3" fill="${leafGreen}"/>
-        <ellipse cx="${c}" cy="${c - 14}" rx="7" ry="4" fill="${leafGreen}"/>
-        <ellipse cx="${c - 5}" cy="${c - 16}" rx="4" ry="3" fill="${leafGreen}"/>
-        <ellipse cx="${c + 5}" cy="${c - 16}" rx="4" ry="3" fill="${leafGreen}"/>
+        <rect x="${c - size * 0.08}" y="${c - size * 0.24}" width="${size * 0.16}" height="${size * 0.7}" fill="${P.trunkMid}"/>
+        <rect x="${c - size * 0.08}" y="${c - size * 0.24}" width="${size * 0.07}" height="${size * 0.7}" fill="${P.trunkLight}" opacity="0.5"/>
+        <ellipse cx="${c - size * 0.4}" cy="${c - size * 0.32}" rx="${size * 0.26}" ry="${size * 0.16}" fill="${P.leafMid}"/>
+        <ellipse cx="${c + size * 0.4}" cy="${c - size * 0.36}" rx="${size * 0.26}" ry="${size * 0.16}" fill="${P.leafLight}"/>
+        <ellipse cx="${c}" cy="${c - size * 0.56}" rx="${size * 0.32}" ry="${size * 0.18}" fill="${P.leafMid}"/>
+        <ellipse cx="${c - size * 0.22}" cy="${c - size * 0.7}" rx="${size * 0.18}" ry="${size * 0.11}" fill="${P.leafDark}"/>
+        <ellipse cx="${c + size * 0.22}" cy="${c - size * 0.68}" rx="${size * 0.18}" ry="${size * 0.11}" fill="${P.leafLight}"/>
+        ${renderBlossoms(c, size)}
       `;
+
     default:
-      return `<circle cx="${c}" cy="${c}" r="3" fill="${soilBrown}"/>`;
+      return `<ellipse cx="${c}" cy="${c}" rx="${size * 0.14}" ry="${size * 0.09}" fill="${P.soilDark}"/>`;
+  }
+}
+
+function renderBlossoms(c, size) {
+  const P = PLANT_PALETTE;
+  const blossoms = [
+    { x: c - size * 0.36, y: c - size * 0.4, r: size * 0.08,  fill: P.blossom1 },
+    { x: c + size * 0.32, y: c - size * 0.42, r: size * 0.075, fill: P.blossom3 },
+    { x: c - size * 0.1,  y: c - size * 0.72, r: size * 0.085, fill: P.blossom2 },
+    { x: c + size * 0.18, y: c - size * 0.7, r: size * 0.07,  fill: P.blossom1 },
+    { x: c - size * 0.18, y: c - size * 0.82, r: size * 0.06,  fill: P.blossom3 },
+    { x: c + size * 0.06, y: c - size * 0.86, r: size * 0.055, fill: P.blossom2 }
+  ];
+  return blossoms.map(b => `
+    <g>
+      <circle cx="${b.x}" cy="${b.y}" r="${b.r}" fill="${b.fill}"/>
+      <circle cx="${b.x}" cy="${b.y}" r="${b.r * 0.4}" fill="${P.blossomCtr}"/>
+    </g>
+  `).join('');
+}
+
+// ═══════════════════════════════════════════
+// PINE TREE — triangular tiers, dark green
+// ═══════════════════════════════════════════
+function renderPineTree(stage, size) {
+  const c = size / 2;
+  const P = PLANT_PALETTE;
+
+  switch (stage) {
+    case 'seed':
+      return `
+        <ellipse cx="${c}" cy="${c + size * 0.15}" rx="${size * 0.14}" ry="${size * 0.09}" fill="${P.soilDark}"/>
+        <ellipse cx="${c + size * 0.02}" cy="${c + size * 0.13}" rx="${size * 0.04}" ry="${size * 0.03}" fill="${P.trunkMid}" opacity="0.6"/>
+      `;
+
+    case 'sprout':
+      return `
+        <rect x="${c - size * 0.03}" y="${c + size * 0.02}" width="${size * 0.06}" height="${size * 0.16}" fill="${P.trunkMid}"/>
+        <polygon points="${c},${c - size * 0.18} ${c - size * 0.14},${c + size * 0.02} ${c + size * 0.14},${c + size * 0.02}" fill="${P.pineMid}"/>
+      `;
+
+    case 'seedling':
+      return `
+        <rect x="${c - size * 0.04}" y="${c + size * 0.04}" width="${size * 0.08}" height="${size * 0.2}" fill="${P.trunkMid}"/>
+        <polygon points="${c},${c - size * 0.24} ${c - size * 0.18},${c - size * 0.02} ${c + size * 0.18},${c - size * 0.02}" fill="${P.pineMid}"/>
+        <polygon points="${c},${c - size * 0.4} ${c - size * 0.14},${c - size * 0.2} ${c + size * 0.14},${c - size * 0.2}" fill="${P.pineLight}"/>
+      `;
+
+    case 'sapling':
+      return `
+        <rect x="${c - size * 0.05}" y="${c + size * 0.02}" width="${size * 0.1}" height="${size * 0.34}" fill="${P.trunkMid}"/>
+        <polygon points="${c},${c - size * 0.14} ${c - size * 0.26},${c + size * 0.04} ${c + size * 0.26},${c + size * 0.04}" fill="${P.pineMid}"/>
+        <polygon points="${c},${c - size * 0.34} ${c - size * 0.22},${c - size * 0.12} ${c + size * 0.22},${c - size * 0.12}" fill="${P.pineMid}"/>
+        <polygon points="${c},${c - size * 0.52} ${c - size * 0.18},${c - size * 0.3} ${c + size * 0.18},${c - size * 0.3}" fill="${P.pineLight}"/>
+      `;
+
+    case 'trunk':
+      return `
+        <rect x="${c - size * 0.06}" y="${c + size * 0.04}" width="${size * 0.12}" height="${size * 0.48}" fill="${P.trunkMid}"/>
+        <polygon points="${c},${c - size * 0.1} ${c - size * 0.34},${c + size * 0.08} ${c + size * 0.34},${c + size * 0.08}" fill="${P.pineDark}"/>
+        <polygon points="${c},${c - size * 0.34} ${c - size * 0.3},${c - size * 0.1} ${c + size * 0.3},${c - size * 0.1}" fill="${P.pineMid}"/>
+        <polygon points="${c},${c - size * 0.56} ${c - size * 0.26},${c - size * 0.32} ${c + size * 0.26},${c - size * 0.32}" fill="${P.pineMid}"/>
+        <polygon points="${c},${c - size * 0.76} ${c - size * 0.2},${c - size * 0.54} ${c + size * 0.2},${c - size * 0.54}" fill="${P.pineLight}"/>
+      `;
+
+    case 'flowering': // mature pine — deepest stage
+      return `
+        <rect x="${c - size * 0.07}" y="${c + size * 0.06}" width="${size * 0.14}" height="${size * 0.58}" fill="${P.trunkMid}"/>
+        <polygon points="${c},${c - size * 0.06} ${c - size * 0.42},${c + size * 0.12} ${c + size * 0.42},${c + size * 0.12}" fill="${P.pineDark}"/>
+        <polygon points="${c},${c - size * 0.32} ${c - size * 0.36},${c - size * 0.06} ${c + size * 0.36},${c - size * 0.06}" fill="${P.pineMid}"/>
+        <polygon points="${c},${c - size * 0.56} ${c - size * 0.3},${c - size * 0.28} ${c + size * 0.3},${c - size * 0.28}" fill="${P.pineMid}"/>
+        <polygon points="${c},${c - size * 0.78} ${c - size * 0.24},${c - size * 0.5} ${c + size * 0.24},${c - size * 0.5}" fill="${P.pineLight}"/>
+        <polygon points="${c},${c - size * 0.96} ${c - size * 0.16},${c - size * 0.72} ${c + size * 0.16},${c - size * 0.72}" fill="${P.pineLight}"/>
+        ${renderPineCones(c, size)}
+      `;
+
+    default:
+      return `<ellipse cx="${c}" cy="${c}" rx="${size * 0.14}" ry="${size * 0.09}" fill="${P.soilDark}"/>`;
+  }
+}
+
+function renderPineCones(c, size) {
+  const P = PLANT_PALETTE;
+  const cones = [
+    { x: c - size * 0.24, y: c - size * 0.14 },
+    { x: c + size * 0.22, y: c - size * 0.34 },
+    { x: c - size * 0.1,  y: c - size * 0.44 }
+  ];
+  return cones.map(cone => `
+    <ellipse cx="${cone.x}" cy="${cone.y}" rx="${size * 0.035}" ry="${size * 0.055}" fill="${P.trunkDark}"/>
+    <ellipse cx="${cone.x}" cy="${cone.y}" rx="${size * 0.02}" ry="${size * 0.04}" fill="${P.trunkMid}" opacity="0.7"/>
+  `).join('');
+}
+
+// ═══════════════════════════════════════════
+// LEAFY TREE — round canopy, wide spread
+// ═══════════════════════════════════════════
+function renderLeafyTree(stage, size) {
+  const c = size / 2;
+  const P = PLANT_PALETTE;
+
+  switch (stage) {
+    case 'seed':
+      return `
+        <ellipse cx="${c}" cy="${c + size * 0.15}" rx="${size * 0.14}" ry="${size * 0.09}" fill="${P.soilDark}"/>
+        <ellipse cx="${c - size * 0.03}" cy="${c + size * 0.14}" rx="${size * 0.03}" ry="${size * 0.025}" fill="${P.trunkLight}" opacity="0.7"/>
+      `;
+
+    case 'sprout':
+      return `
+        <rect x="${c - size * 0.03}" y="${c}" width="${size * 0.06}" height="${size * 0.2}" fill="${P.trunkMid}"/>
+        <ellipse cx="${c - size * 0.12}" cy="${c - size * 0.02}" rx="${size * 0.13}" ry="${size * 0.07}" fill="${P.leafMid}"/>
+        <ellipse cx="${c + size * 0.12}" cy="${c - size * 0.06}" rx="${size * 0.13}" ry="${size * 0.07}" fill="${P.leafLight}"/>
+      `;
+
+    case 'seedling':
+      return `
+        <rect x="${c - size * 0.05}" y="${c - size * 0.04}" width="${size * 0.1}" height="${size * 0.28}" fill="${P.trunkMid}"/>
+        <ellipse cx="${c - size * 0.18}" cy="${c - size * 0.14}" rx="${size * 0.16}" ry="${size * 0.1}" fill="${P.leafMid}"/>
+        <ellipse cx="${c + size * 0.18}" cy="${c - size * 0.18}" rx="${size * 0.16}" ry="${size * 0.1}" fill="${P.leafLight}"/>
+        <ellipse cx="${c}" cy="${c - size * 0.3}" rx="${size * 0.18}" ry="${size * 0.12}" fill="${P.leafMid}"/>
+      `;
+
+    case 'sapling':
+      return `
+        <rect x="${c - size * 0.06}" y="${c - size * 0.1}" width="${size * 0.12}" height="${size * 0.4}" fill="${P.trunkMid}"/>
+        <rect x="${c - size * 0.06}" y="${c - size * 0.1}" width="${size * 0.05}" height="${size * 0.4}" fill="${P.trunkLight}" opacity="0.6"/>
+        <ellipse cx="${c - size * 0.24}" cy="${c - size * 0.22}" rx="${size * 0.2}" ry="${size * 0.14}" fill="${P.leafMid}"/>
+        <ellipse cx="${c + size * 0.24}" cy="${c - size * 0.26}" rx="${size * 0.2}" ry="${size * 0.14}" fill="${P.leafLight}"/>
+        <ellipse cx="${c}" cy="${c - size * 0.42}" rx="${size * 0.22}" ry="${size * 0.14}" fill="${P.leafMid}"/>
+      `;
+
+    case 'trunk':
+      return `
+        <rect x="${c - size * 0.08}" y="${c - size * 0.18}" width="${size * 0.16}" height="${size * 0.56}" fill="${P.trunkMid}"/>
+        <rect x="${c - size * 0.08}" y="${c - size * 0.18}" width="${size * 0.06}" height="${size * 0.56}" fill="${P.trunkLight}" opacity="0.6"/>
+        <ellipse cx="${c - size * 0.32}" cy="${c - size * 0.32}" rx="${size * 0.24}" ry="${size * 0.16}" fill="${P.leafMid}"/>
+        <ellipse cx="${c + size * 0.32}" cy="${c - size * 0.36}" rx="${size * 0.24}" ry="${size * 0.16}" fill="${P.leafLight}"/>
+        <ellipse cx="${c - size * 0.06}" cy="${c - size * 0.58}" rx="${size * 0.26}" ry="${size * 0.17}" fill="${P.leafMid}"/>
+        <ellipse cx="${c + size * 0.12}" cy="${c - size * 0.56}" rx="${size * 0.24}" ry="${size * 0.16}" fill="${P.leafLight}"/>
+      `;
+
+    case 'flowering': // mature leafy — biggest canopy
+      return `
+        <rect x="${c - size * 0.1}" y="${c - size * 0.22}" width="${size * 0.2}" height="${size * 0.68}" fill="${P.trunkMid}"/>
+        <rect x="${c - size * 0.1}" y="${c - size * 0.22}" width="${size * 0.08}" height="${size * 0.68}" fill="${P.trunkLight}" opacity="0.6"/>
+        <ellipse cx="${c - size * 0.38}" cy="${c - size * 0.4}" rx="${size * 0.26}" ry="${size * 0.18}" fill="${P.leafDark}"/>
+        <ellipse cx="${c + size * 0.38}" cy="${c - size * 0.44}" rx="${size * 0.26}" ry="${size * 0.18}" fill="${P.leafMid}"/>
+        <ellipse cx="${c - size * 0.16}" cy="${c - size * 0.66}" rx="${size * 0.24}" ry="${size * 0.17}" fill="${P.leafMid}"/>
+        <ellipse cx="${c + size * 0.16}" cy="${c - size * 0.64}" rx="${size * 0.24}" ry="${size * 0.17}" fill="${P.leafLight}"/>
+        <ellipse cx="${c}" cy="${c - size * 0.82}" rx="${size * 0.26}" ry="${size * 0.18}" fill="${P.leafMid}"/>
+        <ellipse cx="${c - size * 0.08}" cy="${c - size * 0.94}" rx="${size * 0.16}" ry="${size * 0.11}" fill="${P.leafLight}"/>
+      `;
+
+    default:
+      return `<ellipse cx="${c}" cy="${c}" rx="${size * 0.14}" ry="${size * 0.09}" fill="${P.soilDark}"/>`;
   }
 }
 
@@ -739,7 +999,8 @@ function addWordsToGarden(language, wordsText, meaningsText, date, backlog) {
         gardenY: pos.y,
         theme: '',
         wordType: '',
-        direction: ''
+        direction: '',
+        galleryThemesHidden: false,
       });
     }
   });
@@ -748,14 +1009,45 @@ function addWordsToGarden(language, wordsText, meaningsText, date, backlog) {
 
 function findAutoPosition(language) {
   const sameLang = (DATA.vocabulary || []).filter(w => w.language === language && w.gardenX);
-  if (sameLang.length) {
-    const ref = sameLang[Math.floor(Math.random() * sameLang.length)];
-    return {
-      x: (ref.gardenX || 200) + (Math.random() - 0.5) * 160,
-      y: (ref.gardenY || 200) + (Math.random() - 0.5) * 160
-    };
+
+  // If no words of this language yet, place at the center of the canvas
+  if (!sameLang.length) {
+    return { x: 600, y: 400 };
   }
-  return { x: 100 + Math.random() * 800, y: 100 + Math.random() * 600 };
+
+  // Compute centroid of same-language words as the anchor
+  const cx = sameLang.reduce((a, w) => a + w.gardenX, 0) / sameLang.length;
+  const cy = sameLang.reduce((a, w) => a + w.gardenY, 0) / sameLang.length;
+
+  // Spiral outward, looking for a spot with no neighbors within 60px
+  const MIN_DIST = 60;
+  for (let radius = 50; radius < 900; radius += 40) {
+    const steps = Math.max(8, Math.floor(radius / 20));
+    for (let i = 0; i < steps; i++) {
+      const angle = (i / steps) * Math.PI * 2 + radius * 0.1;  // rotate spiral
+      const x = cx + Math.cos(angle) * radius;
+      const y = cy + Math.sin(angle) * radius;
+      // Clamp to canvas bounds
+      if (x < 40 || x > 1960 || y < 40 || y > 1560) continue;
+      if (!hasNeighborWithin(x, y, MIN_DIST)) {
+        return { x, y };
+      }
+    }
+  }
+
+  // Fallback — random offset
+  return {
+    x: cx + (Math.random() - 0.5) * 200,
+    y: cy + (Math.random() - 0.5) * 200
+  };
+}
+
+function hasNeighborWithin(x, y, distance) {
+  return (DATA.vocabulary || []).some(w =>
+    w.gardenX !== undefined &&
+    Math.abs(w.gardenX - x) < distance &&
+    Math.abs(w.gardenY - y) < distance
+  );
 }
 
 function parseWordList(text) {
@@ -777,40 +1069,6 @@ function updateWordStage(w) {
   else w.stage = 'seed';
 }
 
-function rearrangeByTheme() {
-  if (!isEditable()) return;
-  if (!confirm('Rearrange all plants by theme? You can undo this with "Restore Placement".')) return;
-
-  // Snapshot current positions for undo
-  DATA.settings._lastGardenSnapshot = (DATA.vocabulary || []).map(w => ({
-    id: w.id,
-    gardenX: w.gardenX,
-    gardenY: w.gardenY
-  }));
-
-  const words = DATA.vocabulary || [];
-  const themes = {};
-  words.forEach(w => {
-    const t = (w.theme || '').trim().toLowerCase() || '__no_theme__';
-    if (!themes[t]) themes[t] = [];
-    themes[t].push(w);
-  });
-
-  let yOffset = 100;
-  Object.keys(themes).forEach(theme => {
-    const group = themes[theme];
-    group.forEach((w, i) => {
-      const col = i % 6;
-      const row = Math.floor(i / 6);
-      w.gardenX = 100 + col * 90;
-      w.gardenY = yOffset + row * 90;
-    });
-    yOffset += 120 + Math.ceil(group.length / 6) * 90;
-  });
-
-  saveData(DATA);
-  renderGarden();
-}
 
 function restoreGardenPlacement() {
   if (!isEditable()) return;
@@ -844,10 +1102,8 @@ function getWordTypeOptions() {
 }
 
 // ═══════════════════════════════════════════════
-// WORD CARD — Phase 5.4 (display / edit modes)
+// WORD CARD — (display / edit modes)
 // ═══════════════════════════════════════════════
-
-let wordCardEditMode = false;
 
 function toggleWordCardEdit() {
   wordCardEditMode = !wordCardEditMode;
@@ -906,6 +1162,26 @@ function openWordCard(id) {
 
           ${renderWordCardField(word, editing, 'Meaning', 'meaning', escapeHtml(word.meaning || '—'))}
           ${renderWordCardSelect(word, editing, 'Type', 'wordType', typeOptions, word.wordType)}
+          <div class="word-card-field">
+  <label>Plant type:</label>
+  <div class="plant-type-picker">
+    <button class="plant-type-btn ${(word.plantType || 'leafy') === 'flowering' ? 'active' : ''}"
+            onclick="updatePlantType('${word.id}', 'flowering')"
+            title="Flowering plant">
+      🌸 Flowering
+    </button>
+    <button class="plant-type-btn ${word.plantType === 'pine' ? 'active' : ''}"
+            onclick="updatePlantType('${word.id}', 'pine')"
+            title="Pine tree">
+      🌲 Pine
+    </button>
+    <button class="plant-type-btn ${(word.plantType || 'leafy') === 'leafy' ? 'active' : ''}"
+            onclick="updatePlantType('${word.id}', 'leafy')"
+            title="Leafy tree">
+      🌳 Leafy
+    </button>
+  </div>
+</div>
           ${renderWordCardThemeSelect(word, editing, word.theme)}
           ${renderWordCardField(word, editing, 'Reading', 'reading', escapeHtml(word.reading || '—'))}
           ${renderWordCardTextarea(word, editing, 'Notes', 'notes', escapeHtml(word.notes || ''))}
@@ -983,6 +1259,15 @@ function openWordCard(id) {
 
   modal.classList.remove('hidden');
   setTimeout(() => drawWordCardTree(word, parent), 60);
+}
+
+function updatePlantType(wordId, type) {
+  if (!isEditable()) return;
+  const word = DATA.vocabulary.find(w => w.id === wordId);
+  if (!word) return;
+  word.plantType = type;
+  saveData(DATA);
+  openWordCard(wordId);
 }
 
 // ─── RENDER HELPERS ─────────────────────────
@@ -1308,24 +1593,38 @@ function drawWordCardTree(word, parent) {
     svg += `<path d="M ${c.x} ${c.y + c.size/2} Q ${mx} ${my} ${t.x} ${t.y - t.size/2}" stroke="#b8906a" stroke-width="3" fill="none"/>`;
   });
 
-  // Nodes
-  Object.entries(positions).forEach(([id, pos]) => {
-    const nodeWord = id === word.id ? word : (id === parent?.id ? parent : visibleChildren.find(c => c.id === id));
-    if (!nodeWord) return;
-    const meta = LANGUAGES[nodeWord.language];
-    const isCurrent = pos.isCurrent;
-    const fill = isCurrent ? '#a07850' : '#c8a878';
-    const stroke = isCurrent ? '#5a3a2a' : '#8a6a4a';
+  // Nodes — use plant sprites instead of circles
+Object.entries(positions).forEach(([id, pos]) => {
+  const nodeWord = id === word.id ? word : (id === parent?.id ? parent : visibleChildren.find(c => c.id === id));
+  if (!nodeWord) return;
 
-    svg += `
-      <g style="cursor:pointer" onclick="openWordCard('${nodeWord.id}')">
-        <circle cx="${pos.x}" cy="${pos.y}" r="${pos.size / 2}" fill="${fill}" stroke="${stroke}" stroke-width="${isCurrent ? 4 : 2}"/>
-        <text x="${pos.x}" y="${pos.y + 4}" text-anchor="middle" font-size="${Math.max(8, pos.size / 4)}" fill="#fff" font-family="Courier New, monospace" font-weight="bold">
-          ${escapeHtml((nodeWord.word || '').slice(0, 6))}
-        </text>
-      </g>
-    `;
-  });
+  const nodeStage = nodeWord.stage || 'seed';
+  const nodeType = nodeWord.plantType || 'leafy';
+  const nodeSize = pos.size;
+
+  // Wrap the plant SVG in a foreignObject so it renders inside the tree SVG
+  svg += `
+    <g style="cursor:pointer" onclick="openWordCard('${nodeWord.id}')">
+      <foreignObject x="${pos.x - nodeSize / 2}" y="${pos.y - nodeSize / 2}"
+                     width="${nodeSize}" height="${nodeSize}">
+        <div xmlns="http://www.w3.org/1999/xhtml"
+             style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;">
+          <svg viewBox="0 0 ${nodeSize} ${nodeSize}" width="${nodeSize}" height="${nodeSize}">
+            ${renderPlantSVG(nodeStage, nodeSize, nodeType)}
+          </svg>
+        </div>
+      </foreignObject>
+      <text x="${pos.x}" y="${pos.y + nodeSize / 2 + 12}"
+            text-anchor="middle"
+            font-size="10"
+            fill="#3a2520"
+            font-family="Courier New, monospace"
+            font-weight="bold">
+        ${escapeHtml((nodeWord.word || '').slice(0, 8))}
+      </text>
+    </g>
+  `;
+});
 
   container.innerHTML = `
     <svg width="100%" height="100%" viewBox="0 0 ${w} ${h}" preserveAspectRatio="xMidYMid meet">
@@ -1621,7 +1920,8 @@ function submitBranch(parentId) {
     gardenX: position.x,
     gardenY: position.y,
     theme: parent.theme || '',
-    wordType: ''
+    wordType: '',
+      plantType: 'flowering'
   };
   DATA.vocabulary.push(newWord);
   parent.childIds = parent.childIds || [];
@@ -1635,18 +1935,22 @@ function findBranchPosition(parent, excludeId) {
   const parentX = parent.gardenX || 200;
   const parentY = parent.gardenY || 200;
 
+  // Tighter spacing than before
+  const TIGHT_RADIUS = 90;      // was 110
+  const TIGHT_SPACING = 100;    // was 130
+
   // Gather existing sibling positions (children of parent)
   const siblings = (parent.childIds || [])
     .filter(id => id !== excludeId)
     .map(id => DATA.vocabulary.find(w => w.id === id))
     .filter(Boolean);
 
-  // Available directions with their offsets
+  // Available directions with their offsets (tighter)
   const directions = [
-    { key: 'up',    dx: 0,   dy: -110 },
-    { key: 'right', dx: 130, dy: 0 },
-    { key: 'down',  dx: 0,   dy: 110 },
-    { key: 'left',  dx: -130, dy: 0 }
+    { key: 'up',    dx: 0,           dy: -TIGHT_RADIUS },
+    { key: 'right', dx: TIGHT_SPACING, dy: 0 },
+    { key: 'down',  dx: 0,           dy: TIGHT_RADIUS },
+    { key: 'left',  dx: -TIGHT_SPACING, dy: 0 }
   ];
 
   // Count how many siblings occupy each direction
@@ -1665,14 +1969,82 @@ function findBranchPosition(parent, excludeId) {
   const sorted = directions.slice().sort((a, b) => counts[a.key] - counts[b.key]);
   const chosen = sorted[0];
 
-  // Add a small random jitter to prevent overlap
-  const jitterX = (Math.random() - 0.5) * 30;
-  const jitterY = (Math.random() - 0.5) * 30;
+  // Small jitter to avoid perfect overlap
+  const jitterX = (Math.random() - 0.5) * 20;
+  const jitterY = (Math.random() - 0.5) * 20;
 
   return {
     x: parentX + chosen.dx + jitterX,
     y: parentY + chosen.dy + jitterY
   };
+}
+
+// ═══════════════════════════════════════════════
+// TIDY BRANCHES (5.6e)
+// Recursively re-place every child near its parent,
+// preserving tree structure but compressing long branches.
+// ═══════════════════════════════════════════════
+
+function tidyBranches() {
+  if (!isEditable()) return;
+  if (!confirm('Tidy branch layout? Children will be re-placed near their parents. You can undo with Restore Placement.')) return;
+
+  // Snapshot for undo (reuse the same field the Cluster button used)
+  DATA.settings._lastGardenSnapshot = (DATA.vocabulary || []).map(w => ({
+    id: w.id,
+    gardenX: w.gardenX,
+    gardenY: w.gardenY
+  }));
+
+  const roots = (DATA.vocabulary || []).filter(w => !w.parentId);
+  const placed = new Set();
+  let cursorX = 200;
+  const START_Y = 200;
+
+  roots.forEach(root => {
+    if (placed.has(root.id)) return;
+    // Place the root if it doesn't have a coherent position
+    // (we don't move roots, only their descendants)
+    placeSubtree(root, root.gardenX || cursorX, root.gardenY || START_Y);
+    placed.add(root.id);
+
+    // Advance the horizontal cursor for the next root's family if this one
+    // was not previously positioned
+    if (!root.gardenX) {
+      cursorX += 400;
+      if (cursorX > 1700) cursorX = 200;
+    }
+  });
+
+  saveData(DATA);
+  renderGarden();
+  if (typeof renderGardenBranches === 'function') renderGardenBranches();
+}
+
+function placeSubtree(node, cx, cy) {
+  const children = (node.childIds || [])
+    .map(id => DATA.vocabulary.find(w => w.id === id))
+    .filter(Boolean);
+
+  if (!children.length) return;
+
+  // Distribute children in a circle around the node
+  const count = children.length;
+  const radius = 90 + Math.min(count * 8, 80);  // grows slowly with count
+  children.forEach((child, i) => {
+    const angle = (i / count) * Math.PI * 2 - Math.PI / 2;
+    const jitterX = (Math.random() - 0.5) * 15;
+    const jitterY = (Math.random() - 0.5) * 15;
+    child.gardenX = Math.round(cx + Math.cos(angle) * radius + jitterX);
+    child.gardenY = Math.round(cy + Math.sin(angle) * radius + jitterY);
+
+    // Clamp to canvas
+    child.gardenX = Math.max(40, Math.min(1960, child.gardenX));
+    child.gardenY = Math.max(40, Math.min(1560, child.gardenY));
+
+    // Recurse for the child's own children
+    placeSubtree(child, child.gardenX, child.gardenY);
+  });
 }
 
 function isAncestor(possibleAncestorId, wordId) {
@@ -1975,4 +2347,569 @@ function hasBranchRelation(aId, bId) {
   if (a.parentId === bId || b.parentId === aId) return true;
   if ((a.childIds || []).includes(bId) || (b.childIds || []).includes(aId)) return true;
   return false;
+}
+
+// ═ garden decor// ═══════════════════════════════════════════════
+
+const AMBIENT_SPRITES = [
+  'grass-1.png',
+  'grass-2.png',
+  'grass-3.png',
+  'rock-1.png',
+  'rock-2.png',
+  'flower-1.png',
+  'flower-2.png',
+  'mushroom-1.png',
+  'bush-1.png',
+  'log-1.png'
+];
+
+const AMBIENT_COUNT = 40;               // total sprites scattered
+const AMBIENT_AVOID_RADIUS = 40;        // px — avoid placing near plants
+
+function renderGardenAmbient() {
+  const layer = document.getElementById('garden-ambient-layer');
+  if (!layer) return;
+  layer.innerHTML = '';
+
+  // Generate once per session, deterministic per data snapshot
+  if (!gardenAmbientGenerated) {
+    gardenAmbientSprites = generateAmbientSprites();
+    gardenAmbientGenerated = true;
+  }
+
+  gardenAmbientSprites.forEach(s => {
+    const img = document.createElement('img');
+    img.src = `assets/garden/ambient/${s.src}`;
+    img.className = 'garden-ambient-sprite';
+    img.style.left = s.x + 'px';
+    img.style.top = s.y + 'px';
+    img.style.transform = `rotate(${s.rot}deg) scale(${s.scale})`;
+    img.style.width = s.size + 'px';
+    img.style.height = s.size + 'px';
+    img.onerror = () => img.remove();  // silently drop missing sprites
+    layer.appendChild(img);
+  });
+}
+
+function generateAmbientSprites() {
+  const CANVAS_W = 2000;
+  const CANVAS_H = 1600;
+  const out = [];
+  const words = DATA.vocabulary || [];
+  let attempts = 0;
+  const MAX_ATTEMPTS = AMBIENT_COUNT * 8;
+
+  // Seeded random for deterministic layout
+  const seed = hashString('garden-ambient-v1');
+  const rng = mulberry32(seed);
+
+  while (out.length < AMBIENT_COUNT && attempts < MAX_ATTEMPTS) {
+    attempts++;
+    const x = rng() * (CANVAS_W - 40) + 20;
+    const y = rng() * (CANVAS_H - 40) + 20;
+
+    // Avoid plants
+    const tooClose = words.some(w => {
+      const dx = (w.gardenX || 0) - x;
+      const dy = (w.gardenY || 0) - y;
+      return dx * dx + dy * dy < AMBIENT_AVOID_RADIUS * AMBIENT_AVOID_RADIUS;
+    });
+    if (tooClose) continue;
+
+    out.push({
+      src: AMBIENT_SPRITES[Math.floor(rng() * AMBIENT_SPRITES.length)],
+      x: Math.round(x),
+      y: Math.round(y),
+      rot: Math.round((rng() - 0.5) * 40),
+      scale: 0.7 + rng() * 0.6,
+      size: 28 + Math.round(rng() * 24)
+    });
+  }
+
+  return out;
+}
+
+// Simple deterministic PRNG
+function hashString(str) {
+  let h = 2166136261;
+  for (let i = 0; i < str.length; i++) {
+    h ^= str.charCodeAt(i);
+    h = (h * 16777619) >>> 0;
+  }
+  return h;
+}
+
+function mulberry32(a) {
+  return function () {
+    a |= 0;
+    a = (a + 0x6D2B79F5) | 0;
+    let t = a;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+// ════════════════theme sorting// ═══════════════════════════════════════════════
+
+function toggleGardenEditMode() {
+  gardenEditMode = !gardenEditMode;
+  DATA.settings.gardenEditMode = gardenEditMode;
+  saveData(DATA);
+  renderVocabSidebar();     // ← refresh sidebar buttons
+  renderGarden();           // ← refresh canvas
+}
+
+function renderGardenRegions() {
+  const layer = document.getElementById('garden-regions-layer');
+  if (!layer) return;
+  layer.innerHTML = '';
+
+  if (!gardenEditMode) {
+    layer.style.display = 'none';
+    return;
+  }
+  layer.style.display = 'block';
+
+  const regions = DATA.gardenThemeRegions || {};
+  const themeSlugs = Object.keys(regions);
+
+  themeSlugs.forEach(slug => {
+    const r = regions[slug];
+    const t = THEME_MAP[slug];
+    if (!t) return;
+
+    const el = document.createElement('div');
+    el.className = 'garden-region';
+    el.dataset.slug = slug;
+    el.style.left = r.x + 'px';
+    el.style.top = r.y + 'px';
+    el.style.width = r.w + 'px';
+    el.style.height = r.h + 'px';
+    el.style.borderColor = hexToRgba(t.color, 0.6);
+    el.style.background = hexToRgba(t.color, 0.12);
+
+    const wordCount = (DATA.vocabulary || []).filter(w => w.theme === slug).length;
+
+    el.innerHTML = `
+  <div class="garden-region-label"
+       style="background: ${hexToRgba(t.color, 0.9)}; color: #2a2520;"
+       onclick="event.stopPropagation(); zoomToRegion('${slug}')">
+    <span>${t.icon} ${t.label}</span>
+    <span class="garden-region-count">${wordCount}</span>
+    <button class="garden-region-zoom"
+            onclick="event.stopPropagation(); zoomToRegion('${slug}')"
+            title="Zoom to region">⤢</button>
+    <button class="garden-region-delete"
+            onclick="event.stopPropagation(); deleteGardenRegion('${slug}')"
+            title="Delete region">×</button>
+  </div>
+  <div class="garden-region-resize"
+       onmousedown="event.stopPropagation(); startRegionResize(event, '${slug}')"></div>
+`;
+
+    // Region drag
+    el.addEventListener('mousedown', (e) => {
+      if (e.target.closest('.garden-region-label')) return;
+      if (e.target.closest('.garden-region-resize')) return;
+      startRegionDrag(e, slug);
+    });
+
+    layer.appendChild(el);
+  });
+}
+
+function initGardenRegionDrag() {
+  // Drag is handled per-element on mousedown; nothing global needed
+}
+
+function startRegionDrag(e, slug) {
+  if (!gardenEditMode || !isEditable()) return;
+  e.preventDefault();
+  const r = DATA.gardenThemeRegions[slug];
+  if (!r) return;
+
+  gardenRegionDrag = {
+    slug,
+    startX: e.clientX,
+    startY: e.clientY,
+    origX: r.x,
+    origY: r.y,
+    mode: 'move'
+  };
+
+  document.addEventListener('mousemove', onRegionDragMove);
+  document.addEventListener('mouseup', onRegionDragEnd);
+}
+
+function startRegionResize(e, slug) {
+  if (!gardenEditMode || !isEditable()) return;
+  e.preventDefault();
+  const r = DATA.gardenThemeRegions[slug];
+  if (!r) return;
+
+  gardenRegionDrag = {
+    slug,
+    startX: e.clientX,
+    startY: e.clientY,
+    origX: r.x,
+    origY: r.y,
+    origW: r.w,
+    origH: r.h,
+    mode: 'resize'
+  };
+
+  document.addEventListener('mousemove', onRegionDragMove);
+  document.addEventListener('mouseup', onRegionDragEnd);
+}
+
+function onRegionDragMove(e) {
+  if (!gardenRegionDrag) return;
+  const d = gardenRegionDrag;
+  const r = DATA.gardenThemeRegions[d.slug];
+  if (!r) return;
+
+  const scale = currentZoom || 1;
+  const dx = (e.clientX - d.startX) / scale;
+  const dy = (e.clientY - d.startY) / scale;
+
+  if (d.mode === 'move') {
+    r.x = Math.round(d.origX + dx);
+    r.y = Math.round(d.origY + dy);
+  } else {
+    r.w = Math.max(120, Math.round(d.origW + dx));
+    r.h = Math.max(100, Math.round(d.origH + dy));
+  }
+
+  const el = document.querySelector(`.garden-region[data-slug="${d.slug}"]`);
+  if (el) {
+    el.style.left = r.x + 'px';
+    el.style.top = r.y + 'px';
+    el.style.width = r.w + 'px';
+    el.style.height = r.h + 'px';
+  }
+}
+
+function onRegionDragEnd() {
+  if (!gardenRegionDrag) return;
+  saveData(DATA);
+  gardenRegionDrag = null;
+  document.removeEventListener('mousemove', onRegionDragMove);
+  document.removeEventListener('mouseup', onRegionDragEnd);
+}
+
+function zoomToRegion(slug) {
+  const r = DATA.gardenThemeRegions[slug];
+  const wrap = document.getElementById('garden-canvas-wrap');
+  if (!r || !wrap) return;
+
+  const padding = 100;
+  const viewportW = wrap.clientWidth;
+  const viewportH = wrap.clientHeight;
+
+  // Compute zoom to fit region
+  const zoomX = viewportW / (r.w + padding * 2);
+  const zoomY = viewportH / (r.h + padding * 2);
+  const newZoom = Math.min(2, Math.max(0.4, Math.min(zoomX, zoomY)));
+
+  currentZoom = newZoom;
+  applyZoom();
+
+  // Scroll so region center is in view
+  const cx = r.x + r.w / 2;
+  const cy = r.y + r.h / 2;
+  wrap.scrollTo({
+    left: cx * newZoom - viewportW / 2,
+    top: cy * newZoom - viewportH / 2,
+    behavior: 'smooth'
+  });
+}
+
+// ─── UNTHEMED WORD PLACEMENT ────────────────
+function startGardenPlacement(wordId) {
+  const word = DATA.vocabulary.find(w => w.id === wordId);
+  if (!word) return;
+  gardenPendingPlacement = { wordId };
+  renderGarden();
+
+  const scene = document.getElementById('palace-scene') || document.getElementById('garden-canvas');
+  if (!scene) return;
+
+  // Attach a one-shot click handler to the canvas
+  const canvas = document.getElementById('garden-canvas');
+  if (canvas) {
+    canvas.style.cursor = 'crosshair';
+    canvas.addEventListener('click', onGardenPlacementClick, { once: false });
+  }
+}
+
+function onGardenPlacementClick(e) {
+  if (!gardenPendingPlacement) {
+    const canvas = document.getElementById('garden-canvas');
+    if (canvas) canvas.removeEventListener('click', onGardenPlacementClick);
+    return;
+  }
+  // Ignore clicks inside existing plants or region labels
+  if (e.target.closest('.garden-plant')) return;
+  if (e.target.closest('.garden-region-label')) return;
+  if (e.target.closest('.garden-region-resize')) return;
+
+  const canvas = document.getElementById('garden-canvas');
+  if (!canvas) return;
+  const rect = canvas.getBoundingClientRect();
+  const scale = currentZoom || 1;
+  const x = (e.clientX - rect.left) / scale;
+  const y = (e.clientY - rect.top) / scale;
+
+  const word = DATA.vocabulary.find(w => w.id === gardenPendingPlacement.wordId);
+  if (word) {
+    word.gardenX = Math.round(x);
+    word.gardenY = Math.round(y);
+
+    // Check if this point is inside a theme region
+    const regionTheme = findRegionAt(x, y);
+    if (regionTheme) {
+      word.theme = regionTheme;
+    }
+    // If outside all regions, we do nothing to the theme (per D1 = A)
+
+    saveData(DATA);
+  }
+
+  cancelGardenPlacement();
+  renderGarden();
+}
+
+function cancelGardenPlacement() {
+  gardenPendingPlacement = null;
+  const canvas = document.getElementById('garden-canvas');
+  if (canvas) {
+    canvas.removeEventListener('click', onGardenPlacementClick);
+    canvas.style.cursor = '';
+  }
+  renderGarden();
+}
+
+function findRegionAt(x, y) {
+  const regions = DATA.gardenThemeRegions || {};
+  for (const slug of Object.keys(regions)) {
+    const r = regions[slug];
+    if (x >= r.x && x <= r.x + r.w && y >= r.y && y <= r.y + r.h) {
+      return slug;
+    }
+  }
+  return null;
+}
+
+// ─── UNTHEMED LIST (sidebar) ─────────────────
+function renderUnthemedWordsList() {
+  const unthemed = (DATA.vocabulary || []).filter(w => !w.theme);
+
+  if (!unthemed.length) {
+    return `<div class="lang-empty" style="font-size:0.7rem;">All words have themes! 🎉</div>`;
+  }
+
+  return unthemed.slice(0, 40).map(w => {
+    const meta = LANGUAGES[w.language];
+    const display = formatClusterInline(w) || w.word;
+    return `
+      <div class="garden-unthemed-row">
+        <span class="garden-unthemed-flag">${meta.flag}</span>
+        <span class="garden-unthemed-word">${escapeHtml(display)}</span>
+        <button class="garden-unthemed-place"
+                onclick="startGardenPlacement('${w.id}')"
+                ${gardenPendingPlacement ? 'disabled' : ''}>
+          Place
+        </button>
+      </div>
+    `;
+  }).join('') + (unthemed.length > 40
+    ? `<div class="garden-unthemed-more">+${unthemed.length - 40} more</div>`
+    : '');
+}
+// ═══════════════════════════════════════════════
+// REGION DRAWING (5.6e)
+// ═══════════════════════════════════════════════
+
+let gardenRegionDrawing = null;   // {startX, startY, el}
+
+function openNewRegionFlow() {
+  if (!isEditable()) return;
+  const available = THEMES.filter(t => !DATA.gardenThemeRegions[t.slug]);
+
+  if (!available.length) {
+    alert('All themes already have regions. Delete one first.');
+    return;
+  }
+
+  const options = available.map((t, i) => `${i + 1}. ${t.icon} ${t.label}`).join('\n');
+  const input = prompt(
+    `Which theme?\n\n${options}\n\nEnter the number:`,
+    '1'
+  );
+  if (!input) return;
+
+  const idx = parseInt(input) - 1;
+  if (isNaN(idx) || idx < 0 || idx >= available.length) {
+    alert('Invalid choice.');
+    return;
+  }
+
+  const themeSlug = available[idx].slug;
+  startRegionDrawing(themeSlug);
+}
+
+function startRegionDrawing(slug) {
+  gardenPendingRegionSlug = slug;
+
+  const layer = document.getElementById('garden-regions-layer');
+  if (!layer) return;
+
+  layer.style.pointerEvents = 'auto';
+  layer.style.cursor = 'crosshair';
+
+  const canvas = document.getElementById('garden-canvas');
+  if (canvas) canvas.style.cursor = 'crosshair';
+
+  // Listen for mousedown on the layer
+  layer.addEventListener('mousedown', onRegionDrawStart);
+  layer.addEventListener('mousemove', onRegionDrawMove);
+  document.addEventListener('mouseup', onRegionDrawEnd);
+}
+
+function onRegionDrawStart(e) {
+  if (!gardenPendingRegionSlug) return;
+  if (e.target.closest('.garden-region')) return;
+
+  const canvas = document.getElementById('garden-canvas');
+  if (!canvas) return;
+  const rect = canvas.getBoundingClientRect();
+  const scale = currentZoom || 1;
+  const x = (e.clientX - rect.left) / scale;
+  const y = (e.clientY - rect.top) / scale;
+
+  gardenRegionDrawing = {
+    startX: x,
+    startY: y,
+    el: document.createElement('div')
+  };
+
+  gardenRegionDrawing.el.className = 'garden-region drawing';
+  gardenRegionDrawing.el.style.left = x + 'px';
+  gardenRegionDrawing.el.style.top = y + 'px';
+  gardenRegionDrawing.el.style.width = '0px';
+  gardenRegionDrawing.el.style.height = '0px';
+
+  const themeColor = (THEME_MAP[gardenPendingRegionSlug]?.color) || '#c8c8c8';
+  gardenRegionDrawing.el.style.borderColor = hexToRgba(themeColor, 0.6);
+  gardenRegionDrawing.el.style.background = hexToRgba(themeColor, 0.12);
+
+  const layer = document.getElementById('garden-regions-layer');
+  layer.appendChild(gardenRegionDrawing.el);
+}
+
+function onRegionDrawMove(e) {
+  if (!gardenRegionDrawing) return;
+  const canvas = document.getElementById('garden-canvas');
+  if (!canvas) return;
+
+  const rect = canvas.getBoundingClientRect();
+  const scale = currentZoom || 1;
+  const x = (e.clientX - rect.left) / scale;
+  const y = (e.clientY - rect.top) / scale;
+
+  const x1 = Math.min(gardenRegionDrawing.startX, x);
+  const y1 = Math.min(gardenRegionDrawing.startY, y);
+  const w = Math.abs(x - gardenRegionDrawing.startX);
+  const h = Math.abs(y - gardenRegionDrawing.startY);
+
+  gardenRegionDrawing.el.style.left = x1 + 'px';
+  gardenRegionDrawing.el.style.top = y1 + 'px';
+  gardenRegionDrawing.el.style.width = w + 'px';
+  gardenRegionDrawing.el.style.height = h + 'px';
+}
+
+function onRegionDrawEnd(e) {
+  if (!gardenRegionDrawing) return;
+
+  const canvas = document.getElementById('garden-canvas');
+  if (!canvas) return;
+  const rect = canvas.getBoundingClientRect();
+  const scale = currentZoom || 1;
+  const x = (e.clientX - rect.left) / scale;
+  const y = (e.clientY - rect.top) / scale;
+
+  const x1 = Math.min(gardenRegionDrawing.startX, x);
+  const y1 = Math.min(gardenRegionDrawing.startY, y);
+  const w = Math.abs(x - gardenRegionDrawing.startX);
+  const h = Math.abs(y - gardenRegionDrawing.startY);
+
+  const MIN_W = 100;
+  const MIN_H = 80;
+
+  if (w < MIN_W || h < MIN_H) {
+    // Too small — discard and clean up
+    gardenRegionDrawing.el.remove();
+    gardenRegionDrawing = null;
+    cleanupRegionDrawing();
+    return;
+  }
+
+  // Commit the region
+  DATA.gardenThemeRegions[gardenPendingRegionSlug] = {
+    x: Math.round(x1),
+    y: Math.round(y1),
+    w: Math.round(w),
+    h: Math.round(h)
+  };
+  saveData(DATA);
+
+  gardenRegionDrawing = null;
+  cleanupRegionDrawing();
+  renderGarden();
+}
+
+function cleanupRegionDrawing() {
+  gardenPendingRegionSlug = null;
+
+  const layer = document.getElementById('garden-regions-layer');
+  if (layer) {
+    layer.removeEventListener('mousedown', onRegionDrawStart);
+    layer.removeEventListener('mousemove', onRegionDrawMove);
+    layer.style.pointerEvents = 'none';
+    layer.style.cursor = '';
+  }
+  document.removeEventListener('mouseup', onRegionDrawEnd);
+
+  const canvas = document.getElementById('garden-canvas');
+  if (canvas) canvas.style.cursor = '';
+}
+
+function cancelRegionDrawing() {
+  if (gardenRegionDrawing) {
+    gardenRegionDrawing.el.remove();
+    gardenRegionDrawing = null;
+  }
+  cleanupRegionDrawing();
+  renderGarden();
+}
+
+// ─── REGION DELETION ────────────────────────
+function deleteGardenRegion(slug) {
+  if (!isEditable()) return;
+  const t = THEME_MAP[slug];
+  if (!t) return;
+  if (!confirm(`Delete the ${t.label} region? Words keep their theme.`)) return;
+  delete DATA.gardenThemeRegions[slug];
+  saveData(DATA);
+  renderGarden();
+}
+
+// ─── COLOR HELPERS ───────────────────────────
+function hexToRgba(hex, alpha) {
+  const h = hex.replace('#', '');
+  const r = parseInt(h.substring(0, 2), 16);
+  const g = parseInt(h.substring(2, 4), 16);
+  const b = parseInt(h.substring(4, 6), 16);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }

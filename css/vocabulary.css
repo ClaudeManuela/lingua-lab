@@ -529,3 +529,57 @@
     display: none;
   }
 }
+/* ═══ THEME CHIPS TOGGLE (Gallery) ═══ */
+.gallery-theme-chips-header {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 0.4rem;
+}
+
+.theme-chips-toggle {
+  background: transparent;
+  border: none;
+  padding: 0.2rem 0.5rem;
+  font-family: var(--font-pixel);
+  font-size: 0.65rem;
+  font-weight: bold;
+  letter-spacing: 0.5px;
+  color: var(--paper-ink-soft);
+  cursor: pointer;
+}
+
+.theme-chips-toggle:hover {
+  color: var(--accent-ink);
+  text-decoration: underline;
+}
+
+/* ═══ PLANT TYPE PICKER (word card) ═══ */
+.plant-type-picker {
+  display: flex;
+  gap: 0.3rem;
+  flex-wrap: wrap;
+}
+
+.plant-type-btn {
+  flex: 1;
+  min-width: 90px;
+  background: var(--paper-bg);
+  border: 2px solid var(--border-soft);
+  padding: 0.4rem 0.5rem;
+  font-family: var(--font-pixel);
+  font-size: 0.65rem;
+  font-weight: bold;
+  cursor: pointer;
+  color: var(--paper-ink);
+  transition: all 0.1s;
+}
+
+.plant-type-btn:hover {
+  border-color: var(--accent-violet);
+}
+
+.plant-type-btn.active {
+  background: var(--accent-violet);
+  color: var(--text-inverse);
+  border-color: var(--accent-violet);
+}
