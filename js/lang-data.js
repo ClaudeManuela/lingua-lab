@@ -145,7 +145,7 @@ const THEMES = [
   { slug: 'food',        label: 'Food',         icon: '🍚', color: '#e8c8a8' },
   { slug: 'drink',       label: 'Drink',        icon: '🍵', color: '#a8d9c8' },
   { slug: 'market',      label: 'Market',       icon: '🛒', color: '#e8d9a8' },
-  { slug: 'money',       label: 'Money',        icon: '💰', color: '#d9c88a' },
+  { slug: 'store',       label: 'Store',        icon: '🛍️', color: '#a8c8d9' },
   { slug: 'school',      label: 'School',       icon: '🎓', color: '#a8c8e8' },
   { slug: 'work',        label: 'Work',         icon: '💼', color: '#8a9bc4' },
   { slug: 'home',        label: 'Home',         icon: '🏡', color: '#c8a898' },

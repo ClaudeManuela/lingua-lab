@@ -43,6 +43,14 @@ const PALACE_ROOMS = [
     icon: '�',
     background: 'assets/palace/store.png',
     placeholderColor: '#e8d4a8'
+  },
+  {
+    id: 'closet',
+    name: 'Closet',
+    theme: 'clothing',
+    icon: '👗',
+    background: 'assets/palace/closet.png',
+    placeholderColor: '#d9a8c8',
   }
 ];
 
