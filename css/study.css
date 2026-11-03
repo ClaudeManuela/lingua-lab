@@ -385,3 +385,44 @@
     padding: 0.5rem 0.5rem;
   }
 }
+
+@media (max-width: 700px) {
+  /* Lock the card to a taller height so all content fits */
+  .study-card, 
+  .study-card-inner, 
+  .study-card-face {
+    min-height: 420px; 
+    height: 420px;
+  }
+
+  /* Ensure the back face starts from the top and has room */
+  .study-card-back {
+    justify-content: flex-start;
+    padding-top: 2rem;
+    padding-bottom: 2rem;
+    overflow-y: auto;
+  }
+
+  .study-session-wrap {
+    padding-bottom: 3rem; /* Give space for the timer below */
+  }
+
+  /* Stack the buttons so they don't get clipped sideways */
+  .study-grade-row {
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-top: auto; /* Pushes buttons to the bottom of the card */
+    padding-top: 1rem;
+  }
+
+  .study-grade {
+    width: 100%;
+    min-width: 0;
+    padding: 0.8rem;
+    font-size: 0.8rem;
+  }
+
+  .study-card-face {
+    padding: 1rem;
+  }
+}

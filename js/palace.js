@@ -174,6 +174,12 @@ function switchToStudyLayout() {
   palaceTick = 0;
   palaceMobileFullscreen = false;
   palaceFullscreenPrompted = false;
+
+  // On mobile, entering study mode should immediately open the setup modal
+  if (typeof isPalaceMobile === 'function' && isPalaceMobile()) {
+    palaceSetupModalOpen = true;
+  }
+
   renderPalace();
 }
 
@@ -517,23 +523,8 @@ function renderPalaceSetupModal() {
 
 // ─── MOBILE DRAWER ───────────────────────────
 function renderPalaceMobileDrawer(room, data, editing) {
-  if (!editing) {
-    // NOTE: mobile study layout is a placeholder until Phase 5.5c-4
-    // (full-screen mobile sessions).
-    return `
-      <div class="palace-mobile-drawer" id="palace-mobile-drawer">
-        <button class="palace-drawer-toggle" onclick="togglePalaceDrawer()">
-          <span id="palace-drawer-label">Tasks</span>
-          <span class="palace-drawer-caret" id="palace-drawer-caret">▾</span>
-        </button>
-        <div class="palace-drawer-body" id="palace-drawer-body" hidden>
-          <div class="palace-drawer-content" id="palace-drawer-content">
-            ${renderPalaceTaskPanel()}
-          </div>
-        </div>
-      </div>
-    `;
-  }
+  // Study mode drawer is handled by renderPalaceMobileStudyDrawer()
+  if (!editing) return '';
 
   return `
     <div class="palace-mobile-drawer" id="palace-mobile-drawer">
@@ -557,7 +548,7 @@ function renderPalaceMobileDrawer(room, data, editing) {
 // ═════════════════════════════════════════════
 
 function renderPalaceMobileStudyDrawer(room, data) {
-  // Running session — drawer shows the current task panel
+  // If a session is running, show the task panel in the drawer
   if (palaceStudySession && !palaceStudySession.complete) {
     return `
       <div class="palace-mobile-drawer open" id="palace-mobile-drawer">
@@ -570,15 +561,11 @@ function renderPalaceMobileStudyDrawer(room, data) {
     `;
   }
 
-  // Setup — show a button that opens the setup modal
-  return `
-    <div class="palace-mobile-drawer" id="palace-mobile-drawer">
-      <button class="palace-drawer-toggle" onclick="openPalaceSetupModal()">
-        ▶ Start a study session
-      </button>
-    </div>
-  `;
+  // If we are in setup mode, the drawer should be completely empty.
+  // The setup UI lives exclusively inside the modal on mobile.
+  return '';
 }
+
 function renderPalaceMobileSlotsContent(room, data) {
   return `<div class="palace-slots-panel compact">${renderPalaceSlotsPanel(room, data)}</div>`;
 }

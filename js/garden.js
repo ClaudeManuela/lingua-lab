@@ -970,15 +970,23 @@ function submitBackfill(event) {
 function addWordsToGarden(language, wordsText, meaningsText, date, backlog) {
   const words = parseWordList(wordsText);
   const meanings = parseWordList(meaningsText);
+  
   words.forEach((word, i) => {
+    // Normalize for checking (lowercase, trim)
+    const normWord = word.trim().toLowerCase();
+    
+    // Find if it already exists
     const existing = DATA.vocabulary.find(w => 
-      w.language === language && w.word.toLowerCase() === word.toLowerCase()
+      w.language === language && w.word.trim().toLowerCase() === normWord
     );
+    
     if (existing) {
+      // It's a duplicate — don't add it again, just increment water
       existing.waters = (existing.waters || 0) + 1;
       existing.lastWatered = date;
       updateWordStage(existing);
     } else {
+      // It's new — add it
       const pos = findAutoPosition(language);
       DATA.vocabulary.push({
         id: generateUUID(),
@@ -1000,11 +1008,114 @@ function addWordsToGarden(language, wordsText, meaningsText, date, backlog) {
         theme: '',
         wordType: '',
         direction: '',
-        galleryThemesHidden: false,
+        plantType: 'flowering' 
       });
     }
   });
   saveData(DATA);
+}
+
+// ═══════════════════════════════════════════════
+// DUPLICATE CLEANUP TOOL
+// ═══════════════════════════════════════════════
+
+function findAndFixDuplicates() {
+  if (!isEditable()) return;
+  
+  const seen = {};
+  const duplicates = []; // Array of { primaryId, duplicateId }
+  
+  (DATA.vocabulary || []).forEach(w => {
+    // Create a unique key based on language + word (normalized)
+    const key = `${w.language}-${w.word.trim().toLowerCase()}`;
+    
+    if (!seen[key]) {
+      // First time seeing this word — mark it as the primary
+      seen[key] = w;
+    } else {
+      // We've seen this word before — it's a duplicate
+      duplicates.push({
+        primary: seen[key],
+        duplicate: w
+      });
+    }
+  });
+
+  if (!duplicates.length) {
+    alert('No duplicate words found! 🎉');
+    return;
+  }
+
+  // Show prompt with options
+  let msg = `Found ${duplicates.length} duplicate words:\n\n`;
+  duplicates.slice(0, 10).forEach(d => {
+    msg += `• ${d.primary.word} (${d.primary.language})\n`;
+  });
+  if (duplicates.length > 10) msg += `...and ${duplicates.length - 10} more.\n`;
+  
+  msg += `\nDelete the duplicates? (Their waters will be added to the primary word, and any Palace assignments will be updated).`;
+  
+  if (!confirm(msg)) return;
+
+  // Do the merge
+  duplicates.forEach(d => {
+    const { primary, duplicate } = d;
+
+    // 1. Merge waters
+    primary.waters = (primary.waters || 0) + (duplicate.waters || 0);
+    
+    // 2. Merge dates (keep the older lastWatered)
+    if (duplicate.lastWatered && (!primary.lastWatered || duplicate.lastWatered < primary.lastWatered)) {
+      primary.lastWatered = duplicate.lastWatered;
+    }
+    if (duplicate.dateAdded && (!primary.dateAdded || duplicate.dateAdded < primary.dateAdded)) {
+      primary.dateAdded = duplicate.dateAdded;
+    }
+
+    // 3. Merge connections (to avoid orphaned references)
+    const conns = new Set([...(primary.connections || []), ...(duplicate.connections || [])]);
+    conns.delete(duplicate.id); // remove self-reference
+    conns.delete(primary.id);
+    primary.connections = Array.from(conns);
+    
+    // Update the connection arrays of those other words
+    primary.connections.forEach(cid => {
+      const cw = DATA.vocabulary.find(x => x.id === cid);
+      if (cw && cw.connections) {
+        cw.connections = cw.connections.map(id => id === duplicate.id ? primary.id : id);
+        cw.connections = [...new Set(cw.connections)]; // deduplicate
+      }
+    });
+
+    // 4. Merge children (if the duplicate had children)
+    (duplicate.childIds || []).forEach(cid => {
+      const child = DATA.vocabulary.find(x => x.id === cid);
+      if (child) {
+        child.parentId = primary.id;
+        if (!primary.childIds) primary.childIds = [];
+        if (!primary.childIds.includes(cid)) primary.childIds.push(cid);
+      }
+    });
+
+    // 5. Fix Palace assignments
+    Object.keys(DATA.palaceRooms || {}).forEach(roomId => {
+      const room = DATA.palaceRooms[roomId];
+      (room.slots || []).forEach(slot => {
+        Object.keys(slot.words || {}).forEach(lang => {
+          if (slot.words[lang] === duplicate.id) {
+            slot.words[lang] = primary.id; // Repoint to primary
+          }
+        });
+      });
+    });
+
+    // 6. Remove the duplicate from vocabulary
+    DATA.vocabulary = DATA.vocabulary.filter(w => w.id !== duplicate.id);
+  });
+
+  saveData(DATA);
+  renderGarden();
+  alert(`✅ Cleaned up ${duplicates.length} duplicate words.`);
 }
 
 function findAutoPosition(language) {

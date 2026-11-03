@@ -138,9 +138,10 @@ function renderVocabSidebar() {
       <div class="garden-sidebar-title">Summary</div>
       <div id="garden-summary-list"></div>
     </div>
-        <div class="garden-sidebar-section">
-    <div class="garden-sidebar-title">Themes</div>
-    <div id="theme-clusters-list"></div>
+    
+    <div class="garden-sidebar-section">
+      <div class="garden-sidebar-title">Themes</div>
+      <div id="theme-clusters-list"></div>
     </div>
 
     <div class="garden-sidebar-section" id="vocab-mode-actions">
@@ -149,36 +150,37 @@ function renderVocabSidebar() {
     </div>
 
     <div class="garden-sidebar-section" id="garden-unthemed-section" style="display:none;">
-  <div class="garden-sidebar-title">Unthemed words</div>
-  <div id="garden-unthemed-list"></div>
-</div>
+      <div class="garden-sidebar-title">Unthemed words</div>
+      <div id="garden-unthemed-list"></div>
+    </div>
   `;
 
   // Populate shared sidebar sections (reuse garden's logic)
   if (typeof renderGardenSidebar === 'function') {
     renderGardenSidebar();
   }
+
   const themesList = document.getElementById('theme-clusters-list');
-if (themesList) {
-  const counts = {};
-  (DATA.vocabulary || []).forEach(w => {
-    if (w.theme) counts[w.theme] = (counts[w.theme] || 0) + 1;
-  });
-  const sorted = Object.keys(counts).sort((a, b) => counts[b] - counts[a]);
-  if (!sorted.length) {
-    themesList.innerHTML = `<div class="lang-empty" style="font-size:0.7rem;">No themed words yet.</div>`;
-  } else {
-    themesList.innerHTML = sorted.map(slug => {
-      const t = THEME_MAP[slug];
-      if (!t) return '';
-      return `<div class="garden-sidebar-row theme-sidebar-row"
-                   onclick="jumpToTheme('${slug}')">
-        <span>${t.icon} ${t.label}</span>
-        <strong>${counts[slug]}</strong>
-      </div>`;
-    }).join('');
+  if (themesList) {
+    const counts = {};
+    (DATA.vocabulary || []).forEach(w => {
+      if (w.theme) counts[w.theme] = (counts[w.theme] || 0) + 1;
+    });
+    const sorted = Object.keys(counts).sort((a, b) => counts[b] - counts[a]);
+    if (!sorted.length) {
+      themesList.innerHTML = `<div class="lang-empty" style="font-size:0.7rem;">No themed words yet.</div>`;
+    } else {
+      themesList.innerHTML = sorted.map(slug => {
+        const t = THEME_MAP[slug];
+        if (!t) return '';
+        return `<div class="garden-sidebar-row theme-sidebar-row"
+                     onclick="jumpToTheme('${slug}')">
+          <span>${t.icon} ${t.label}</span>
+          <strong>${counts[slug]}</strong>
+        </div>`;
+      }).join('');
+    }
   }
-}
 
   // Populate mode-specific actions
   const actions = document.getElementById('vocab-actions-list');
@@ -189,46 +191,41 @@ if (themesList) {
       <button onclick="openStudyMode()">Start / Resume Study</button>
     `;
   } else if (vocabTab === 'garden') {
-  const canPlaceRegion = gardenEditMode && isEditable();
-  actions.innerHTML = admin ? `
-    <button onclick="openStudyMode()">Study</button>
-    <button onclick="openAddWordsModal()">+ Add Words</button>
-    <button onclick="openBackfillModal()">Backfill</button>
-    <button onclick="toggleGardenEditMode()"
-            class="${gardenEditMode ? 'active' : ''}">
-      ${gardenEditMode ? '✓ Done editing' : '🗺️ Edit Garden'}
-    </button>
-    ${canPlaceRegion ? `
-      <button onclick="openNewRegionFlow()">+ New Region</button>
-      <button onclick="tidyBranches()">Tidy Branches</button>
-    ` : ''}
-    <button onclick="restoreGardenPlacement()"
-            ${DATA.settings._lastGardenSnapshot?.length ? '' : 'disabled'}>
-      Restore Placement
-    </button>
-  ` : '';
-
-  // Also render the unthemed words list if edit mode is on
-  const unthemedSection = document.getElementById('garden-unthemed-list');
-  if (unthemedSection) {
-    unthemedSection.innerHTML = gardenEditMode ? renderUnthemedWordsList() : '';
-    unthemedSection.parentElement.style.display = gardenEditMode ? '' : 'none';
-  }
-
+    const canPlaceRegion = gardenEditMode && isEditable();
+    actions.innerHTML = admin ? `
+      <button onclick="openStudyMode()">Study</button>
+      <button onclick="openAddWordsModal()">+ Add Words</button>
+      <button onclick="openBackfillModal()">Backfill</button>
+      <button onclick="toggleGardenEditMode()" class="${gardenEditMode ? 'active' : ''}">
+        ${gardenEditMode ? '✓ Done editing' : '🗺️ Edit Garden'}
+      </button>
+      ${canPlaceRegion ? `
+        <button onclick="openNewRegionFlow()">+ New Region</button>
+        <button onclick="tidyBranches()">Tidy Branches</button>
+      ` : ''}
+      
+      <button onclick="findAndFixDuplicates()" style="margin-top: 1rem; background: var(--danger); color: white;">⚠ Find Duplicates</button>
+      
+      <button onclick="restoreGardenPlacement()"
+              ${DATA.settings._lastGardenSnapshot?.length ? '' : 'disabled'}>
+        Restore Placement
+      </button>
+    ` : '';
   } else if (vocabTab === 'palace') {
     actions.innerHTML = typeof renderPalaceSidebarActions === 'function'
       ? renderPalaceSidebarActions(admin)
       : '';
   }
-        // Toggle unthemed section visibility based on garden edit mode
-      const unthemedSection = document.getElementById('garden-unthemed-section');
-      if (unthemedSection) {
-        unthemedSection.style.display = (vocabTab === 'garden' && gardenEditMode) ? '' : 'none';
-      }
-      const unthemedList = document.getElementById('garden-unthemed-list');
-      if (unthemedList && gardenEditMode) {
-        unthemedList.innerHTML = renderUnthemedWordsList();
-      }
+
+  // Toggle unthemed section visibility based on garden edit mode
+  const unthemedSection = document.getElementById('garden-unthemed-section');
+  if (unthemedSection) {
+    unthemedSection.style.display = (vocabTab === 'garden' && gardenEditMode) ? '' : 'none';
+  }
+  const unthemedList = document.getElementById('garden-unthemed-list');
+  if (unthemedList && gardenEditMode && typeof renderUnthemedWordsList === 'function') {
+    unthemedList.innerHTML = renderUnthemedWordsList();
+  }
 }
 
 //study by theme
