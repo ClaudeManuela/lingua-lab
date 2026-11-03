@@ -95,7 +95,13 @@ function goToSection(section) {
       return;
     }
   }
-
+  if (section === 'notes') {
+    if (typeof renderNotesPage === 'function') {
+      showPage('notes-page');
+      renderNotesPage();
+      return;
+    }
+  }
   if (section === 'vocabulary') {
     if (typeof renderVocabulary === 'function') {
     renderVocabulary();

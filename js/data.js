@@ -41,6 +41,9 @@ function getDefaultData() {
     studySessions: [],
     studyState: null,
     palaceRooms: [],
+    literatureNotes: [],
+    zIndexNotes: [],
+    learningLogs: [],
     gardenThemeRegions: {}, 
     seedPoints: {},
     gardenSessions: [],
@@ -72,6 +75,11 @@ function migrateData(data) {
   // Ensure top-level arrays exist
   if (!Array.isArray(data.languageTests)) data.languageTests = [];
   if (!Array.isArray(data.languageReflections)) data.languageReflections = [];
+  
+    // Notes Pillar arrays
+  if (!Array.isArray(data.literatureNotes)) data.literatureNotes = [];
+  if (!Array.isArray(data.zIndexNotes)) data.zIndexNotes = [];
+  if (!Array.isArray(data.learningLogs)) data.learningLogs = [];
 
   // Garden array checks
   if (!Array.isArray(data.vocabulary)) data.vocabulary = [];
@@ -246,6 +254,10 @@ async function fetchFromCloud() {
   }
 }
 
+// ─── CLOUD SYNC (QUEUED) ─────────────────────
+let isCloudSaving = false;
+let cloudSavePending = false;
+
 async function saveToCloud(data) {
   const key = getAdminKey();
   if (!key) {
@@ -254,7 +266,7 @@ async function saveToCloud(data) {
   }
 
   data.metadata.lastSaved = new Date().toISOString();
-
+  
   try {
     const res = await fetch(API_URL, {
       method: 'PUT',
@@ -272,6 +284,47 @@ async function saveToCloud(data) {
   } catch (e) {
     console.error('Cloud save failed:', e);
     return { success: false, error: e.message };
+  }
+}
+
+function saveData(data) {
+  // 1. Always cache locally FIRST (instant, no data loss)
+  cacheData(data);
+  
+  // 2. If no admin key, we can't save to cloud anyway
+  if (!getAdminKey()) return;
+
+  // 3. Queue the cloud save
+  if (isCloudSaving) {
+    // If a save is already in progress, mark that we need to save again
+    cloudSavePending = true;
+    return;
+  }
+
+  executeQueuedSave(data);
+}
+
+async function executeQueuedSave(data) {
+  isCloudSaving = true;
+  cloudSavePending = false;
+
+  const result = await saveToCloud(data);
+  
+  if (result.success) {
+    console.log('☁️ Cloud save success');
+  } else {
+    console.warn('⚠️ Cloud save failed:', result.error);
+  }
+
+  isCloudSaving = false;
+
+  // If another save was requested while we were saving, do it again now.
+  // We use the latest cached data from localStorage to ensure we send the most up-to-date state.
+  if (cloudSavePending) {
+    const latestData = getCachedData();
+    if (latestData) {
+      executeQueuedSave(latestData);
+    }
   }
 }
 
@@ -299,19 +352,6 @@ function loadData() {
   const fresh = getDefaultData();
   cacheData(fresh);
   return fresh;
-}
-
-function saveData(data) {
-  cacheData(data);
-  if (getAdminKey()) {
-    saveToCloud(data).then(result => {
-      if (result.success) {
-        console.log('☁️ Cloud save:', result.savedAt);
-      } else {
-        console.warn('⚠️ Cloud save failed:', result.error);
-      }
-    });
-  }
 }
 
 async function loadFromCloud() {
