@@ -544,13 +544,16 @@ function renderNoteEditorModal() {
          <div class="note-editor-controls">
     ${isEdit ? `<button class="save-btn small" onclick="saveNoteDraft()">Save</button>` : ''}
     
-    <!-- Only show Edit if it's NOT a learning log -->
     ${admin && !isEdit && !isLearning ? `
       <button class="add-btn small" onclick="currentNoteMode='edit'; renderNoteEditorModal()">Edit</button>
     ` : ''}
     
     <button class="cancel-btn small" onclick="closeNoteEditor()">Close</button>
+    ${admin && !isEdit ? `<button class="cancel-btn small" style="color: var(--danger);" onclick="deleteCurrentNote()">Delete</button>` : ''}
+
   </div>
+        <div class="note-editor-header">
+        
 
         <div class="note-editor-body">
           ${isEdit ? renderNoteEditMode(draft, sourceOptions) : renderNoteViewMode(draft, currentNoteType)}
@@ -590,7 +593,6 @@ function renderNoteViewMode(draft, type) {
 
       <div class="note-view-body">
         ${renderedBody}
-          <button class="cancel-btn small" style="color: var(--danger);" onclick="deleteCurrentNote()">Delete</button>
       </div>
 
       ${linksHtml ? `
