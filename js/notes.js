@@ -538,8 +538,6 @@ function renderNoteEditorModal() {
   const modalHtml = `
     <div class="modal-overlay" id="note-editor-modal">
       <div class="note-editor-panel">
-        
-        <div class="note-editor-header">
           <div class="note-editor-tab">
             ${currentNoteType === 'learning' ? '📖 Learning Log' : currentNoteType === 'literature' ? '📚 Literature' : '🗂 Z-Note'}
           </div>
