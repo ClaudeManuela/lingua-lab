@@ -102,6 +102,13 @@ function goToSection(section) {
       return;
     }
   }
+ if (section === 'results') {
+    if (typeof renderResultsPage === 'function') {
+      showPage('results-page');
+      renderResultsPage();
+      return;
+    }
+  }
   if (section === 'vocabulary') {
     if (typeof renderVocabulary === 'function') {
     renderVocabulary();

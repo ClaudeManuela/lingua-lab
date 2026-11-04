@@ -44,6 +44,7 @@ function getDefaultData() {
     literatureNotes: [],
     zIndexNotes: [],
     learningLogs: [],
+    testResults: [],
     gardenThemeRegions: {}, 
     seedPoints: {},
     gardenSessions: [],
@@ -75,11 +76,12 @@ function migrateData(data) {
   // Ensure top-level arrays exist
   if (!Array.isArray(data.languageTests)) data.languageTests = [];
   if (!Array.isArray(data.languageReflections)) data.languageReflections = [];
-  
-    // Notes Pillar arrays
+
+    // Notes & results Pillar arrays
   if (!Array.isArray(data.literatureNotes)) data.literatureNotes = [];
   if (!Array.isArray(data.zIndexNotes)) data.zIndexNotes = [];
   if (!Array.isArray(data.learningLogs)) data.learningLogs = [];
+  if (!Array.isArray(data.testResults)) data.testResults = [];
 
   // Garden array checks
   if (!Array.isArray(data.vocabulary)) data.vocabulary = [];

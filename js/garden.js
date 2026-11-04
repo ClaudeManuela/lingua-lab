@@ -641,7 +641,7 @@ function createPlantElement(w, admin) {
 
   el.innerHTML = `
     <svg class="garden-plant-svg" viewBox="0 0 ${size} ${size}" width="${size}" height="${size}">
-      ${renderPlantSVG(stage, size, plantType)}
+${renderPlantSVG(stage, size, plantType, w.flowerColor)}
     </svg>
     <div class="garden-plant-label">${escapeHtml(formatClusterShort(w) || w.word)}</div>
   `;
@@ -695,226 +695,84 @@ const PLANT_PALETTE = {
   blossomCtr: '#f5d878'
 };
 
-// ═══════════════════════════════════════════
-// FLOWERING PLANT — soft, bushy, blooms
-// ═══════════════════════════════════════════
-function renderFloweringPlant(stage, size) {
+// ═══ PLANT SILHOUETTES & FLOWER COLORS ═══
+function renderFloweringPlant(stage, size, flowerColor) {
   const c = size / 2;
   const P = PLANT_PALETTE;
+  const F = flowerColor || '#f0a8c0'; // Default pink
 
   switch (stage) {
     case 'seed':
-      return `
-        <ellipse cx="${c}" cy="${c + size * 0.15}" rx="${size * 0.14}" ry="${size * 0.09}" fill="${P.soilDark}"/>
-        <ellipse cx="${c - size * 0.03}" cy="${c + size * 0.13}" rx="${size * 0.04}" ry="${size * 0.03}" fill="${P.trunkMid}" opacity="0.6"/>
-      `;
-
+      return `<circle cx="${c}" cy="${c}" r="${size * 0.1}" fill="${P.soilDark}"/>`;
     case 'sprout':
       return `
-        <rect x="${c - size * 0.03}" y="${c - size * 0.02}" width="${size * 0.06}" height="${size * 0.22}" fill="${P.leafMid}"/>
-        <ellipse cx="${c - size * 0.11}" cy="${c - size * 0.04}" rx="${size * 0.11}" ry="${size * 0.06}" fill="${P.leafMid}"/>
-        <ellipse cx="${c + size * 0.11}" cy="${c - size * 0.06}" rx="${size * 0.11}" ry="${size * 0.06}" fill="${P.leafLight}"/>
+        <rect x="${c - 1}" y="${c}" width="2" height="${size * 0.2}" fill="${P.leafMid}"/>
+        <ellipse cx="${c - size * 0.08}" cy="${c}" rx="${size * 0.08}" ry="${size * 0.04}" fill="${P.leafLight}"/>
+        <ellipse cx="${c + size * 0.08}" cy="${c}" rx="${size * 0.08}" ry="${size * 0.04}" fill="${P.leafLight}"/>
       `;
-
     case 'seedling':
       return `
-        <rect x="${c - size * 0.04}" y="${c - size * 0.06}" width="${size * 0.08}" height="${size * 0.3}" fill="${P.trunkMid}"/>
-        <ellipse cx="${c - size * 0.2}" cy="${c - size * 0.12}" rx="${size * 0.16}" ry="${size * 0.09}" fill="${P.leafMid}"/>
-        <ellipse cx="${c + size * 0.2}" cy="${c - size * 0.16}" rx="${size * 0.16}" ry="${size * 0.09}" fill="${P.leafLight}"/>
-        <ellipse cx="${c}" cy="${c - size * 0.26}" rx="${size * 0.14}" ry="${size * 0.1}" fill="${P.leafMid}"/>
+        <rect x="${c - 1.5}" y="${c - size * 0.1}" width="3" height="${size * 0.3}" fill="${P.leafMid}"/>
+        <ellipse cx="${c - size * 0.12}" cy="${c - size * 0.1}" rx="${size * 0.1}" ry="${size * 0.06}" fill="${P.leafLight}"/>
+        <ellipse cx="${c + size * 0.12}" cy="${c - size * 0.2}" rx="${size * 0.1}" ry="${size * 0.06}" fill="${P.leafLight}"/>
+        <circle cx="${c}" cy="${c - size * 0.15}" r="${size * 0.05}" fill="${F}"/>
       `;
-
-    case 'sapling':
+    default: // sapling, trunk, flowering
       return `
-        <rect x="${c - size * 0.05}" y="${c - size * 0.12}" width="${size * 0.1}" height="${size * 0.44}" fill="${P.trunkMid}"/>
-        <ellipse cx="${c - size * 0.28}" cy="${c - size * 0.22}" rx="${size * 0.2}" ry="${size * 0.12}" fill="${P.leafMid}"/>
-        <ellipse cx="${c + size * 0.28}" cy="${c - size * 0.28}" rx="${size * 0.2}" ry="${size * 0.12}" fill="${P.leafLight}"/>
-        <ellipse cx="${c}" cy="${c - size * 0.4}" rx="${size * 0.22}" ry="${size * 0.14}" fill="${P.leafMid}"/>
-        <ellipse cx="${c - size * 0.12}" cy="${c - size * 0.5}" rx="${size * 0.14}" ry="${size * 0.09}" fill="${P.leafDark}"/>
-        <ellipse cx="${c + size * 0.14}" cy="${c - size * 0.48}" rx="${size * 0.14}" ry="${size * 0.09}" fill="${P.leafLight}"/>
+        <rect x="${c - size * 0.04}" y="${c - size * 0.3}" width="${size * 0.08}" height="${size * 0.6}" fill="${P.trunkMid}"/>
+        <ellipse cx="${c - size * 0.2}" cy="${c - size * 0.2}" rx="${size * 0.12}" ry="${size * 0.08}" fill="${P.leafMid}"/>
+        <ellipse cx="${c + size * 0.2}" cy="${c - size * 0.35}" rx="${size * 0.12}" ry="${size * 0.08}" fill="${P.leafMid}"/>
+        <circle cx="${c}" cy="${c - size * 0.4}" r="${size * 0.15}" fill="${F}"/>
+        <circle cx="${c - size * 0.15}" cy="${c - size * 0.15}" r="${size * 0.08}" fill="${F}"/>
+        <circle cx="${c + size * 0.18}" cy="${c - size * 0.25}" r="${size * 0.06}" fill="${F}"/>
       `;
-
-    case 'trunk':
-      return `
-        <rect x="${c - size * 0.07}" y="${c - size * 0.2}" width="${size * 0.14}" height="${size * 0.6}" fill="${P.trunkMid}"/>
-        <rect x="${c - size * 0.07}" y="${c - size * 0.2}" width="${size * 0.06}" height="${size * 0.6}" fill="${P.trunkLight}" opacity="0.5"/>
-        <ellipse cx="${c - size * 0.35}" cy="${c - size * 0.28}" rx="${size * 0.24}" ry="${size * 0.14}" fill="${P.leafMid}"/>
-        <ellipse cx="${c + size * 0.35}" cy="${c - size * 0.32}" rx="${size * 0.24}" ry="${size * 0.14}" fill="${P.leafLight}"/>
-        <ellipse cx="${c}" cy="${c - size * 0.5}" rx="${size * 0.28}" ry="${size * 0.16}" fill="${P.leafMid}"/>
-        <ellipse cx="${c - size * 0.18}" cy="${c - size * 0.62}" rx="${size * 0.16}" ry="${size * 0.1}" fill="${P.leafDark}"/>
-        <ellipse cx="${c + size * 0.18}" cy="${c - size * 0.6}" rx="${size * 0.16}" ry="${size * 0.1}" fill="${P.leafLight}"/>
-      `;
-
-    case 'flowering':
-      return `
-        <rect x="${c - size * 0.08}" y="${c - size * 0.24}" width="${size * 0.16}" height="${size * 0.7}" fill="${P.trunkMid}"/>
-        <rect x="${c - size * 0.08}" y="${c - size * 0.24}" width="${size * 0.07}" height="${size * 0.7}" fill="${P.trunkLight}" opacity="0.5"/>
-        <ellipse cx="${c - size * 0.4}" cy="${c - size * 0.32}" rx="${size * 0.26}" ry="${size * 0.16}" fill="${P.leafMid}"/>
-        <ellipse cx="${c + size * 0.4}" cy="${c - size * 0.36}" rx="${size * 0.26}" ry="${size * 0.16}" fill="${P.leafLight}"/>
-        <ellipse cx="${c}" cy="${c - size * 0.56}" rx="${size * 0.32}" ry="${size * 0.18}" fill="${P.leafMid}"/>
-        <ellipse cx="${c - size * 0.22}" cy="${c - size * 0.7}" rx="${size * 0.18}" ry="${size * 0.11}" fill="${P.leafDark}"/>
-        <ellipse cx="${c + size * 0.22}" cy="${c - size * 0.68}" rx="${size * 0.18}" ry="${size * 0.11}" fill="${P.leafLight}"/>
-        ${renderBlossoms(c, size)}
-      `;
-
-    default:
-      return `<ellipse cx="${c}" cy="${c}" rx="${size * 0.14}" ry="${size * 0.09}" fill="${P.soilDark}"/>`;
   }
 }
 
-function renderBlossoms(c, size) {
-  const P = PLANT_PALETTE;
-  const blossoms = [
-    { x: c - size * 0.36, y: c - size * 0.4, r: size * 0.08,  fill: P.blossom1 },
-    { x: c + size * 0.32, y: c - size * 0.42, r: size * 0.075, fill: P.blossom3 },
-    { x: c - size * 0.1,  y: c - size * 0.72, r: size * 0.085, fill: P.blossom2 },
-    { x: c + size * 0.18, y: c - size * 0.7, r: size * 0.07,  fill: P.blossom1 },
-    { x: c - size * 0.18, y: c - size * 0.82, r: size * 0.06,  fill: P.blossom3 },
-    { x: c + size * 0.06, y: c - size * 0.86, r: size * 0.055, fill: P.blossom2 }
-  ];
-  return blossoms.map(b => `
-    <g>
-      <circle cx="${b.x}" cy="${b.y}" r="${b.r}" fill="${b.fill}"/>
-      <circle cx="${b.x}" cy="${b.y}" r="${b.r * 0.4}" fill="${P.blossomCtr}"/>
-    </g>
-  `).join('');
-}
-
-// ═══════════════════════════════════════════
-// PINE TREE — triangular tiers, dark green
-// ═══════════════════════════════════════════
 function renderPineTree(stage, size) {
   const c = size / 2;
   const P = PLANT_PALETTE;
 
   switch (stage) {
     case 'seed':
-      return `
-        <ellipse cx="${c}" cy="${c + size * 0.15}" rx="${size * 0.14}" ry="${size * 0.09}" fill="${P.soilDark}"/>
-        <ellipse cx="${c + size * 0.02}" cy="${c + size * 0.13}" rx="${size * 0.04}" ry="${size * 0.03}" fill="${P.trunkMid}" opacity="0.6"/>
-      `;
-
+      return `<circle cx="${c}" cy="${c}" r="${size * 0.1}" fill="${P.soilDark}"/>`;
     case 'sprout':
-      return `
-        <rect x="${c - size * 0.03}" y="${c + size * 0.02}" width="${size * 0.06}" height="${size * 0.16}" fill="${P.trunkMid}"/>
-        <polygon points="${c},${c - size * 0.18} ${c - size * 0.14},${c + size * 0.02} ${c + size * 0.14},${c + size * 0.02}" fill="${P.pineMid}"/>
-      `;
-
     case 'seedling':
       return `
-        <rect x="${c - size * 0.04}" y="${c + size * 0.04}" width="${size * 0.08}" height="${size * 0.2}" fill="${P.trunkMid}"/>
-        <polygon points="${c},${c - size * 0.24} ${c - size * 0.18},${c - size * 0.02} ${c + size * 0.18},${c - size * 0.02}" fill="${P.pineMid}"/>
-        <polygon points="${c},${c - size * 0.4} ${c - size * 0.14},${c - size * 0.2} ${c + size * 0.14},${c - size * 0.2}" fill="${P.pineLight}"/>
+        <rect x="${c - 1}" y="${c}" width="2" height="${size * 0.15}" fill="${P.trunkMid}"/>
+        <polygon points="${c},${c - size * 0.25} ${c - size * 0.15},${c} ${c + size * 0.15},${c}" fill="${P.pineDark}"/>
+        <polygon points="${c},${c - size * 0.4} ${c - size * 0.1},${c - size * 0.2} ${c + size * 0.1},${c - size * 0.2}" fill="${P.pineMid}"/>
       `;
-
-    case 'sapling':
+    default: // sapling, trunk, flowering
       return `
-        <rect x="${c - size * 0.05}" y="${c + size * 0.02}" width="${size * 0.1}" height="${size * 0.34}" fill="${P.trunkMid}"/>
-        <polygon points="${c},${c - size * 0.14} ${c - size * 0.26},${c + size * 0.04} ${c + size * 0.26},${c + size * 0.04}" fill="${P.pineMid}"/>
-        <polygon points="${c},${c - size * 0.34} ${c - size * 0.22},${c - size * 0.12} ${c + size * 0.22},${c - size * 0.12}" fill="${P.pineMid}"/>
-        <polygon points="${c},${c - size * 0.52} ${c - size * 0.18},${c - size * 0.3} ${c + size * 0.18},${c - size * 0.3}" fill="${P.pineLight}"/>
+        <rect x="${c - size * 0.05}" y="${c - size * 0.1}" width="${size * 0.1}" height="${size * 0.4}" fill="${P.trunkMid}"/>
+        <polygon points="${c},${c - size * 0.5} ${c - size * 0.25},${c - size * 0.1} ${c + size * 0.25},${c - size * 0.1}" fill="${P.pineDark}"/>
+        <polygon points="${c},${c - size * 0.7} ${c - size * 0.18},${c - size * 0.35} ${c + size * 0.18},${c - size * 0.35}" fill="${P.pineMid}"/>
+        <polygon points="${c},${c - size * 0.9} ${c - size * 0.12},${c - size * 0.6} ${c + size * 0.12},${c - size * 0.6}" fill="${P.pineLight}"/>
       `;
-
-    case 'trunk':
-      return `
-        <rect x="${c - size * 0.06}" y="${c + size * 0.04}" width="${size * 0.12}" height="${size * 0.48}" fill="${P.trunkMid}"/>
-        <polygon points="${c},${c - size * 0.1} ${c - size * 0.34},${c + size * 0.08} ${c + size * 0.34},${c + size * 0.08}" fill="${P.pineDark}"/>
-        <polygon points="${c},${c - size * 0.34} ${c - size * 0.3},${c - size * 0.1} ${c + size * 0.3},${c - size * 0.1}" fill="${P.pineMid}"/>
-        <polygon points="${c},${c - size * 0.56} ${c - size * 0.26},${c - size * 0.32} ${c + size * 0.26},${c - size * 0.32}" fill="${P.pineMid}"/>
-        <polygon points="${c},${c - size * 0.76} ${c - size * 0.2},${c - size * 0.54} ${c + size * 0.2},${c - size * 0.54}" fill="${P.pineLight}"/>
-      `;
-
-    case 'flowering': // mature pine — deepest stage
-      return `
-        <rect x="${c - size * 0.07}" y="${c + size * 0.06}" width="${size * 0.14}" height="${size * 0.58}" fill="${P.trunkMid}"/>
-        <polygon points="${c},${c - size * 0.06} ${c - size * 0.42},${c + size * 0.12} ${c + size * 0.42},${c + size * 0.12}" fill="${P.pineDark}"/>
-        <polygon points="${c},${c - size * 0.32} ${c - size * 0.36},${c - size * 0.06} ${c + size * 0.36},${c - size * 0.06}" fill="${P.pineMid}"/>
-        <polygon points="${c},${c - size * 0.56} ${c - size * 0.3},${c - size * 0.28} ${c + size * 0.3},${c - size * 0.28}" fill="${P.pineMid}"/>
-        <polygon points="${c},${c - size * 0.78} ${c - size * 0.24},${c - size * 0.5} ${c + size * 0.24},${c - size * 0.5}" fill="${P.pineLight}"/>
-        <polygon points="${c},${c - size * 0.96} ${c - size * 0.16},${c - size * 0.72} ${c + size * 0.16},${c - size * 0.72}" fill="${P.pineLight}"/>
-        ${renderPineCones(c, size)}
-      `;
-
-    default:
-      return `<ellipse cx="${c}" cy="${c}" rx="${size * 0.14}" ry="${size * 0.09}" fill="${P.soilDark}"/>`;
   }
 }
 
-function renderPineCones(c, size) {
-  const P = PLANT_PALETTE;
-  const cones = [
-    { x: c - size * 0.24, y: c - size * 0.14 },
-    { x: c + size * 0.22, y: c - size * 0.34 },
-    { x: c - size * 0.1,  y: c - size * 0.44 }
-  ];
-  return cones.map(cone => `
-    <ellipse cx="${cone.x}" cy="${cone.y}" rx="${size * 0.035}" ry="${size * 0.055}" fill="${P.trunkDark}"/>
-    <ellipse cx="${cone.x}" cy="${cone.y}" rx="${size * 0.02}" ry="${size * 0.04}" fill="${P.trunkMid}" opacity="0.7"/>
-  `).join('');
-}
-
-// ═══════════════════════════════════════════
-// LEAFY TREE — round canopy, wide spread
-// ═══════════════════════════════════════════
 function renderLeafyTree(stage, size) {
   const c = size / 2;
   const P = PLANT_PALETTE;
 
   switch (stage) {
     case 'seed':
-      return `
-        <ellipse cx="${c}" cy="${c + size * 0.15}" rx="${size * 0.14}" ry="${size * 0.09}" fill="${P.soilDark}"/>
-        <ellipse cx="${c - size * 0.03}" cy="${c + size * 0.14}" rx="${size * 0.03}" ry="${size * 0.025}" fill="${P.trunkLight}" opacity="0.7"/>
-      `;
-
+      return `<circle cx="${c}" cy="${c}" r="${size * 0.1}" fill="${P.soilDark}"/>`;
     case 'sprout':
-      return `
-        <rect x="${c - size * 0.03}" y="${c}" width="${size * 0.06}" height="${size * 0.2}" fill="${P.trunkMid}"/>
-        <ellipse cx="${c - size * 0.12}" cy="${c - size * 0.02}" rx="${size * 0.13}" ry="${size * 0.07}" fill="${P.leafMid}"/>
-        <ellipse cx="${c + size * 0.12}" cy="${c - size * 0.06}" rx="${size * 0.13}" ry="${size * 0.07}" fill="${P.leafLight}"/>
-      `;
-
     case 'seedling':
       return `
-        <rect x="${c - size * 0.05}" y="${c - size * 0.04}" width="${size * 0.1}" height="${size * 0.28}" fill="${P.trunkMid}"/>
-        <ellipse cx="${c - size * 0.18}" cy="${c - size * 0.14}" rx="${size * 0.16}" ry="${size * 0.1}" fill="${P.leafMid}"/>
-        <ellipse cx="${c + size * 0.18}" cy="${c - size * 0.18}" rx="${size * 0.16}" ry="${size * 0.1}" fill="${P.leafLight}"/>
-        <ellipse cx="${c}" cy="${c - size * 0.3}" rx="${size * 0.18}" ry="${size * 0.12}" fill="${P.leafMid}"/>
+        <rect x="${c - 2}" y="${c - size * 0.05}" width="4" height="${size * 0.2}" fill="${P.trunkMid}"/>
+        <circle cx="${c}" cy="${c - size * 0.15}" r="${size * 0.2}" fill="${P.leafMid}"/>
       `;
-
-    case 'sapling':
+    default: // sapling, trunk, flowering
       return `
-        <rect x="${c - size * 0.06}" y="${c - size * 0.1}" width="${size * 0.12}" height="${size * 0.4}" fill="${P.trunkMid}"/>
-        <rect x="${c - size * 0.06}" y="${c - size * 0.1}" width="${size * 0.05}" height="${size * 0.4}" fill="${P.trunkLight}" opacity="0.6"/>
-        <ellipse cx="${c - size * 0.24}" cy="${c - size * 0.22}" rx="${size * 0.2}" ry="${size * 0.14}" fill="${P.leafMid}"/>
-        <ellipse cx="${c + size * 0.24}" cy="${c - size * 0.26}" rx="${size * 0.2}" ry="${size * 0.14}" fill="${P.leafLight}"/>
-        <ellipse cx="${c}" cy="${c - size * 0.42}" rx="${size * 0.22}" ry="${size * 0.14}" fill="${P.leafMid}"/>
+        <rect x="${c - size * 0.06}" y="${c - size * 0.2}" width="${size * 0.12}" height="${size * 0.5}" fill="${P.trunkMid}"/>
+        <circle cx="${c}" cy="${c - size * 0.35}" r="${size * 0.25}" fill="${P.leafDark}"/>
+        <circle cx="${c - size * 0.15}" cy="${c - size * 0.25}" r="${size * 0.18}" fill="${P.leafMid}"/>
+        <circle cx="${c + size * 0.15}" cy="${c - size * 0.25}" r="${size * 0.18}" fill="${P.leafLight}"/>
       `;
-
-    case 'trunk':
-      return `
-        <rect x="${c - size * 0.08}" y="${c - size * 0.18}" width="${size * 0.16}" height="${size * 0.56}" fill="${P.trunkMid}"/>
-        <rect x="${c - size * 0.08}" y="${c - size * 0.18}" width="${size * 0.06}" height="${size * 0.56}" fill="${P.trunkLight}" opacity="0.6"/>
-        <ellipse cx="${c - size * 0.32}" cy="${c - size * 0.32}" rx="${size * 0.24}" ry="${size * 0.16}" fill="${P.leafMid}"/>
-        <ellipse cx="${c + size * 0.32}" cy="${c - size * 0.36}" rx="${size * 0.24}" ry="${size * 0.16}" fill="${P.leafLight}"/>
-        <ellipse cx="${c - size * 0.06}" cy="${c - size * 0.58}" rx="${size * 0.26}" ry="${size * 0.17}" fill="${P.leafMid}"/>
-        <ellipse cx="${c + size * 0.12}" cy="${c - size * 0.56}" rx="${size * 0.24}" ry="${size * 0.16}" fill="${P.leafLight}"/>
-      `;
-
-    case 'flowering': // mature leafy — biggest canopy
-      return `
-        <rect x="${c - size * 0.1}" y="${c - size * 0.22}" width="${size * 0.2}" height="${size * 0.68}" fill="${P.trunkMid}"/>
-        <rect x="${c - size * 0.1}" y="${c - size * 0.22}" width="${size * 0.08}" height="${size * 0.68}" fill="${P.trunkLight}" opacity="0.6"/>
-        <ellipse cx="${c - size * 0.38}" cy="${c - size * 0.4}" rx="${size * 0.26}" ry="${size * 0.18}" fill="${P.leafDark}"/>
-        <ellipse cx="${c + size * 0.38}" cy="${c - size * 0.44}" rx="${size * 0.26}" ry="${size * 0.18}" fill="${P.leafMid}"/>
-        <ellipse cx="${c - size * 0.16}" cy="${c - size * 0.66}" rx="${size * 0.24}" ry="${size * 0.17}" fill="${P.leafMid}"/>
-        <ellipse cx="${c + size * 0.16}" cy="${c - size * 0.64}" rx="${size * 0.24}" ry="${size * 0.17}" fill="${P.leafLight}"/>
-        <ellipse cx="${c}" cy="${c - size * 0.82}" rx="${size * 0.26}" ry="${size * 0.18}" fill="${P.leafMid}"/>
-        <ellipse cx="${c - size * 0.08}" cy="${c - size * 0.94}" rx="${size * 0.16}" ry="${size * 0.11}" fill="${P.leafLight}"/>
-      `;
-
-    default:
-      return `<ellipse cx="${c}" cy="${c}" rx="${size * 0.14}" ry="${size * 0.09}" fill="${P.soilDark}"/>`;
   }
 }
 
@@ -1273,25 +1131,25 @@ function openWordCard(id) {
 
           ${renderWordCardField(word, editing, 'Meaning', 'meaning', escapeHtml(word.meaning || '—'))}
           ${renderWordCardSelect(word, editing, 'Type', 'wordType', typeOptions, word.wordType)}
-          <div class="word-card-field">
+         
+<div class="word-card-field">
   <label>Plant type:</label>
   <div class="plant-type-picker">
-    <button class="plant-type-btn ${(word.plantType || 'leafy') === 'flowering' ? 'active' : ''}"
-            onclick="updatePlantType('${word.id}', 'flowering')"
-            title="Flowering plant">
-      🌸 Flowering
-    </button>
-    <button class="plant-type-btn ${word.plantType === 'pine' ? 'active' : ''}"
-            onclick="updatePlantType('${word.id}', 'pine')"
-            title="Pine tree">
-      🌲 Pine
-    </button>
-    <button class="plant-type-btn ${(word.plantType || 'leafy') === 'leafy' ? 'active' : ''}"
-            onclick="updatePlantType('${word.id}', 'leafy')"
-            title="Leafy tree">
-      🌳 Leafy
-    </button>
+    <button class="plant-type-btn ${(word.plantType || 'leafy') === 'flowering' ? 'active' : ''}" onclick="updatePlantType('${word.id}', 'flowering')">🌸 Flowering</button>
+    <button class="plant-type-btn ${word.plantType === 'pine' ? 'active' : ''}" onclick="updatePlantType('${word.id}', 'pine')">🌲 Pine</button>
+    <button class="plant-type-btn ${(word.plantType || 'leafy') === 'leafy' ? 'active' : ''}" onclick="updatePlantType('${word.id}', 'leafy')">🌳 Leafy</button>
   </div>
+  ${(word.plantType === 'flowering' || !word.plantType) ? `
+    <div style="margin-top: 0.5rem;">
+      <label style="font-size:0.65rem; color:var(--paper-ink-soft);">Flower Color:</label>
+      <div style="display:flex; gap:0.3rem; margin-top:0.2rem;">
+        ${['#f0a8c0', '#d94b4b', '#f5d878', '#7bb6e8'].map(c => `
+          <button style="width:20px; height:20px; border-radius:50%; background:${c}; border:2px solid ${word.flowerColor === c ? 'var(--text-main)' : 'transparent'};" 
+                  onclick="updateFlowerColor('${word.id}', '${c}')"></button>
+        `).join('')}
+      </div>
+    </div>
+  ` : ''}
 </div>
           ${renderWordCardThemeSelect(word, editing, word.theme)}
           ${renderWordCardField(word, editing, 'Reading', 'reading', escapeHtml(word.reading || '—'))}
@@ -1609,6 +1467,15 @@ function toggleAllBranches(wordId) {
   openWordCard(wordId);
 }
 
+//change the colors of the flowering plants
+function updateFlowerColor(id, color) {
+  if (!isEditable()) return;
+  const word = DATA.vocabulary.find(w => w.id === id);
+  if (!word) return;
+  word.flowerColor = color;
+  saveData(DATA);
+  openWordCard(id);
+}
 // ═══════════════════════════════════════════════
 // TREE DRAWING
 // ═══════════════════════════════════════════════
@@ -3023,4 +2890,71 @@ function hexToRgba(hex, alpha) {
   const g = parseInt(h.substring(2, 4), 16);
   const b = parseInt(h.substring(4, 6), 16);
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
+function openBulkEditModal() {
+  if (!isEditable()) return;
+  
+  const incomplete = DATA.vocabulary.filter(isIncompleteWord).slice(0, 20);
+  if (!incomplete.length) {
+    alert('No incomplete words found! 🎉');
+    return;
+  }
+
+  const existing = document.getElementById('bulk-edit-modal');
+  if (existing) existing.remove();
+
+  const html = `
+    <div class="modal-overlay" id="bulk-edit-modal">
+      <div class="modal-box" style="max-width: 700px;">
+        <div class="modal-header">
+          <h2>Bulk Edit Incomplete Words</h2>
+          <button class="remove-btn" onclick="document.getElementById('bulk-edit-modal').remove()">X</button>
+        </div>
+        <div class="modal-body" style="max-height: 60vh; overflow-y: auto;">
+          ${incomplete.map(w => `
+            <div style="border-bottom: 1px dashed var(--border-soft); padding: 0.5rem 0; display: flex; gap: 0.5rem; align-items: center;">
+              <span style="width: 120px; font-weight: bold; font-size: 0.8rem;">${w.word}</span>
+              
+              <select class="bulk-theme" data-id="${w.id}" style="flex: 1; font-size: 0.7rem;">
+                <option value="">— Theme —</option>
+                ${THEMES.map(t => `<option value="${t.slug}" ${w.theme === t.slug ? 'selected' : ''}>${t.icon} ${t.label}</option>`).join('')}
+              </select>
+
+              <select class="bulk-type" data-id="${w.id}" style="flex: 1; font-size: 0.7rem;">
+                <option value="">— Type —</option>
+                ${DEFAULT_WORD_TYPES.map(t => `<option value="${t}" ${w.wordType === t ? 'selected' : ''}>${t}</option>`).join('')}
+              </select>
+
+              <input type="text" class="bulk-meaning" data-id="${w.id}" value="${w.meaning || ''}" placeholder="Meaning" style="flex: 1; font-size: 0.7rem;">
+            </div>
+          `).join('')}
+        </div>
+        <div class="modal-footer">
+          <button class="save-btn" onclick="saveBulkEdit()">Save All</button>
+          <button class="cancel-btn" onclick="document.getElementById('bulk-edit-modal').remove()">Cancel</button>
+        </div>
+      </div>
+    </div>
+  `;
+  document.body.insertAdjacentHTML('beforeend', html);
+}
+
+function saveBulkEdit() {
+  document.querySelectorAll('.bulk-theme').forEach(el => {
+    const w = DATA.vocabulary.find(v => v.id === el.dataset.id);
+    if (w) w.theme = el.value;
+  });
+  document.querySelectorAll('.bulk-type').forEach(el => {
+    const w = DATA.vocabulary.find(v => v.id === el.dataset.id);
+    if (w) w.wordType = el.value;
+  });
+  document.querySelectorAll('.bulk-meaning').forEach(el => {
+    const w = DATA.vocabulary.find(v => v.id === el.dataset.id);
+    if (w) w.meaning = el.value;
+  });
+  saveData(DATA);
+  document.getElementById('bulk-edit-modal').remove();
+  renderGarden();
+  renderVocabSidebar();
 }

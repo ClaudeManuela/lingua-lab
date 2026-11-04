@@ -17,24 +17,30 @@ function renderNotesPage() {
   const admin = isEditable();
 
   container.innerHTML = `
-    <div class="notes-layout">
-      <div class="notes-header">
-        <div class="notes-title">The Z-System & Journal</div>
-      </div>
+    <div class="book-spread">
+      <div class="book-page" style="padding: 2rem; max-width: 100%; display: flex; flex-direction: column;">
+        
+        <div class="notes-layout" style="margin: 0;">
+          <div class="notes-header">
+            <div class="notes-title">The Z-System & Journal</div>
+          </div>
 
-      <div class="notes-tabs">
-        <button class="notes-tab ${notesCurrentTab === 'journal' ? 'active' : ''}" 
-                onclick="setNotesTab('journal')">Journal & Calendar</button>
-        <button class="notes-tab ${notesCurrentTab === 'learning' ? 'active' : ''}" 
-                onclick="setNotesTab('learning')">Learning Logs</button>
-        <button class="notes-tab ${notesCurrentTab === 'literature' ? 'active' : ''}" 
-                onclick="setNotesTab('literature')">Literature Notes</button>
-        <button class="notes-tab ${notesCurrentTab === 'z-index' ? 'active' : ''}" 
-                onclick="setNotesTab('z-index')">Z-Library (Index)</button>
-      </div>
+          <div class="notes-tabs">
+            <button class="notes-tab ${notesCurrentTab === 'journal' ? 'active' : ''}" 
+                    onclick="setNotesTab('journal')">Journal & Calendar</button>
+            <button class="notes-tab ${notesCurrentTab === 'learning' ? 'active' : ''}" 
+                    onclick="setNotesTab('learning')">Learning Logs</button>
+            <button class="notes-tab ${notesCurrentTab === 'literature' ? 'active' : ''}" 
+                    onclick="setNotesTab('literature')">Literature Notes</button>
+            <button class="notes-tab ${notesCurrentTab === 'z-index' ? 'active' : ''}" 
+                    onclick="setNotesTab('z-index')">Z-Library (Index)</button>
+          </div>
 
-      <div class="notes-content" id="notes-content">
-        ${renderNotesTabContent()}
+          <div class="notes-content" id="notes-content">
+            ${renderNotesTabContent()}
+          </div>
+        </div>
+
       </div>
     </div>
     

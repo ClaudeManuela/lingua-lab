@@ -115,15 +115,20 @@ function renderVocabContent() {
         }
 }
 
+let showFullHistory = false;
+
+function toggleFullHistory() {
+  showFullHistory = !showFullHistory;
+  renderVocabSidebar();
+}
+
 function renderVocabSidebar() {
   const sidebar = document.getElementById('vocab-sidebar');
   if (!sidebar) return;
   const admin = isEditable();
-  const points = typeof calculateSeedPoints === 'function' ? calculateSeedPoints() : {};
-
+  
   sidebar.innerHTML = `
     <h2 class="garden-sidebar-h2">Vocabulary</h2>
-
     <div class="garden-sidebar-section">
       <div class="garden-sidebar-title">Languages (hours · points)</div>
       <div id="seed-points-list"></div>
@@ -131,7 +136,9 @@ function renderVocabSidebar() {
 
     <div class="garden-sidebar-section">
       <div class="garden-sidebar-title">Study History</div>
-      <div id="study-history-list"></div>
+      <div id="study-history-list">
+         <!-- Populated below -->
+      </div>
     </div>
 
     <div class="garden-sidebar-section">
@@ -148,84 +155,57 @@ function renderVocabSidebar() {
       <div class="garden-sidebar-title">Actions</div>
       <div class="garden-sidebar-actions" id="vocab-actions-list"></div>
     </div>
+  `;
 
-    <div class="garden-sidebar-section" id="garden-unthemed-section" style="display:none;">
-      <div class="garden-sidebar-title">Unthemed words</div>
-      <div id="garden-unthemed-list"></div>
+  // 1. Languages
+  document.getElementById('seed-points-list').innerHTML = GARDEN_LANGUAGES.map(slug => {
+    const meta = LANGUAGES[slug];
+    const hours = (getLanguageSummary(DATA, slug).totalMinutes / 60).toFixed(1);
+    return `<div class="garden-sidebar-row"><span>${meta.flag} ${meta.name}</span><strong>${hours}h</strong></div>`;
+  }).join('');
+
+  // 2. History
+  const sessions = DATA.studySessions || [];
+  const recent = [...sessions].reverse();
+  const displaySessions = showFullHistory ? recent : recent.slice(0, 5);
+  
+  document.getElementById('study-history-list').innerHTML = `
+    ${displaySessions.map(s => `
+      <div class="garden-sidebar-row" style="font-size:0.65rem;">
+        <span>${s.date}</span>
+        <strong>${s.wordsReviewed} cards</strong>
+      </div>
+    `).join('')}
+    ${!showFullHistory && recent.length > 5 ? `
+      <button class="add-btn small" style="margin-top:0.5rem; width:100%;" onclick="toggleFullHistory()">Show All (${recent.length})</button>
+    ` : ''}
+    ${showFullHistory && recent.length > 5 ? `
+      <button class="add-btn small" style="margin-top:0.5rem; width:100%;" onclick="toggleFullHistory()">Show Less</button>
+    ` : ''}
+  `;
+
+  // 3. Summary
+  const words = DATA.vocabulary || [];
+  document.getElementById('garden-summary-list').innerHTML = `
+    <div class="garden-sidebar-row"><span>Total words</span><strong>${words.length}</strong></div>
+    <div class="garden-sidebar-row theme-sidebar-row" onclick="jumpToIncomplete()" style="color: var(--danger);">
+      <span>⚠ Incomplete words</span>
+      <strong>${words.filter(isIncompleteWord).length}</strong>
     </div>
   `;
 
-  // Populate shared sidebar sections (reuse garden's logic)
-  if (typeof renderGardenSidebar === 'function') {
-    renderGardenSidebar();
-  }
-
-  const themesList = document.getElementById('theme-clusters-list');
-  if (themesList) {
-    const counts = {};
-    (DATA.vocabulary || []).forEach(w => {
-      if (w.theme) counts[w.theme] = (counts[w.theme] || 0) + 1;
-    });
-    const sorted = Object.keys(counts).sort((a, b) => counts[b] - counts[a]);
-    if (!sorted.length) {
-      themesList.innerHTML = `<div class="lang-empty" style="font-size:0.7rem;">No themed words yet.</div>`;
-    } else {
-      themesList.innerHTML = sorted.map(slug => {
-        const t = THEME_MAP[slug];
-        if (!t) return '';
-        return `<div class="garden-sidebar-row theme-sidebar-row"
-                     onclick="jumpToTheme('${slug}')">
-          <span>${t.icon} ${t.label}</span>
-          <strong>${counts[slug]}</strong>
-        </div>`;
-      }).join('');
-    }
-  }
-
-  // Populate mode-specific actions
+  // 4. Actions
   const actions = document.getElementById('vocab-actions-list');
-  if (!actions) return;
-
-  if (vocabTab === 'study') {
-    actions.innerHTML = `
-      <button onclick="openStudyMode()">Start / Resume Study</button>
-    `;
-  } else if (vocabTab === 'garden') {
-    const canPlaceRegion = gardenEditMode && isEditable();
-    actions.innerHTML = admin ? `
-      <button onclick="openStudyMode()">Study</button>
-      <button onclick="openAddWordsModal()">+ Add Words</button>
-      <button onclick="openBackfillModal()">Backfill</button>
-      <button onclick="toggleGardenEditMode()" class="${gardenEditMode ? 'active' : ''}">
-        ${gardenEditMode ? '✓ Done editing' : '🗺️ Edit Garden'}
-      </button>
-      ${canPlaceRegion ? `
-        <button onclick="openNewRegionFlow()">+ New Region</button>
-        <button onclick="tidyBranches()">Tidy Branches</button>
-      ` : ''}
-      
-      <button onclick="findAndFixDuplicates()" style="margin-top: 1rem; background: var(--danger); color: white;">⚠ Find Duplicates</button>
-      
-      <button onclick="restoreGardenPlacement()"
-              ${DATA.settings._lastGardenSnapshot?.length ? '' : 'disabled'}>
-        Restore Placement
-      </button>
-    ` : '';
-  } else if (vocabTab === 'palace') {
-    actions.innerHTML = typeof renderPalaceSidebarActions === 'function'
-      ? renderPalaceSidebarActions(admin)
-      : '';
-  }
-
-  // Toggle unthemed section visibility based on garden edit mode
-  const unthemedSection = document.getElementById('garden-unthemed-section');
-  if (unthemedSection) {
-    unthemedSection.style.display = (vocabTab === 'garden' && gardenEditMode) ? '' : 'none';
-  }
-  const unthemedList = document.getElementById('garden-unthemed-list');
-  if (unthemedList && gardenEditMode && typeof renderUnthemedWordsList === 'function') {
-    unthemedList.innerHTML = renderUnthemedWordsList();
-  }
+  actions.innerHTML = admin ? `
+    <button onclick="openStudyMode()">Study</button>
+    <button onclick="openAddWordsModal()">+ Add Words</button>
+    <button onclick="openBackfillModal()">Backfill</button>
+    <button onclick="toggleGardenEditMode()" class="${gardenEditMode ? 'active' : ''}">
+      ${gardenEditMode ? '✓ Done editing' : '🗺️ Edit Garden'}
+    </button>
+    <button onclick="openBulkEditModal()">✏️ Bulk Edit Incomplete</button>
+    <button onclick="findAndFixDuplicates()" style="margin-top: 1rem; background: var(--danger); color: white;">⚠ Find Duplicates</button>
+  ` : '';
 }
 
 //study by theme
