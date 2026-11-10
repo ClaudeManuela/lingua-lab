@@ -1,6 +1,6 @@
 /* ============================================
-   PALACE ROOM DEFINITIONS — Phase 5.5a
-   Room meta only. Slots live in DATA.palaceRooms.
+   creating new palace rooms ez: add as variable, design on canva, upload to assets/palace
+
    ============================================ */
 
 const PALACE_ROOMS = [
@@ -51,6 +51,22 @@ const PALACE_ROOMS = [
     icon: '👗',
     background: 'assets/palace/closet.png',
     placeholderColor: '#d9a8c8',
+  },
+  {
+    id: 'numbers',
+    name: 'Numbers',
+    theme: 'numbers',
+    icon: '🔢',
+    background: 'assets/palace/numbers.png',
+    placeholderColor: '#a8d9c8',
+  },
+  {
+    id: 'colors',
+    name: 'Colors',
+    theme: 'colors',
+    icon: '🎨',
+    background: 'assets/palace/colors.png',
+    placeholderColor: '#d9a8c5',
   }
 ];
 
