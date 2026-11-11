@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>core.js test harness</title>
+</head>
+<body>
+  <h1>vocabulary.js test harness</h1>
+  <p>Open DevTools → Console. No errors = pass.</p>
+
+<script src="core/core.js"></script>
+<script src="core/vocabulary.js"></script>
+  <script>
+
+    let passed = 0, failed = 0;
+
+    function assert(label, actual, expected) {
+      const ok = JSON.stringify(actual) === JSON.stringify(expected);
+      if (ok) { passed++; console.log(`✅ ${label}`); }
+      else    { failed++; console.error(`❌ ${label}\n   expected:`, expected, '\n   got:     ', actual); }
+    }
+
+    function assertTruthy(label, value) {
+      if (value) { passed++; console.log(`✅ ${label}`); }
+      else       { failed++; console.error(`❌ ${label} — got:`, value); }
+    }
+//Section 1
+assertTruthy(typeof initVocabTab === 'function', 'initVocabTab() is a function');
+assertTruthy(typeof renderVocabulary === 'function', 'renderVocabulary() is a function');
+assertTruthy(typeof setVocabTab === 'function', 'setVocabTab() is a function');
+assertTruthy(typeof renderVocabSidebar === 'function', 'renderVocabSidebar() is a function');
+assertTruthy(typeof renderVocabContent === 'function', 'renderVocabContent() is a function');
+assertTruthy(typeof jumpToIncomplete === 'function', 'jumpToIncomplete() is a function');
+assertTruthy(typeof jumpToTheme === 'function', 'jumpToTheme() is a function');
+assertTruthy(typeof toggleGardenEditMode === 'function', 'toggleGardenEditMode() is a function');
+assertTruthy(typeof toggleFullHistory ==='function', 'toggleFullHistory() is a function');
+assertTruthy(typeof vocabTab !== 'undefined', 'vocabTab is defined');
+//Section 2
+
+//Section3
+    </script>
+</body>
+</html>

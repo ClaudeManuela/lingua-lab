@@ -1,0 +1,239 @@
+
+//Section 1: Vocabulary Hub
+
+let vocabTab = 'garden';
+
+function initVocabTab() {
+  if (DATA && DATA.settings && DATA.settings.lastVocabTab) {
+    vocabTab = DATA.settings.lastVocabTab;
+  }
+}
+
+function renderVocabulary() {
+  const container = document.getElementById('vocabulary-page');
+  if (!container) return;
+
+  initVocabTab();
+
+  document.querySelectorAll('.garden-modal-root').forEach(el => el.remove());
+
+  container.innerHTML = `
+<div class="vocab-layout ${vocabTab === 'palace' ? 'palace-active' : ''}">
+      <div class="vocab-sidebar" id="vocab-sidebar"></div>
+      <div class="vocab-main">
+        <div class="vocab-header">
+          <div class="vocab-header-title">Vocabulary</div>
+          <div class="vocab-tabs" id="vocab-tabs">
+            <button class="vocab-pill pill-study ${vocabTab === 'study' ? 'active' : ''}"
+                    onclick="setVocabTab('study')">Study</button>
+            <button class="vocab-pill pill-garden ${vocabTab === 'garden' ? 'active' : ''}"
+                    onclick="setVocabTab('garden')">Garden</button>
+                    <button class="vocab-pill pill-palace ${vocabTab === 'palace' ? 'active' : ''}"
+                    onclick="setVocabTab('palace')">
+            Memory Palace
+            </button>
+          </div>
+        </div>
+        <div class="vocab-content" id="vocab-content"></div>
+      </div>
+    </div>
+  `;
+
+  renderVocabSidebar();
+  renderVocabContent();
+}
+
+//incomplete function for sidebar
+
+function jumpToIncomplete() {
+  const wasOnGarden = vocabTab === 'garden';
+  if (!wasOnGarden) {
+    vocabTab = 'garden';
+    if (DATA.settings) {
+      DATA.settings.lastVocabTab = 'garden';
+      saveData(DATA);
+    }
+    document.querySelectorAll('.vocab-pill').forEach(btn => {
+      btn.classList.toggle('active', btn.classList.contains('pill-garden'));
+    });
+    renderVocabSidebar();
+  }
+  gardenView = 'gallery';
+  gardenThemeFilter = '__incomplete__';
+  renderGarden('vocab-content');
+}
+
+function setVocabTab(tab) {
+  if (tab === 'palace' && typeof renderPalace !== 'function') return;
+
+  // Abandon any running palace session when leaving the Palace tab
+  if (typeof palaceStudySession !== 'undefined' && palaceStudySession &&
+      !palaceStudySession.complete && tab !== 'palace') {
+    clearPalaceTimer();
+    palaceStudySession = null;
+    palaceTick = 0;
+  }
+
+  vocabTab = tab;
+  if (DATA.settings) {
+    DATA.settings.lastVocabTab = tab;
+    saveData(DATA);
+  }
+
+  document.querySelectorAll('.vocab-pill').forEach(btn => {
+    btn.classList.toggle('active', btn.classList.contains('pill-' + tab));
+  });
+
+  const layout = document.querySelector('.vocab-layout');
+  if (layout) {
+    layout.classList.toggle('palace-active', tab === 'palace');
+  }
+
+  renderVocabSidebar();
+  renderVocabContent();
+}
+
+function renderVocabContent() {
+  const slot = document.getElementById('vocab-content');
+  if (!slot) return;
+
+  if (vocabTab === 'study') {
+    // Study.js mounts into #vocab-content
+    if (typeof renderStudySetup === 'function') {
+      renderStudySetup('vocab-content');
+    }
+  } else if (vocabTab === 'garden') {
+    if (typeof renderGarden === 'function') {
+      renderGarden('vocab-content');
+    }
+        } else if (vocabTab === 'palace') {
+        if (typeof renderPalace === 'function') {
+            renderPalace('vocab-content');
+        }
+        }
+}
+
+let showFullHistory = false;
+
+function toggleFullHistory() {
+  showFullHistory = !showFullHistory;
+  renderVocabSidebar();
+}
+
+function renderVocabSidebar() {
+  const sidebar = document.getElementById('vocab-sidebar');
+  if (!sidebar) return;
+  const admin = isEditable();
+  
+  sidebar.innerHTML = `
+    <h2 class="garden-sidebar-h2">Vocabulary</h2>
+    <div class="garden-sidebar-section">
+      <div class="garden-sidebar-title">Languages (hours · points)</div>
+      <div id="seed-points-list"></div>
+    </div>
+
+    <div class="garden-sidebar-section">
+      <div class="garden-sidebar-title">Study History</div>
+      <div id="study-history-list">
+         <!-- Populated below -->
+      </div>
+    </div>
+
+    <div class="garden-sidebar-section">
+      <div class="garden-sidebar-title">Summary</div>
+      <div id="garden-summary-list"></div>
+    </div>
+    
+    <div class="garden-sidebar-section">
+      <div class="garden-sidebar-title">Themes</div>
+      <div id="theme-clusters-list"></div>
+    </div>
+
+    <div class="garden-sidebar-section" id="vocab-mode-actions">
+      <div class="garden-sidebar-title">Actions</div>
+      <div class="garden-sidebar-actions" id="vocab-actions-list"></div>
+    </div>
+  `;
+
+  // 1. Languages
+  document.getElementById('seed-points-list').innerHTML = GARDEN_LANGUAGES.map(slug => {
+    const meta = LANGUAGES[slug];
+    const hours = (getLanguageSummary(DATA, slug).totalMinutes / 60).toFixed(1);
+    return `<div class="garden-sidebar-row"><span>${meta.flag} ${meta.name}</span><strong>${hours}h</strong></div>`;
+  }).join('');
+
+  // 2. History
+  const sessions = DATA.studySessions || [];
+  const recent = [...sessions].reverse();
+  const displaySessions = showFullHistory ? recent : recent.slice(0, 5);
+  
+  document.getElementById('study-history-list').innerHTML = `
+    ${displaySessions.map(s => `
+      <div class="garden-sidebar-row" style="font-size:0.65rem;">
+        <span>${s.date}</span>
+        <strong>${s.wordsReviewed} cards</strong>
+      </div>
+    `).join('')}
+    ${!showFullHistory && recent.length > 5 ? `
+      <button class="add-btn small" style="margin-top:0.5rem; width:100%;" onclick="toggleFullHistory()">Show All (${recent.length})</button>
+    ` : ''}
+    ${showFullHistory && recent.length > 5 ? `
+      <button class="add-btn small" style="margin-top:0.5rem; width:100%;" onclick="toggleFullHistory()">Show Less</button>
+    ` : ''}
+  `;
+
+  // 3. Summary
+  const words = DATA.vocabulary || [];
+  document.getElementById('garden-summary-list').innerHTML = `
+    <div class="garden-sidebar-row"><span>Total words</span><strong>${words.length}</strong></div>
+    <div class="garden-sidebar-row theme-sidebar-row" onclick="jumpToIncomplete()" style="color: var(--danger);">
+      <span>⚠ Incomplete words</span>
+      <strong>${words.filter(isIncompleteWord).length}</strong>
+    </div>
+  `;
+
+  // 4. Actions
+  const actions = document.getElementById('vocab-actions-list');
+  actions.innerHTML = admin ? `
+    <button onclick="openStudyMode()">Study</button>
+    <button onclick="openAddWordsModal()">+ Add Words</button>
+    <button onclick="openBackfillModal()">Backfill</button>
+    <button onclick="toggleGardenEditMode()" class="${gardenEditMode ? 'active' : ''}">
+      ${gardenEditMode ? '✓ Done editing' : '🗺️ Edit Garden'}
+    </button>
+    <button onclick="openBulkEditModal()">✏️ Bulk Edit Incomplete</button>
+    <button onclick="findAndFixDuplicates()" style="margin-top: 1rem; background: var(--danger); color: white;">⚠ Find Duplicates</button>
+  ` : '';
+}
+
+//study by theme
+function jumpToTheme(slug) {
+  // Ensure Garden tab is active — set state without triggering a render
+  const wasOnGarden = vocabTab === 'garden';
+  if (!wasOnGarden) {
+    vocabTab = 'garden';
+    if (DATA.settings) {
+      DATA.settings.lastVocabTab = 'garden';
+      saveData(DATA);
+    }
+    document.querySelectorAll('.vocab-pill').forEach(btn => {
+      btn.classList.toggle('active', btn.classList.contains('pill-garden'));
+    });
+    renderVocabSidebar();
+  }
+
+  // Force Gallery view + apply the theme filter BEFORE rendering
+  if (typeof gardenView !== 'undefined') gardenView = 'gallery';
+  if (typeof gardenThemeFilter !== 'undefined') gardenThemeFilter = slug;
+
+  // Render once, with everything already set
+  renderGarden('vocab-content');
+}
+// garden edit mode toggle
+function toggleGardenEditMode() {
+  gardenEditMode = !gardenEditMode;
+  DATA.settings.gardenEditMode = gardenEditMode;
+  saveData(DATA);
+  renderVocabSidebar();
+  renderGarden();
+}

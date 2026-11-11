@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>core.js test harness</title>
+</head>
+<body>
+  <h1>vocabulary.js test harness</h1>
+  <p>Open DevTools → Console. No errors = pass.</p>
+
+<script src="core/core.js"></script>
+<script src="core/vocabulary.js"></script>
+  <script>
+
+    let passed = 0, failed = 0;
+
+    function assert(label, actual, expected) {
+      const ok = JSON.stringify(actual) === JSON.stringify(expected);
+      if (ok) { passed++; console.log(`✅ ${label}`); }
+      else    { failed++; console.error(`❌ ${label}\n   expected:`, expected, '\n   got:     ', actual); }
+    }
+
+function assertTruthy(label, value) {
+  if (value) { passed++; console.log(`✅ ${label}`); }
+  else       { failed++; console.error(`❌ ${label} — got:`, value); }
+}
+//Section 1
+assertTruthy('initVocabTab is a function', typeof initVocabTab === 'function');
+assertTruthy('renderVocabulary is a function', typeof renderVocabulary === 'function');
+assertTruthy('setVocabTab is a function', typeof setVocabTab === 'function');
+assertTruthy('renderVocabSidebar is a function', typeof renderVocabSidebar === 'function');
+assertTruthy('renderVocabContent is a function', typeof renderVocabContent === 'function');
+assertTruthy('jumpToIncomplete is a function', typeof jumpToIncomplete === 'function');
+assertTruthy('jumpToTheme is a function', typeof jumpToTheme === 'function');
+assertTruthy('toggleGardenEditMode is a function', typeof toggleGardenEditMode === 'function');
+assertTruthy('toggleFullHistory is a function', typeof toggleFullHistory === 'function');
+assertTruthy('vocabTab is defined', typeof vocabTab !== 'undefined');
+//Section 2 - garden
+assertTruthy('renderGarden is a function', typeof renderGarden === 'function');
+assertTruthy('renderGardenView is a function', typeof renderGardenView === 'function');
+assertTruthy('renderGardenGallery is a function', typeof renderGardenGallery === 'function');
+assertTruthy('renderGardenList is a function', typeof renderGardenList === 'function');
+assertTruthy('renderGardenPlants is a function', typeof renderGardenPlants === 'function');
+assertTruthy('openWordCard is a function', typeof openWordCard === 'function');
+assertTruthy('renderGardenRegions is a function', typeof renderGardenRegions === 'function');
+assertTruthy('addWordsToGarden is a function', typeof addWordsToGarden === 'function');
+assertTruthy('findAutoPosition is a function', typeof findAutoPosition === 'function');
+assertTruthy('updateWordStage is a function', typeof updateWordStage === 'function');
+assertTruthy('generateUUID is a function', typeof generateUUID === 'function');
+assertTruthy('toggleGardenEditMode exists', typeof toggleGardenEditMode === 'function');
+assertTruthy('GARDEN_LANGUAGES defined', Array.isArray(GARDEN_LANGUAGES));
+assertTruthy('STAGE_THRESHOLDS defined', typeof STAGE_THRESHOLDS === 'object');
+assertTruthy('THEME_MAP accessible', typeof THEME_MAP === 'object');
+const testWord = { waters: 0, stage: 'seed' };
+updateWordStage(testWord);
+assertTruthy('updateWordStage(0) → seed', testWord.stage === 'seed');
+testWord.waters = 20;
+updateWordStage(testWord);
+assertTruthy('updateWordStage(20) → flowering', testWord.stage === 'flowering');
+
+//Section3
+
+assertTruthy('renderGardenBranches is a function', typeof renderGardenBranches === 'function');
+assertTruthy('initGardenDrag is a function', typeof initGardenDrag === 'function');
+assertTruthy('initGardenZoom is a function', typeof initGardenZoom === 'function');
+assertTruthy('onGardenWheel is a function', typeof onGardenWheel === 'function');
+assertTruthy('startDrag is a function', typeof startDrag === 'function');
+assertTruthy('onDragEnd is a function', typeof onDragEnd === 'function');
+assertTruthy('collectDescendants is a function', typeof collectDescendants === 'function');
+assertTruthy('dragState is defined', typeof dragState !== 'undefined');
+
+//Section4
+assertTruthy('openStudyMode is a function', typeof openStudyMode === 'function');
+assertTruthy('closeStudyMode is a function', typeof closeStudyMode === 'function');
+assertTruthy('renderStudySetup is a function', typeof renderStudySetup === 'function');
+assertTruthy('startStudySession is a function', typeof startStudySession === 'function');
+assertTruthy('renderStudyCard is a function', typeof renderStudyCard === 'function');
+assertTruthy('gradeStudyCard is a function', typeof gradeStudyCard === 'function');
+assertTruthy('completeStudySession is a function', typeof completeStudySession === 'function');
+assertTruthy('renderStudyHistory is a function', typeof renderStudyHistory === 'function');
+assertTruthy('STAGE_LABELS defined', typeof STAGE_LABELS === 'object');
+assertTruthy('STAGE_LABELS.seed = Seed', STAGE_LABELS.seed === 'Seed');
+assertTruthy('STAGE_LABELS.flowering = Flowering', STAGE_LABELS.flowering === 'Flowering');
+
+
+//Section5
+assertTruthy('renderPalace is a function', typeof renderPalace === 'function');
+assertTruthy('openPalaceRoom is a function', typeof openPalaceRoom === 'function');
+assertTruthy('closePalaceRoom is a function', typeof closePalaceRoom === 'function');
+assertTruthy('startPalaceSession is a function', typeof startPalaceSession === 'function');
+assertTruthy('completePalaceSession is a function', typeof completePalaceSession === 'function');
+assertTruthy('clearPalaceTimer is a function', typeof clearPalaceTimer === 'function');
+assertTruthy('formatPalaceTime is a function', typeof formatPalaceTime === 'function');
+assertTruthy('isPalaceMobile is a function', typeof isPalaceMobile === 'function');
+assertTruthy('copyPalaceSummary is a function', typeof copyPalaceSummary === 'function');
+assertTruthy('palaceCurrentRoom is defined', typeof palaceCurrentRoom !== 'undefined');
+assertTruthy('palaceTick is defined', typeof palaceTick !== 'undefined');
+
+
+    console.log(`\n===== ${passed} passed, ${failed} failed =====`);
+
+    </script>
+</body>
+</html>
