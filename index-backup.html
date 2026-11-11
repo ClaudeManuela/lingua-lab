@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lingua Lab — 90-Day Korean Experiment</title>
+  <link rel="stylesheet" href="css/pixel-theme.css">
+  <link rel="stylesheet" href="css/book.css">
+  <link rel="stylesheet" href="css/log-form.css">
+  <link rel="stylesheet" href="css/entry-list.css">
+  <link rel="stylesheet" href="css/brain-map.css">
+  <link rel="stylesheet" href="css/avatar.css">
+  <link rel="stylesheet" href="css/levels.css">
+  <link rel="stylesheet" href="css/garden.css">
+  <link rel="stylesheet" href="css/study.css">
+  <link rel="stylesheet" href="css/vocabulary.css">
+  <link rel="stylesheet" href="css/palace.css">
+  <link rel="stylesheet" href="css/notes.css">
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+</head>
+<body>
+
+  <!-- TOP BAR -->
+  <div class="top-bar">
+    <div class="top-bar-title">Lingua Lab</div>
+    <div style="display: flex; gap: 0.5rem;">
+      <button class="mode-toggle-btn" onclick="openSettings()" title="Settings">SETTINGS</button>
+      <button class="mode-toggle-btn" id="mode-toggle" onclick="toggleMode()">DAY</button>
+    </div>
+  </div>
+
+  <!-- NAV BAR (visible on interior pages only) -->
+  <div class="nav-bar hidden" id="nav-bar">
+    <button class="nav-btn" onclick="closeBook()">CLOSE BOOK</button>
+    <div class="nav-title">Lingua Lab</div>
+    <button class="nav-btn" onclick="goToSection('toc')">TABLE OF CONTENTS</button>
+  </div>
+
+  <!-- EDIT BANNER -->
+  <div id="edit-banner" class="edit-banner hidden">
+    <span>EDIT MODE ACTIVE</span>
+    <button onclick="exitEditMode()">EXIT</button>
+  </div>
+
+  <!-- PAGE 1: COVER -->
+  <div id="cover-page" class="page active">
+    <div class="book-cover" id="notebook" onclick="openNotebook()">
+
+      <!-- WHITE LABEL SECTION -->
+      <div class="cover-label">
+        <div class="cover-label-row">
+
+          <div class="cover-label-info">
+            <div class="cover-title-main">90-Day Korean Experiment</div>
+            <div class="cover-byline">by Claude Manuela</div>
+            <div class="cover-day-line">Day <span id="cover-day">1</span> / 90</div>
+            <div class="cover-open-hint">[ TAP TO OPEN ]</div>
+          </div>
+
+          <div class="cover-label-avatar">
+            <div class="pixel-avatar" id="avatar" data-state="idle">
+              <div class="css-head"></div>
+              <div class="css-body"></div>
+            </div>
+            <div class="avatar-mini-status" id="avatar-mini-status" data-day="1">
+              <span>Energy <span id="cover-energy">—</span></span>
+              <span>Streak <span id="cover-streak">0</span>d</span>
+              <span class="avatar-state-label" id="avatar-state-label">idle</span>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- DATA SECTIONS BELOW LABEL -->
+      <div class="cover-divider"></div>
+
+      <div class="cover-section-title">Korean Hours Logged</div>
+
+      <div class="hours-row">
+        <span class="hours-label">STUDY:</span>
+        <div class="hours-bar-bg">
+          <div class="hours-bar-fill study" id="bar-study"></div>
+        </div>
+        <span class="hours-value" id="val-study">0.0h</span>
+      </div>
+
+      <div class="hours-row">
+        <span class="hours-label">MEDIA:</span>
+        <div class="hours-bar-bg">
+          <div class="hours-bar-fill media" id="bar-media"></div>
+        </div>
+        <span class="hours-value" id="val-media">0.0h</span>
+      </div>
+
+      <div class="hours-row">
+        <span class="hours-label">TOTAL:</span>
+        <div class="hours-bar-bg">
+          <div class="hours-bar-fill total" id="bar-total"></div>
+        </div>
+        <span class="hours-value" id="val-total">0.0h</span>
+      </div>
+
+      <div class="cover-divider"></div>
+
+      <div class="cover-section-title">Quick Glance</div>
+      <div class="glance-grid">
+        <div>Korean: <strong id="glance-korean">0.0h</strong></div>
+        <div>Maint: <strong id="glance-maint">0.0h</strong></div>
+        <div>Intrusions: <strong id="glance-intrusions">0</strong></div>
+        <div>Headache: <strong id="glance-headache">—</strong></div>
+        <div>Words: <strong id="glance-words">0</strong></div>
+        <div>Vocab: <strong id="glance-vocab">—</strong></div>
+      </div>
+
+      <div class="cover-divider"></div>
+
+      <div class="cover-section-title">Favourite Word This Week</div>
+      <div class="fav-word-box">
+        <div class="fav-word-korean" id="fav-word-kr">—</div>
+        <div class="fav-word-meaning" id="fav-word-meaning">Add one from the notes section</div>
+      </div>
+
+      <!-- BRAND CHIP -->
+      <div class="cover-brand">
+        <div class="brand-chip">LL</div>
+        <div class="brand-text">
+          <div class="brand-name">Claude's Language Lab</div>
+          <div class="brand-sub">A5 • 7mm ruled • No. 3</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- PAGE 2: TOC -->
+  <div id="notebook-page" class="page">
+    <div class="book-spread">
+
+      <div class="book-page">
+        <h2>Table of Contents</h2>
+        <ul class="toc">
+          <li onclick="goToSection('logs')">1. LOGS <small>Daily Entries, Weekly Summaries, Media</small></li>
+       <li onclick="goToSection('vocabulary')">2. VOCABULARY <small>Study, Garden, Memory Palace</small></li>
+        <li onclick="goToSection('notes')">3. NOTES <small>Learning Log, Literature, Z-Library</small></li>
+        <li onclick="goToSection('results')">4. RESULTS <small>Test Scores, Typing, Charts</small></li>
+          <li onclick="goToSection('levels')">5. LEVELS & STATS <small>Skill Levels, Official Scores</small></li>
+          <li onclick="goToSection('graphs')">6. GRAPHS <small>Brain Map, Correlations, Trends</small></li>
+        </ul>
+
+        <button class="back-btn" onclick="closeBook()">CLOSE BOOK</button>
+      </div>
+
+      <div class="book-page">
+  <div class="toc-right-columns">
+
+    <div>
+      <h2>Quick Stats</h2>
+      <div class="toc-stats-compact">
+        <div><span>Day:</span> <strong id="toc-day">1</strong></div>
+        <div><span>Korean:</span> <strong id="toc-korean">0.0</strong></div>
+        <div><span>Maint:</span> <strong id="toc-maint">0.0</strong></div>
+        <div><span>Streak:</span> <strong id="toc-streak">0</strong></div>
+        <div><span>Entries:</span> <strong id="toc-entries">0</strong></div>
+        <div><span>Backlog:</span> <strong id="toc-backlog">0</strong></div>
+      </div>
+    </div>
+
+    <div>
+      <h2>Language Levels</h2>
+      <div class="toc-lang-list" id="toc-lang-list"></div>
+    </div>
+
+  </div>
+</div>
+
+    </div>
+  </div>
+
+  <!-- PAGE 1: LOGS -->
+  <div id="logs-page" class="page"></div>
+
+  <!-- PAGE 2: VOCABULARY (Study / Garden / Palace) -->
+<div id="vocabulary-page" class="page"></div>
+
+  <!-- PAGE 3: NOTES -->
+  <div id="notes-page" class="page"></div>
+
+      <!-- PAGE 4: RESULTS -->
+  <div id="results-page" class="page"></div>
+
+  <!-- PAGE 5: LEVELS -->
+  <div id="levels-page" class="page">
+    <div class="placeholder-page">
+      <h2>Levels & Stats</h2>
+      <p>Across languages.</p>
+      <button class="back-btn" onclick="goToSection('toc')">BACK TO CONTENTS</button>
+    </div>
+  </div>
+
+  <!-- PAGE 7: GRAPHS -->
+  <div id="graphs-page" class="page">
+    <div class="placeholder-page">
+      <h2>Graphs</h2>
+      <p>One of these days, Claude will remember to build the graphs. 
+        Here we will build brain map, test score trends, sleep correlations, intrusion charts.</p>
+      <button class="back-btn" onclick="goToSection('toc')">BACK TO CONTENTS</button>
+    </div>
+  </div>
+
+    <!-- PAGE 8: INDIVIDUAL LANGUAGE PAGE -->
+  <div id="language-page" class="page"></div>
+
+  <!-- SETTINGS MODAL -->
+  <div id="settings-modal" class="modal-overlay hidden">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h2>Settings</h2>
+        <button onclick="closeSettings()" class="remove-btn">X</button>
+      </div>
+
+      <div class="modal-body">
+        <section class="settings-section">
+          <h3>Custom App Names</h3>
+          <label>
+            Hangul App Name:
+            <input type="text" id="setting-hangul-app" placeholder="e.g., Write It! Korean">
+          </label>
+          <p class="settings-hint">This appears in the activity dropdown instead of "Hangul App".</p>
+        </section>
+
+        <section class="settings-section">
+          <h3>Targets</h3>
+          <label>
+            Korean Study Target (hours):
+            <input type="number" id="setting-study-target">
+          </label>
+          <label>
+            Korean Media Target (hours):
+            <input type="number" id="setting-media-target">
+          </label>
+        </section>
+
+        <section class="settings-section">
+          <h3>Your Info</h3>
+          <label>
+            Display Name:
+            <input type="text" id="setting-name" placeholder="Your name">
+          </label>
+          <label>
+            Experiment Start Date:
+            <input type="date" id="setting-start-date">
+          </label>
+        </section>
+
+        <section class="settings-section">
+          <h3>Custom Activities</h3>
+          <div id="custom-activities-list"></div>
+          <p class="settings-hint">Custom activities you've added appear here. Delete any you no longer use.</p>
+        </section>
+
+        <section class="settings-section">
+          <h3>Data Management</h3>
+          <button class="add-btn" onclick="exportData()">EXPORT DATA (JSON)</button>
+          <button class="delete-btn" onclick="confirmReset()">RESET ALL DATA</button>
+          <p class="settings-hint">Export regularly to back up your 90-day experiment.</p>
+        </section>
+      </div>
+
+      <div class="modal-footer">
+        <button class="save-btn" onclick="saveSettings()">SAVE SETTINGS</button>
+        <button class="cancel-btn" onclick="closeSettings()">CANCEL</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- HELLA SCRIPTS -->
+<script src="js/lang-data.js"></script>
+<script src="js/palace-rooms.js"></script>
+<script src="js/data.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/settings.js"></script>
+<script src="js/brain-map.js"></script>
+<script src="js/sprite-slicer.js"></script>
+<script src="js/avatar.js"></script>
+<script src="js/garden-branches.js"></script>
+<script src="js/garden-drag.js"></script>
+<script src="js/fuzzy-search.js"></script>
+<script src="js/vocabulary.js"></script>
+<script src="js/garden.js"></script>
+<script src="js/palace.js"></script>
+<script src="js/levels.js"></script>
+<script src="js/log-form.js"></script>
+<script src="js/entry-list.js"></script>
+<script src="js/study.js"></script>
+<script src="js/notes.js"></script>
+<script src="js/results.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

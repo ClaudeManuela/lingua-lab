@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>core.js test harness</title>
+</head>
+<body>
+  <h1>core.js test harness</h1>
+  <p>Open DevTools → Console. No errors = pass.</p>
+
+<script src="core/core.js"></script>
+  <script>
+    /* ============================================================
+       TEST HARNESS — delete nothing, add tests as you go.
+       Each block tests one section of core.js.
+       ============================================================ */
+
+    let passed = 0, failed = 0;
+
+    function assert(label, actual, expected) {
+      const ok = JSON.stringify(actual) === JSON.stringify(expected);
+      if (ok) { passed++; console.log(`✅ ${label}`); }
+      else    { failed++; console.error(`❌ ${label}\n   expected:`, expected, '\n   got:     ', actual); }
+    }
+
+    function assertTruthy(label, value) {
+      if (value) { passed++; console.log(`✅ ${label}`); }
+      else       { failed++; console.error(`❌ ${label} — got:`, value); }
+    }
+    assertTruthy('PALACE_ROOMS defined',       Array.isArray(PALACE_ROOMS) && PALACE_ROOMS.length > 0);
+assertTruthy('PALACE_ROOM_MAP built',      PALACE_ROOM_MAP.market);
+assertTruthy('SLOT_COLORS defined',        Array.isArray(SLOT_COLORS) && SLOT_COLORS.length > 0);
+assertTruthy('PALACE_LANGS defined',       Array.isArray(PALACE_LANGS) && PALACE_LANGS.length > 0);
+
+   assert('escapeHtml escapes <',   escapeHtml('<b>'),   '&lt;b&gt;');
+assert('escapeHtml escapes &',   escapeHtml('a & b'), 'a &amp; b');
+assert('escapeHtml escapes "',   escapeHtml('"'),     '&quot;');
+assertTruthy('LANGUAGES exists',          typeof LANGUAGES === 'object');
+assertTruthy('LANGUAGES.spanish exists',  LANGUAGES.spanish);
+assertTruthy('THEME_MAP built',           THEME_MAP.time);
+assert('normalizeTheme finds label',      normalizeTheme('Time'), 'time');
+assert('getLevelIndex A0 Low = 0',        getLevelIndex('A0 Low'), 0);
+
+    /* ---- SECTION 2: fuzzy search ---- */
+    assert('levenshtein identical = 0', levenshtein('abc', 'abc'), 0);
+    assert('levenshtein one insert = 1', levenshtein('abc', 'abcd'), 1);
+    assert('scoreField exact = 0', scoreField('apple', 'apple'), 0);
+    assert('scoreField prefix = 1', scoreField('app', 'apple'), 1);
+    const many = Array.from({ length: 70 }, (_, i) => ({ word: 'w' + i, reading: '', meaning: '' }));
+assert('fuzzySearch caps at 60', fuzzySearch('', many).length, 60);
+
+    const sampleVocab = [
+      { word: '사과', reading: 'sagwa', meaning: 'apple' },
+      { word: '바나나', reading: 'banana', meaning: 'banana' },
+    ];
+    assert('fuzzySearch finds apple by meaning',
+      fuzzySearch('apple', sampleVocab).length, 1);
+    assert('fuzzySearch empty query returns all (≤60)',
+      fuzzySearch('', sampleVocab).length, 2);
+
+      const sampleWord = {
+  word: 'professoressa', article: 'la', gender: 'fem', number: 'sing',
+  forms: [{ text: 'professore', article: 'il', gender: 'masc', number: 'sing' }]
+};
+assert('formatClusterInline joins base + alt',
+  formatClusterInline(sampleWord), '(la) professoressa / (il) professore');
+assert('formatClusterShort returns base only',
+  formatClusterShort(sampleWord), '(la) professoressa');
+    // add one assert per search function
+
+    /* ---- SECTION 3: state + persistence ---- */
+    // These come later. When you write them, add:
+    // assertTruthy('DEFAULT_DATA has logs', DEFAULT_DATA.logs);
+    // assertTruthy('STATE is defined after init', STATE);
+    // assert('migrate handles empty', typeof migrate({}), 'object');
+    // etc.
+
+    /* ---- SECTION 6: DOM helpers ---- */
+    // When you reach this, add a hidden div and test setText:
+    // const d = document.createElement('div'); d.id = 't1'; document.body.appendChild(d);
+    // setText('t1', 'hello');
+    // assert('setText writes', document.getElementById('t1').textContent, 'hello');
+
+    console.log(`\n===== ${passed} passed, ${failed} failed =====`);
+  </script>
+</body>
+</html>
