@@ -13,7 +13,7 @@ function openLogForm(dateStr = null) {
     return;
   }
 
-  const today = new Date().toISOString().slice(0, 10);
+  const today = localDateStr();
   currentFormDate = dateStr || today;
   formMode = (currentFormDate === today) ? 'today' : 'backlog';
 
@@ -585,14 +585,14 @@ function deleteLog() {
 function switchFormMode(mode) {
   formMode = mode;
   if (mode === 'today') {
-    currentFormDate = new Date().toISOString().slice(0, 10);
+    currentFormDate = localDateStr();
   }
   renderLogForm();
 }
 
 function onDateChange(newDate) {
   currentFormDate = newDate;
-  const today = new Date().toISOString().slice(0, 10);
+  const today = localDateStr();
   formMode = (newDate === today) ? 'today' : 'backlog';
   renderLogForm();
 }

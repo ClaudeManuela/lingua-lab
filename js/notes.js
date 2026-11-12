@@ -208,7 +208,7 @@ function renderCalendarWidget() {
     const hasLog = (DATA.dailyLogs || []).some(l => l.date === dateStr);
     const hasLearningLog = (DATA.learningLogs || []).some(l => l.date === dateStr);
     const hasData = hasLog || hasLearningLog;
-    const isToday = dateStr === new Date().toISOString().slice(0, 10);
+    const isToday = dateStr === localDateStr();
 
     cells += `
       <div class="calendar-day ${hasData ? 'has-data' : ''} ${isToday ? 'today' : ''}"
@@ -353,7 +353,7 @@ function openNewNoteEditor(type) {
     id: 'note-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
     title: '',
     body: '',
-    date: new Date().toISOString().slice(0, 10),
+    date: localDateStr(),
     source: { type: 'custom', title: '', url: '' },
     tags: [],
     linkedNoteIds: [],
@@ -634,7 +634,7 @@ function saveNoteDraft() {
 
   // Gather inputs
   currentNoteDraft.title = document.getElementById('note-edit-title').value.trim() || 'Untitled';
-  currentNoteDraft.date = document.getElementById('note-edit-date').value || new Date().toISOString().slice(0, 10);
+  currentNoteDraft.date = document.getElementById('note-edit-date').value || localDateStr();
   currentNoteDraft.body = document.getElementById('note-edit-body').value;
   
   currentNoteDraft.source = {
@@ -733,7 +733,7 @@ function startLiveSession() {
     type: 'learning',
     title: '', // Will be auto-generated
     body: '',
-    date: new Date().toISOString().slice(0, 10),
+    date: localDateStr(),
     tags: [],
     linkedNoteIds: [],
     sessionStats: { time: 0, method: '', language: '' }
@@ -858,7 +858,7 @@ function endLiveSession() {
   // Fill in the draft
   currentNoteDraft.title = title;
   currentNoteDraft.body = body;
-  currentNoteDraft.date = new Date().toISOString().slice(0, 10); // Use today's date
+  currentNoteDraft.date = localDateStr(); // Use today's date
   currentNoteDraft.tags = [lang, method.toLowerCase()];
   
   currentNoteDraft.sessionStats = {

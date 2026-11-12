@@ -245,7 +245,7 @@ function openAddResultModal() {
               </label>
               <label class="note-field">
                 <span>Date</span>
-                <input type="date" id="res-date" value="${new Date().toISOString().slice(0, 10)}">
+                <input type="date" id="res-date" value="${localDateStr()}">
               </label>
             </div>
 

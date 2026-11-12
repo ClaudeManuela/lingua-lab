@@ -171,7 +171,7 @@ function renderLanguageStats(logs) {
     .filter(lang => stats[lang].minutes > 0 || stats[lang].media > 0)
     .map(lang => {
       const s = stats[lang];
-      const daysAgo = s.lastDate ? daysBetween(s.lastDate, new Date().toISOString().slice(0, 10)) : '—';
+      const daysAgo = s.lastDate ? daysBetween(s.lastDate, localDateStr()) : '—';
       return `<div><span>${LANGUAGE_META[lang].flag} ${lang}</span> <strong>${formatHours(s.minutes)} • ${s.sessions}s • ${s.media}m • ${daysAgo}d ago</strong></div>`;
     }).join('');
 
@@ -288,11 +288,11 @@ function matchesFilter(log) {
     if (log.confidence !== 'HIGH') return false;
   }
   if (entryFilter.type === 'last7') {
-    const days = daysBetween(log.date, new Date().toISOString().slice(0, 10));
+    const days = daysBetween(log.date, localDateStr());
     if (days > 7) return false;
   }
   if (entryFilter.type === 'last30') {
-    const days = daysBetween(log.date, new Date().toISOString().slice(0, 10));
+    const days = daysBetween(log.date, localDateStr());
     if (days > 30) return false;
   }
 
