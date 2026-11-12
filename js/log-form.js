@@ -345,7 +345,7 @@ function renderMedia(container, media, index) {
 </label>
       <label>Type:
         <select class="med-type">
-          ${['Anime','Drama','Movie','YouTube','Music','Podcast','Book'].map(t => 
+          ${['TV Show','Anime','Drama','Movie','YouTube','Music','Podcast','Book', 'Documentary'].map(t => 
             `<option value="${t}" ${media.type === t ? 'selected' : ''}>${t}</option>`
           ).join('')}
         </select>

@@ -731,7 +731,7 @@ function startLiveSession() {
   currentNoteDraft = {
     id: 'log-' + Date.now().toString(36),
     type: 'learning',
-    title: '', // Will be auto-generated
+    title: '', 
     body: '',
     date: localDateStr(),
     tags: [],
