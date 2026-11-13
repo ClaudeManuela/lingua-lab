@@ -96,6 +96,12 @@ function renderLogForm() {
         <h3>⏱ STUDY SESSIONS</h3>
         <div id="sessions-container"></div>
         <button class="add-btn" onclick="addSession()">+ ADD SESSION</button>
+          <label>Words learned today (comma-separated):
+        <textarea id="kor-words-list" rows="2" placeholder="안녕, 감사, 물">${existing?.koreanOutput?.wordsList || ''}</textarea>
+      </label>
+      <label>Meanings (comma-separated, matching order):
+        <textarea id="kor-words-meanings" rows="2" placeholder="hello, thanks, water">${existing?.koreanOutput?.wordsMeanings || ''}</textarea>
+      </label>
       </section>
 
       <section class="form-section">
@@ -109,8 +115,8 @@ function renderLogForm() {
       <section class="form-section">
         <h3>🇰🇷 KOREAN OUTPUT</h3>
         <div class="field-grid">
-          <label>New Words: <input type="number" id="kor-words" value="${existing?.koreanOutput?.newWords || ''}"></label>
-          <label>Subtitle Ignore %: <input type="number" min="0" max="100" id="kor-subignore" value="${existing?.koreanOutput?.subtitleIgnore || ''}"></label>
+
+        <label>Subtitle Ignore %: <input type="number" min="0" max="100" id="kor-subignore" value="${existing?.koreanOutput?.subtitleIgnore || ''}"></label>
           <label>Intrusions: <input type="number" id="kor-intrusions" value="${existing?.koreanOutput?.intrusions || ''}"></label>
           <label>Working Memory Span: <input type="number" id="kor-wm" value="${existing?.koreanOutput?.workingMemorySpan || ''}"></label>
           <label>Dominant Intruder:
@@ -126,12 +132,7 @@ function renderLogForm() {
             </select>
           </label>
         </div>
-         <label>Words learned today (comma-separated):
-        <textarea id="kor-words-list" rows="2" placeholder="안녕, 감사, 물">${existing?.koreanOutput?.wordsList || ''}</textarea>
-      </label>
-      <label>Meanings (comma-separated, matching order):
-        <textarea id="kor-words-meanings" rows="2" placeholder="hello, thanks, water">${existing?.koreanOutput?.wordsMeanings || ''}</textarea>
-      </label>
+       
       </section>
 
       <section class="form-section">
@@ -443,6 +444,9 @@ const mediaConsumed = Array.from(document.querySelectorAll('#media-container .me
     };
   }).filter(m => m.title);
 
+  const rawWordsList = document.getElementById('kor-words-list')?.value || '';
+  const typedWordsCount = parseWordList(rawWordsList).length;
+
   const entry = {
     date: dateStr,
     day: dayNumber,
@@ -463,11 +467,11 @@ const mediaConsumed = Array.from(document.querySelectorAll('#media-container .me
       stress: parseInt(document.getElementById('phys-stress').value) || 0,
       mood: parseInt(document.getElementById('phys-mood').value) || 0,
       motivation: parseInt(document.getElementById('phys-mot').value) || 0
-    },
-    koreanOutput: {
-      newWords: parseInt(document.getElementById('kor-words').value) || 0,
+    },    
+      koreanOutput: {
+      newWords: rawWordsList.trim() ? typedWordsCount : (existing?.koreanOutput?.newWords || 0),
       wordsList: document.getElementById('kor-words-list')?.value || '',
-      wordsMeanings: document.getElementById('kor-words-meanings')?.value || '',   // ← new
+      wordsMeanings: document.getElementById('kor-words-meanings')?.value || '',
       subtitleIgnore: parseInt(document.getElementById('kor-subignore').value) || 0,
       intrusions: parseInt(document.getElementById('kor-intrusions').value) || 0,
       dominantIntruder: document.getElementById('kor-dominant').value,
