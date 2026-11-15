@@ -388,6 +388,7 @@ function removeMedia(index) {
 function saveLog() {
   const dateStr = document.getElementById('form-date').value;
   const dayNumber = daysBetween(DATA.metadata.experimentStartDate, dateStr) + 1;
+  const existing = findLogByDate(DATA, dateStr);
 
   // Gather sessions
   const sessions = Array.from(document.querySelectorAll('#sessions-container .session-card')).map(card => {
