@@ -336,22 +336,28 @@ function renderMedia(container, media, index) {
       <button class="remove-btn" onclick="removeMedia(${index})">✕</button>
     </div>
     <div class="media-grid">
-      <label>Title: <input type="text" class="med-title" value="${media.title || ''}"></label>
-      <label>Language:
+    <label>Title: 
+  <input type="text" class="med-title" list="media-titles-list" value="${media.title || ''}">
+  <datalist id="media-titles-list"></datalist>
+</label>  
+    <label>Language:
   <select class="med-lang">
     ${['Korean','Portuguese','Italian','Arabic','Japanese','Spanish','French','English'].map(l => 
       `<option value="${l}" ${media.language === l ? 'selected' : ''}>${l}</option>`
     ).join('')}
   </select>
 </label>
-      <label>Type:
-        <select class="med-type">
+           <label>Type:
+        <select class="med-type" onchange="this.closest('.media-card').querySelector('.med-author-label').style.display = this.value === 'Book' ? 'block' : 'none';">
           ${['TV Show','Anime','Drama','Movie','YouTube','Music','Podcast','Book', 'Documentary'].map(t => 
             `<option value="${t}" ${media.type === t ? 'selected' : ''}>${t}</option>`
           ).join('')}
         </select>
       </label>
       <label>Duration (min): <input type="number" class="med-dur" value="${media.durationMinutes || ''}"></label>
+            <label class="med-author-label" style="display: ${media.type === 'Book' ? 'block' : 'none'};">
+        Author: <input type="text" class="med-author" value="${media.author || ''}">
+      </label>
     <label>Audio:
   <select class="med-audio">
     ${['Korean','Portuguese','Italian','Arabic','Japanese','Spanish','French','English'].map(a => 
@@ -371,6 +377,17 @@ function renderMedia(container, media, index) {
     <textarea class="med-learned" rows="2" placeholder="What I learned from this media">${media.whatILearned || ''}</textarea>
   `;
   container.appendChild(div);
+    // Populate the datalist with unique titles from past media
+  const datalist = div.querySelector('#media-titles-list');
+  if (datalist) {
+    const uniqueTitles = [...new Set((DATA.dailyLogs || [])
+      .flatMap(log => log.mediaConsumed || [])
+      .map(m => m.title)
+      .filter(Boolean)
+    )].sort();
+    
+    datalist.innerHTML = uniqueTitles.map(t => `<option value="${t}">`).join('');
+  }
 }
 
 function addMedia() {
@@ -441,7 +458,8 @@ const mediaConsumed = Array.from(document.querySelectorAll('#media-container .me
       subtitleLanguage: sub,
       modeCode: modeCode,
       durationMinutes: parseInt(card.querySelector('.med-dur').value) || 0,
-      whatILearned: card.querySelector('.med-learned').value
+      whatILearned: card.querySelector('.med-learned').value,
+      author: card.querySelector('.med-author')?.value || ''
     };
   }).filter(m => m.title);
 
