@@ -121,6 +121,38 @@
         <div class="fav-word-meaning" id="fav-word-meaning">Add one from the notes section</div>
       </div>
 
+
+            <!-- QUICK ACCESS (Claude Only) -->
+     <div id="cover-quick-access" class="hidden">
+  <nav class="menu" aria-label="Main Menu" onclick="event.stopPropagation();">
+    <input type="checkbox" id="toggle" name="cb" class="visually-hidden" />
+    <label for="toggle" aria-controls="menu-list" aria-label="Open/Close Menu">
+      <span class="burger" aria-hidden="true">
+        <span></span><span></span><span></span>
+      </span>
+    </label>
+    <ul class="menu-list">
+      <li style="--i: 0">
+        <a href="#" onclick="event.stopPropagation(); goToSection('logs')" title="Daily Log">📓</a>
+      </li>
+      <li style="--i: 1">
+      <a href="#" onclick="event.stopPropagation(); goToSection('vocabulary')" title="Vocabulary">📖</a>
+      </li>
+      <li style="--i: 2">
+        <a href="#" onclick="event.stopPropagation(); goToSection('levels')" title="Levels & Stats">📈</a>
+      </li>
+      <li style="--i: 3">
+        <a href="#" onclick="event.stopPropagation(); goToSection('results')" title="Results">📊</a>
+      </li>
+      <li style="--i: 4">
+        <a href="#" onclick="event.stopPropagation(); showPage('notes-page'); startLiveSession();" title="Live Session">⏱</a>
+      </li>
+      <li style="--i: 5">
+        <a href="#" onclick="event.stopPropagation(); goToSection('notes')" title="Notes">📝</a>
+      </li>
+    </ul>
+  </nav>
+</div>
       <!-- BRAND CHIP -->
       <div class="cover-brand">
         <div class="brand-chip">LL</div>

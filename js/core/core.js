@@ -1365,6 +1365,12 @@ function updateCoverPage() {
   const favWord = getFavouriteWord(DATA);
   setText('fav-word-kr', favWord.korean);
   setText('fav-word-meaning', favWord.meaning);
+
+    // Show quick access only if admin
+  const quickAccess = document.getElementById('cover-quick-access');
+  if (quickAccess) {
+    quickAccess.classList.toggle('hidden', !isEditable());
+  }
 }
 
 function getFavouriteWord(data) {
