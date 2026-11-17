@@ -741,7 +741,7 @@ function startLiveSession() {
 
   // Take over the screen
   const container = document.getElementById('notes-page');
-  container.innerHTML = `
+    container.innerHTML = `
     <div class="live-session-wrap">
       <div class="live-session-header">
         <div class="live-session-title-group">
@@ -751,7 +751,7 @@ function startLiveSession() {
         <button class="cancel-btn" onclick="cancelLiveSession()">Exit</button>
       </div>
 
-            <div class="live-session-toolbar">
+     <div class="live-session-toolbar">
         <label>Language:
           <select id="live-lang">
             ${Object.keys(LANGUAGES).map(l => `<option value="${l}">${LANGUAGES[l].flag} ${LANGUAGES[l].name}</option>`).join('')}
@@ -772,9 +772,53 @@ function startLiveSession() {
         <input type="text" id="live-custom-method" placeholder="Type custom method..." style="display: none; flex: 1; background: var(--bg-input); border: 2px solid var(--border-main); padding: 0.3rem; font-family: var(--font-pixel);">
       </div>
 
-      <div class="live-session-editor">
-        <textarea id="live-session-body" placeholder="Start typing your thoughts, what you're learning, or use [[ to link a note..."></textarea>
-        <div id="live-session-preview" class="live-preview"></div>
+      <!-- NEW 2-COLUMN LAYOUT -->
+      <div class="live-session-columns">
+        
+        <!-- LEFT: THE NOTE -->
+        <div class="live-session-col-left">
+          <div class="live-session-editor">
+            <textarea id="live-session-body" placeholder="Start typing your thoughts, what you're learning, or use [[ to link a note..."></textarea>
+            <div id="live-session-preview" class="live-preview"></div>
+          </div>
+        </div>
+
+        <!-- RIGHT: THE TRACKER -->
+        <div class="live-session-col-right">
+          <div class="live-tracker-card">
+            <h3>Words Learned</h3>
+            <label>Words (comma-separated):
+              <textarea id="live-words-list" rows="2" placeholder="안녕, 감사"></textarea>
+            </label>
+            <label>Meanings:
+              <textarea id="live-words-meanings" rows="2" placeholder="hello, thanks"></textarea>
+            </label>
+            <button class="add-btn small" onclick="saveLiveSessionWords()">+ Add to Garden</button>
+          </div>
+          
+                    <div class="live-tracker-card" style="margin-top: 1rem;">
+            <h3>Physiological</h3>
+            <div style="display: flex; flex-direction: column; gap: 0.5rem; margin-top: 0.5rem;">
+              <label style="display: flex; justify-content: space-between; align-items: center;">
+                Energy (1-10): 
+                <input type="number" id="live-energy" min="1" max="10" style="width: 60px;">
+              </label>
+              <label style="display: flex; justify-content: space-between; align-items: center;">
+                Stress (1-10): 
+                <input type="number" id="live-stress" min="1" max="10" style="width: 60px;">
+              </label>
+              <label style="display: flex; justify-content: space-between; align-items: center;">
+                Motivation (1-5): 
+                <input type="number" id="live-motivation" min="1" max="5" style="width: 60px;">
+              </label>
+              <label style="display: flex; justify-content: space-between; align-items: center;">
+                Headache (1-10): 
+                <input type="number" id="live-headache" min="0" max="10" style="width: 60px;">
+              </label>
+            </div>
+          </div>
+        </div>
+
       </div>
 
       <div class="live-session-footer">
@@ -880,6 +924,18 @@ function endLiveSession() {
     };
     DATA.dailyLogs.push(log);
   }
+    // Merge Live Tracker inputs into the daily log's physiological data
+  log.physiological = log.physiological || {};
+  
+  const liveEnergy = document.getElementById('live-energy').value;
+  const liveStress = document.getElementById('live-stress').value;
+  const liveMotivation = document.getElementById('live-motivation').value;
+  const liveHeadache = document.getElementById('live-headache').value;
+
+  if (liveEnergy) log.physiological.eveningEnergy = parseInt(liveEnergy);
+  if (liveStress) log.physiological.stress = parseInt(liveStress);
+  if (liveMotivation) log.physiological.motivation = parseInt(liveMotivation);
+  if (liveHeadache) log.physiological.headacheAfterKorean = parseInt(liveHeadache);
   
   log.sessions = log.sessions || [];
   log.sessions.push({
@@ -891,6 +947,11 @@ function endLiveSession() {
     notes: `Learning Log: ${title}`
   });
 
+    // Auto-save any words left in the input boxes
+  if (typeof saveLiveSessionWords === 'function') {
+    saveLiveSessionWords();
+  }
+
   saveData(DATA);
   recalculateAll();
   
@@ -898,6 +959,69 @@ function endLiveSession() {
   currentNoteDraft = null;
   setNotesTab('learning');
 }
+
+function saveLiveSessionWords() {
+  const langSlug = document.getElementById('live-lang').value;
+  const wordsText = document.getElementById('live-words-list').value;
+  const meaningsText = document.getElementById('live-words-meanings').value;
+
+  if (!wordsText.trim()) return; // Nothing to save
+
+  const words = parseWordList(wordsText);
+  const meanings = parseWordList(meaningsText);
+  const today = localDateStr();
+  let addedCount = 0;
+
+  words.forEach((w, i) => {
+    const meaning = meanings[i] || '';
+    const existing = DATA.vocabulary.find(v =>
+      v.language === langSlug && v.word.toLowerCase() === w.toLowerCase()
+    );
+
+    if (existing) {
+      existing.waters = (existing.waters || 0) + 1;
+      existing.lastWatered = today;
+      updateWordStage(existing);
+      if (!existing.meaning && meaning) existing.meaning = meaning;
+    } else {
+      const pos = findAutoPosition(langSlug);
+      DATA.vocabulary.push({
+        id: generateUUID(),
+        word: w,
+        meaning: meaning,
+        language: langSlug,
+        dateAdded: today,
+        waters: 1,
+        lastWatered: today,
+        stage: 'sprout',
+        parentId: null,
+        childIds: [],
+        connections: [],
+        favorite: false,
+        notes: '',
+        backlog: false,
+        plantType: 'flowering',
+        gardenX: pos.x,
+        gardenY: pos.y
+      });
+      addedCount++;
+    }
+  });
+
+  saveData(DATA);
+  
+  // Clear inputs so you can add more
+  document.getElementById('live-words-list').value = '';
+  document.getElementById('live-words-meanings').value = '';
+  
+  // Quick toast notification (reusing the palace toast!)
+  if (typeof showPalaceToast === 'function') {
+    showPalaceToast(`Added ${addedCount} new words to Garden`);
+  } else {
+    alert(`Added ${addedCount} new words to Garden`);
+  }
+}
+
 function deleteCurrentNote() {
   if (!confirm('Delete this note permanently?')) return;
   
