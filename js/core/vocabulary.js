@@ -202,6 +202,7 @@ function renderVocabSidebar() {
       ${gardenEditMode ? '✓ Done editing' : '🗺️ Edit Garden'}
     </button>
     <button onclick="openBulkEditModal()">✏️ Bulk Edit Incomplete</button>
+        <button onclick="openBulkFormsModal()">📝 Bulk Edit Forms</button>
     <button onclick="findAndFixDuplicates()" style="margin-top: 1rem; background: var(--danger); color: white;">⚠ Find Duplicates</button>
   ` : '';
 }
@@ -3190,6 +3191,96 @@ function saveBulkEdit() {
   renderVocabSidebar();
 }
 
+function openBulkFormsModal() {
+  if (!isEditable()) return;
+  
+   // Get words that don't have forms yet, ONLY for gendered languages (limit to 20)
+  const wordsWithoutForms = DATA.vocabulary.filter(w => 
+    languageHasGender(w.language) && 
+    (!w.forms || w.forms.length === 0)
+  ).slice(0, 20);
+
+  if (!wordsWithoutForms.length) {
+    alert('All words already have forms (or you have no words).');
+    return;
+  }
+
+  const existing = document.getElementById('bulk-forms-modal');
+  if (existing) existing.remove();
+
+  const html = `
+    <div class="modal-overlay" id="bulk-forms-modal">
+      <div class="modal-box" style="max-width: 800px;">
+        <div class="modal-header">
+          <h2>Add Forms (Gender / Plural)</h2>
+          <button class="remove-btn" onclick="document.getElementById('bulk-forms-modal').remove()">X</button>
+        </div>
+        <div class="modal-body" style="max-height: 60vh; overflow-y: auto;">
+          <p style="font-size:0.75rem; color:var(--text-dim); margin-bottom:1rem;">Fill out the alt forms for these words. Leave blank if the word doesn't change.</p>
+          ${wordsWithoutForms.map(w => `
+            <div style="border-bottom: 1px dashed var(--border-soft); padding: 0.75rem 0; display: flex; gap: 0.5rem; align-items: center;">
+              <span style="width: 120px; font-weight: bold; font-size: 0.8rem; color: ${LANGUAGES[w.language].accent};">${w.word}</span>
+              
+              <input type="text" class="bulk-form-text" data-id="${w.id}" placeholder="Alt form..." style="flex: 2; font-size: 0.75rem;">
+              <select class="bulk-form-gender" data-id="${w.id}" style="flex: 1; font-size: 0.7rem;">
+                <option value="">Gender</option>
+                <option value="fem">Feminine</option>
+                <option value="masc">Masculine</option>
+              </select>
+
+              <select class="bulk-form-number" data-id="${w.id}" style="flex: 1; font-size: 0.7rem;">
+                <option value="">Number</option>
+                <option value="sing">Singular</option>
+                <option value="plur">Plural</option>
+              </select>
+            </div>
+          `).join('')}
+        </div>
+        <div class="modal-footer">
+          <button class="save-btn" onclick="saveBulkForms()">Save All</button>
+          <button class="cancel-btn" onclick="document.getElementById('bulk-forms-modal').remove()">Cancel</button>
+        </div>
+      </div>
+    </div>
+  `;
+  document.body.insertAdjacentHTML('beforeend', html);
+}
+
+function saveBulkForms() {
+  const texts = document.querySelectorAll('.bulk-form-text');
+  const genders = document.querySelectorAll('.bulk-form-gender');
+  const numbers = document.querySelectorAll('.bulk-form-number');
+
+  texts.forEach((el, i) => {
+    const wordId = el.dataset.id;
+    const textValue = el.value.trim();
+    
+    // Only save if they actually typed a form
+    if (textValue) {
+      const word = DATA.vocabulary.find(v => v.id === wordId);
+      if (word) {
+        if (!word.forms) word.forms = [];
+        
+        // Check if the form already exists to avoid duplicates
+        const exists = word.forms.some(f => f.text.toLowerCase() === textValue.toLowerCase());
+        if (!exists) {
+          word.forms.push({
+            text: textValue,
+            gender: genders[i].value,
+            number: numbers[i].value,
+            article: '',
+            notes: ''
+          });
+        }
+      }
+    }
+  });
+
+  saveData(DATA);
+  document.getElementById('bulk-forms-modal').remove();
+  renderGarden();
+  alert('Forms saved!');
+}
 //Section 3.1 Garden branches
 
 /* ============================================
@@ -3643,11 +3734,26 @@ const themesPresent = Object.keys(themeCounts).sort((a, b) => themeCounts[b] - t
           <div><span>Overdue (&gt;${s.dueThreshold}d):</span><strong>${overdue}</strong></div>
         </div>
         <div class="study-setup-form">
+            <label>Mode:
+            <select id="study-mode" onchange="toggleStudyModeUI(this.value)">
+              <option value="flashcard" selected>Flashcards (Vocab)</option>
+              <option value="grammar">Grammar Drill (Forms)</option>
+            </select>
+          </label>
           <label>Session size:
             <input type="number" id="study-size" min="1" max="100" value="${s.sessionSize}">
           </label>
           <label>Language:
             <select id="study-lang">${langOptions}</select>
+          </label>
+                    <label>Theme Filter:
+            <select id="study-theme">
+              <option value="">All Themes</option>
+              ${Object.keys(THEME_MAP).map(slug => {
+                const count = themeCounts[slug] || 0;
+                return `<option value="${slug}">${THEME_MAP[slug].icon} ${THEME_MAP[slug].label} (${count})</option>`;
+              }).join('')}
+            </select>
           </label>
           <label class="study-reverse-label">
             <input type="checkbox" id="study-reverse" ${s.reverseMode ? 'checked' : ''}>
@@ -3664,15 +3770,28 @@ const themesPresent = Object.keys(themeCounts).sort((a, b) => themeCounts[b] - t
 }
 
 function startStudySession() {
+  const mode = document.getElementById('study-mode').value;
   const size = Math.max(1, Math.min(100, parseInt(document.getElementById('study-size').value) || 25));
   const lang = document.getElementById('study-lang').value;
   const reverse = document.getElementById('study-reverse').checked;
+  const theme = document.getElementById('study-theme').value;
+  DATA.settings.study.themeFilter = theme || null;
 
   DATA.settings.study.sessionSize = size;
   DATA.settings.study.languageFilter = lang;
   DATA.settings.study.reverseMode = reverse;
 
-  const words = selectStudyCards();
+  let words = selectStudyCards();
+  
+  // If grammar mode, ONLY keep words that have alt forms
+  if (mode === 'grammar') {
+    words = words.filter(w => w.forms && w.forms.length > 0);
+  }
+
+  if (!words.length) {
+    alert(mode === 'grammar' ? 'No words with alt forms found in this selection.' : 'No words match your filters.');
+    return;
+  }
   if (!words.length) {
     alert('No words match your filters.');
     return;
@@ -3692,7 +3811,8 @@ function startStudySession() {
     watersAdded: 0,
     wordChanges: [],
     elapsedSeconds: 0,
-    complete: false
+    complete: false,
+    mode: mode
   };
 
   saveData(DATA);
@@ -3722,6 +3842,12 @@ function persistStudyState() {
   saveData(DATA);
 }
 
+function toggleStudyModeUI(mode) {
+  const reverseLabel = document.querySelector('.study-reverse-label');
+  if (reverseLabel) {
+    reverseLabel.style.display = mode === 'grammar' ? 'none' : 'flex';
+  }
+}
 // ─── CARD RENDER ─────────────────────────────
 
 function renderStudyCard(targetId = 'vocab-content') {
@@ -3729,6 +3855,9 @@ function renderStudyCard(targetId = 'vocab-content') {
   if (!container) return;
   const s = studySession;
   const word = DATA.vocabulary.find(w => w.id === s.wordIds[s.currentIndex]);
+    if (s.mode === 'grammar') {
+    return renderGrammarCard(word, targetId);
+  }
   if (!word) { completeStudySession(targetId); return; }
 
   const reverse = s.reverseMode;
@@ -3832,9 +3961,72 @@ function gradeStudyCard(grade) {
     renderStudyCard();
   }
 }
+function renderGrammarCard(word, targetId = 'vocab-content') {
+  const container = document.getElementById(targetId);
+  if (!container) return;
 
-// ─── COMPLETE ────────────────────────────────
-// ← 5.3c: takes optional target container ID
+  // Pick a random alt form to test
+  const formIndex = Math.floor(Math.random() * word.forms.length);
+  const targetForm = word.forms[formIndex];
+  
+  // We will store the answer in a global variable for the check function
+  window._currentGrammarAnswer = targetForm.text;
+  
+  container.innerHTML = `
+    <div class="study-session-wrap">
+      <div class="study-session-header">
+        <span>Grammar Drill</span>
+        <button class="study-exit-btn" onclick="closeStudyMode()">Exit</button>
+      </div>
+      
+      <div class="study-card">
+        <div class="study-card-inner">
+          <div class="study-card-face">
+            <div class="study-card-word">${escapeHtml(word.word)}</div>
+            <div class="study-card-meaning">${escapeHtml(word.meaning)}</div>
+            <div style="margin-top: 2rem; color: var(--text-dim);">
+              Change to: <strong>${targetForm.gender || ''} ${targetForm.number || ''}</strong>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex; gap: 0.5rem; margin-top: 1rem;">
+        <input type="text" id="grammar-answer-input" placeholder="Type the form..." style="flex:1; padding: 1rem; font-size: 1.2rem; background: var(--bg-input); border: 2px solid var(--border-main); color: var(--text-main);">
+        <button class="save-btn" onclick="checkGrammarAnswer()">Submit</button>
+      </div>
+    </div>
+  `;
+  
+  // Focus the input automatically
+  setTimeout(() => document.getElementById('grammar-answer-input')?.focus(), 100);
+}
+
+function checkGrammarAnswer() {
+  const input = document.getElementById('grammar-answer-input');
+  const answer = input.value.trim().toLowerCase();
+  const correct = window._currentGrammarAnswer.toLowerCase();
+  
+  if (answer === correct) {
+    input.style.borderColor = 'var(--success)';
+    setTimeout(() => {
+      // Water the plant and move to next
+      gradeStudyCard(3); // Grade 3 (Knew it)
+    }, 500);
+  } else {
+    input.style.borderColor = 'var(--danger)';
+    // Allow them to try again, or reveal the answer
+    setTimeout(() => {
+      input.value = '';
+      input.style.borderColor = 'var(--border-main)';
+      // Optional: show a hint
+      alert(`Not quite. The correct answer is: ${correct}`);
+      gradeStudyCard(1); // Grade 1 (Didn't know) to move on
+    }, 500);
+  }
+}
+
+
 function completeStudySession(targetId = 'vocab-content') {
   const s = studySession;
   clearStudyTimer();
@@ -3949,12 +4141,16 @@ function renderStudyComplete(targetId = 'vocab-content') {
 }
 
 // ─── KEYBOARD ────────────────────────────────
-// ← 5.3c: only fire when Study tab is active inside Vocabulary
 document.addEventListener('keydown', e => {
   if (typeof vocabTab === 'undefined' || vocabTab !== 'study') return;
   const page = document.getElementById('vocabulary-page');
   if (!page || !page.classList.contains('active')) return;
   if (!studySession || studySession.complete) return;
+    
+  if (studySession && studySession.mode === 'grammar' && e.key === 'Enter') {
+    e.preventDefault();
+    checkGrammarAnswer();
+  }
 
   if (e.key === ' ') { e.preventDefault(); flipStudyCard(); }
   else if (e.key === '1') gradeStudyCard(1);

@@ -179,7 +179,12 @@ function getDaysSinceLastStudied(data, slug) {
    ============================================ */
 
 const THEMES = [
-  { slug: 'time',        label: 'Time',         icon: '⏱',  color: '#c4a8d9' },
+  { slug: 'time',        label: 'Time',         icon: '⏱',  color: '#c4a8d9'},
+  { slug: 'actions',     label: 'Actions',      icon: '🏃', color: '#e8b8a8' },
+  { slug: 'objects',     label: 'Objects',      icon: '📦', color: '#a8d9b8' },
+  { slug: 'science',     label: 'Science',      icon: '🔬', color: '#a8c8e8' },
+  { slug: 'art',         label: 'Art',          icon: '🖌️', color: '#d9a8c8' },
+  { slug: 'politics',     label: 'Politics',     icon: '🏛️', color: '#a8b8d9' },
   { slug: 'people',      label: 'People',       icon: '👥', color: '#d9b8a8' },
   { slug: 'family',      label: 'Family',       icon: '🏠', color: '#e8a8a8' },
   { slug: 'events',       label: 'Events',       icon: '📅', color: '#a8d9e8' },
