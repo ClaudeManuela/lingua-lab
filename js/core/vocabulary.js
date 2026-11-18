@@ -41,6 +41,7 @@ function renderVocabulary() {
 
   renderVocabSidebar();
   renderVocabContent();
+  mountGardenModals();
 }
 
 //incomplete function for sidebar
@@ -322,14 +323,15 @@ function renderGarden(targetId = 'vocab-content') {
   renderGardenView();
   checkRotatePrompt();
 }
-
 function mountGardenModals(admin) {
+  if (document.getElementById('add-words-modal')) return; // Prevent duplicates
   const langOptions = GARDEN_LANGUAGES.map(slug => 
     `<option value="${slug}">${LANGUAGES[slug].flag} ${LANGUAGES[slug].name}</option>`
   ).join('');
 
   const html = `
     <div class="garden-modal-root">
+      <!-- ADD WORDS MODAL -->
       <div id="add-words-modal" class="modal-overlay hidden">
         <div class="modal-box">
           <div class="modal-header">
@@ -346,7 +348,7 @@ function mountGardenModals(admin) {
                   <textarea id="add-words-list" rows="4" required placeholder="안녕, 감사, 물"></textarea>
                 </label>
                 <label>Date:
-                  <input type="date" id="add-words-date" value="${new Date().toISOString().slice(0,10)}">
+                  <input type="date" id="add-words-date" value="${localDateStr()}">
                 </label>
                 <label>Meanings (optional, comma-separated):
                   <textarea id="add-words-meanings" rows="2" placeholder="hello, thanks, water"></textarea>
@@ -361,6 +363,7 @@ function mountGardenModals(admin) {
         </div>
       </div>
 
+      <!-- BACKFILL MODAL -->
       <div id="backfill-modal" class="modal-overlay hidden">
         <div class="modal-box">
           <div class="modal-header">
@@ -371,7 +374,7 @@ function mountGardenModals(admin) {
             <div class="modal-body">
               <section class="settings-section">
                 <p style="font-size: 0.75rem; color: var(--text-dim); margin-bottom: 0.75rem;">
-                  Add words from past days you didn't log. Marked as backlog in the garden.
+                  Add words from past days you didn't log.
                 </p>
                 <label>Language:
                   <select id="backfill-language" required>${langOptions}</select>
@@ -395,6 +398,7 @@ function mountGardenModals(admin) {
         </div>
       </div>
 
+      <!-- WORD CARD MODAL -->
       <div id="word-card-modal" class="modal-overlay hidden">
         <div class="word-card-wide" id="word-card-content"></div>
       </div>
@@ -1029,8 +1033,17 @@ function dismissRotatePrompt() {
 // ADD WORDS / BACKFILL
 // ═══════════════════════════════════════════════
 
-function openAddWordsModal() { if (isEditable()) document.getElementById('add-words-modal').classList.remove('hidden'); }
-function openBackfillModal() { if (isEditable()) document.getElementById('backfill-modal').classList.remove('hidden'); }
+function openAddWordsModal() { 
+  if (!isEditable()) return;
+  const modal = document.getElementById('add-words-modal');
+  if (modal) modal.classList.remove('hidden');
+}
+
+function openBackfillModal() { 
+  if (!isEditable()) return;
+  const modal = document.getElementById('backfill-modal');
+  if (modal) modal.classList.remove('hidden');
+}
 function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
 
 function submitAddWords(event) {
