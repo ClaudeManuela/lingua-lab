@@ -211,6 +211,7 @@ const THEMES = [
   { slug: 'numbers',     label: 'Numbers',      icon: '🔢', color: '#a8b8d9' },
   { slug: 'emotions',    label: 'Emotions',     icon: '💭', color: '#d9b8d9' },
   { slug: 'health',      label: 'Health',       icon: '💊', color: '#a8d9b8' },
+  { slug: 'homonyms',     label: 'Homonyms',     icon: '🔤', color: '#c8a8d9' },
   { slug: 'tech',        label: 'Tech',         icon: '💻', color: '#98a8b8' },
   { slug: 'media',       label: 'Media',        icon: '🎬', color: '#c8a8b8' },
   { slug: 'music',       label: 'Music',        icon: '🎵', color: '#d9a8d9' },
