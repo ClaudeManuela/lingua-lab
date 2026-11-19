@@ -4179,7 +4179,7 @@ function renderStudyComplete(targetId = 'vocab-content') {
         <div class="study-changes-list">${changesHtml}</div>
         <div class="study-setup-actions">
           <button class="save-btn" onclick="closeStudyMode()">View Garden</button>
-          <button class="add-btn" onclick="startStudySession()">Another Session</button>
+          <button class="add-btn" onclick="renderStudySetup('vocab-content')">Another Session</button>
         </div>
       </div>
     </div>
