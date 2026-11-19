@@ -511,13 +511,16 @@ function renderGardenView() {
         <button onclick="resetZoom()">⟲</button>
         <span class="garden-zoom-label" id="zoom-label">100%</span>
       </div>
-            ${gardenEditMode ? `
+                 ${gardenEditMode ? `
         <div class="garden-edit-banner">
           <span>🗺️ Edit mode: drag regions · ${gardenPendingPlacement ? 'click canvas to place word' : 'use sidebar to place unthemed words'}</span>
           ${gardenPendingPlacement ? `
             <button class="cancel-btn small" onclick="cancelGardenPlacement()">Cancel</button>
           ` : ''}
-          <button class="save-btn small" onclick="autoArrangeGarden()" style="margin-left: 1rem; background: var(--accent-ink);">
+          <button class="add-btn small" onclick="openNewRegionFlow()" style="margin-left: 1rem;">
+            + Add Region
+          </button>
+          <button class="save-btn small" onclick="autoArrangeGarden()" style="margin-left: 0.5rem; background: var(--accent-ink);">
             Auto-Arrange Words
           </button>
         </div>
