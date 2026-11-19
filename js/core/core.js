@@ -197,6 +197,7 @@ const THEMES = [
   { slug: 'school',      label: 'School',       icon: '🎓', color: '#a8c8e8' },
   { slug: 'work',        label: 'Work',         icon: '💼', color: '#8a9bc4' },
   { slug: 'home',        label: 'Home',         icon: '🏡', color: '#c8a898' },
+  { slug: 'places',      label: 'Places',       icon: '🗺️', color: '#a8d9b8' },
   { slug: 'kitchen',     label: 'Kitchen',      icon: '🍳', color: '#e8b898' },
   { slug: 'bathroom',    label: 'Bathroom',     icon: '🚿', color: '#a8d9e8' },
   { slug: 'clothing',    label: 'Clothing',     icon: '👕', color: '#c8a8d9' },
