@@ -285,8 +285,6 @@ let gardenThemesHidden = (typeof DATA !== 'undefined' && DATA?.settings?.gallery
 let wordCardEditMode = false;
 
 let gardenEditMode = false;
-let gardenAmbientSprites = [];          // cached list of {src, x, y, rot, scale}
-let gardenAmbientGenerated = false;     // has ambient been generated this session
 let gardenRegionDrag = null;            // {slug, startX, startY, origX, origY}
 let gardenPendingPlacement = null;      // {wordId} — user clicked "Place" and is choosing a point
 let gardenPendingRegionSlug = null;
@@ -441,6 +439,25 @@ function mountGardenModals(admin) {
       <div id="word-card-modal" class="modal-overlay hidden">
         <div class="word-card-wide" id="word-card-content"></div>
       </div>
+              <!-- MAP MODAL -->
+      <div id="garden-map-modal" class="modal-overlay hidden" style="background: rgba(0,0,0,0.85); z-index: 9999;">
+        <div style="position: relative; display: flex; max-width: 90vw; max-height: 85vh; background: var(--paper-bg); border: 4px solid var(--border-main); box-shadow: 8px 8px 0 rgba(0,0,0,0.3);">
+          
+          <!-- LEFT: THE IMAGE -->
+          <div style="flex: 1; background: url('assets/garden/cozy-garden.png') center/cover; min-width: 400px; border-right: 4px solid var(--border-main);"></div>
+          
+          <!-- RIGHT: THE LIST -->
+          <div style="flex: 1; padding: 2rem; overflow-y: auto; max-height: 85vh; min-width: 300px;">
+            <h2 style="font-family: var(--font-pixel); margin-bottom: 1rem; border-bottom: 2px dashed var(--border-soft); padding-bottom: 0.5rem;">Garden Map</h2>
+            <p style="font-size: 0.75rem; color: var(--text-dim); margin-bottom: 1.5rem;">Select a theme to jump directly to its plot.</p>
+<div id="map-theme-list" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem;">
+            <!-- Populated by JS -->
+            </div>
+          </div>
+          
+          <button class="remove-btn" onclick="closeModal('garden-map-modal')" style="position: absolute; top: 1rem; right: 1rem;">X</button>
+        </div>
+      </div>
     </div>
   `;
 
@@ -505,36 +522,54 @@ function renderGardenView() {
           <button onclick="setGalleryThemeFilter(null)" title="Clear filter">×</button>
         </div>
       ` : ''}
-      <div class="garden-zoom-controls">
+            <div class="garden-zoom-controls">
         <button onclick="zoomIn()">+</button>
         <button onclick="zoomOut()">−</button>
         <button onclick="resetZoom()">⟲</button>
         <span class="garden-zoom-label" id="zoom-label">100%</span>
+        
+        <!-- FAB MOVED HERE -->
+        <div style="position: relative; margin-left: 0.5rem; display: inline-block;">
+          <button class="garden-fab-main" onclick="toggleFabMenu()" style="width: 32px; height: 32px; font-size: 16px; border-width: 2px;">⚙️</button>
+          
+          <!-- UPDATED MENU STYLES -->
+          <div class="garden-fab-menu hidden" id="garden-fab-menu" style="
+            position: absolute; 
+            top: 40px; 
+            right: 0; 
+            z-index: 100; 
+            width: 130px; 
+            white-space: nowrap;
+            background: var(--paper-bg); 
+            border: 2px solid var(--border-main); 
+            box-shadow: 4px 4px 0 rgba(0,0,0,0.2);
+            padding: 0.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+          ">
+            <button onclick="toggleGardenFullscreen()">⛶ Fullscreen</button>
+            <button onclick="toggleGardenMap()"> Open Map</button>
+            <button onclick="cycleGardenTime()"> Time: <span id="fab-time-label">Day</span></button>
+            <button onclick="jumpToNeglected()"> Find Neglected</button>
+            <button onclick="autoArrangeGarden()"> Auto-Arrange</button>
+          </div>
+        </div>
       </div>
                  ${gardenEditMode ? `
-        <div class="garden-edit-banner">
-          <span>🗺️ Edit mode: drag regions · ${gardenPendingPlacement ? 'click canvas to place word' : 'use sidebar to place unthemed words'}</span>
-          ${gardenPendingPlacement ? `
-            <button class="cancel-btn small" onclick="cancelGardenPlacement()">Cancel</button>
-          ` : ''}
-          <button class="add-btn small" onclick="openNewRegionFlow()" style="margin-left: 1rem;">
-            + Add Region
-          </button>
-          <button class="save-btn small" onclick="autoArrangeGarden()" style="margin-left: 0.5rem; background: var(--accent-ink);">
-            Auto-Arrange Words
-          </button>
-        </div>
       ` : ''}
-      <div class="garden-canvas-wrap" id="garden-canvas-wrap">
+              <div class="garden-canvas-wrap" id="garden-canvas-wrap">
+        <!-- TIME OF DAY FILTER -->
+        
         <div class="garden-canvas" id="garden-canvas">
-          <div class="garden-ambient-layer" id="garden-ambient-layer"></div>
-          <div class="garden-regions-layer" id="garden-regions-layer"></div>
-          <svg class="garden-branches-svg" id="garden-branches-svg"></svg>
+          <div class="garden-regions-layer" id="garden-regions-layer" style="z-index: 3;"></div>
+          <svg class="garden-branches-svg" id="garden-branches-svg" style="z-index: 5;"></svg>
+          <!-- We will set the plants to z-index: 10 in their CSS -->
         </div>
+      </div>
       </div>
     `;
     applyZoom();
-    renderGardenAmbient();
     renderGardenRegions();
     renderGardenPlants();
     if (typeof renderGardenBranches === 'function') renderGardenBranches();
@@ -544,6 +579,120 @@ function renderGardenView() {
   }
   checkRotatePrompt();
 }
+
+function toggleGardenMap() {
+  const modal = document.getElementById('garden-map-modal');
+  const list = document.getElementById('map-theme-list');
+  
+  // Get all themes that have words
+  const activeThemes = [...new Set((DATA.vocabulary || []).map(w => w.theme).filter(Boolean))];
+  
+  // Build the button list
+  list.innerHTML = activeThemes.map(slug => {
+    const t = THEME_MAP[slug];
+    return `
+          <button class="save-btn" style="text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 1rem 0.5rem; gap: 0.5rem;" onclick="jumpToThemeFromMap('${slug}')">
+        <span style="font-size: 1.2rem;">${t.icon}</span>
+        <span>${t.label}</span>
+      </button>
+    `;
+  }).join('');
+
+  if (modal) modal.classList.remove('hidden');
+  toggleFabMenu();
+}
+function jumpToThemeFromMap(slug) {
+  closeModal('garden-map-modal');
+  
+  // Ensure we are in the Canvas view
+  if (gardenView !== 'garden') {
+    setGardenView('garden');
+  }
+  
+  // Give the DOM a split second to render the canvas before zooming
+  setTimeout(() => {
+    zoomToRegion(slug);
+  }, 100);
+}
+
+function toggleFabMenu() {
+  document.getElementById('garden-fab-menu').classList.toggle('hidden');
+}
+
+function toggleGardenFullscreen() {
+  const wrap = document.getElementById('garden-canvas-wrap');
+  const modalRoot = document.querySelector('.garden-modal-root');
+  
+  if (!document.fullscreenElement) {
+    // 1. Request fullscreen on the canvas wrapper
+    wrap.requestFullscreen().catch(err => alert(`Error: ${err.message}`));
+    
+    // 2. Move the modals INSIDE the fullscreen wrapper so they show up!
+    if (modalRoot) wrap.appendChild(modalRoot);
+    
+  } else {
+    // 1. Exit fullscreen
+    document.exitFullscreen();
+    
+    // 2. Move the modals back to the body
+    if (modalRoot) document.body.appendChild(modalRoot);
+  }
+  toggleFabMenu();
+}
+
+function jumpToNeglected() {
+  toggleFabMenu();
+  
+  // Find the plant with the fewest waters
+  const words = getFilteredWords();
+  if (!words.length) return;
+  
+  let lowest = words[0];
+  words.forEach(w => {
+    if ((w.waters || 0) < (lowest.waters || 0)) lowest = w;
+  });
+  
+  if (!lowest) return;
+
+  // Zoom to it (we can reuse the zoom math from zoomToRegion, but centered on the word)
+  const wrap = document.getElementById('garden-canvas-wrap');
+  currentZoom = 2.0; // Zoom in close
+  applyZoom();
+  
+  // Scroll to the word
+  wrap.scrollTo({
+    left: (lowest.gardenX * currentZoom) - (wrap.clientWidth / 2),
+    top: (lowest.gardenY * currentZoom) - (wrap.clientHeight / 2),
+    behavior: 'smooth'
+  });
+
+  // Optional: Flash it or alert
+  setTimeout(() => {
+    const el = document.querySelector(`.garden-plant[data-id="${lowest.id}"]`);
+    if (el) el.classList.add('garden-plant-sway'); // Just a visual cue
+  }, 500);
+}
+
+let gardenTimeState = 0; 
+function cycleGardenTime() {
+  gardenTimeState = (gardenTimeState + 1) % 3;
+  const wrap = document.getElementById('garden-canvas-wrap');
+  const label = document.getElementById('fab-time-label');
+  
+  if (gardenTimeState === 0) {
+    wrap.style.boxShadow = 'none';
+    label.textContent = 'Day';
+  } else if (gardenTimeState === 1) {
+    // Sunset: Orange inset shadow
+    wrap.style.boxShadow = 'inset 0 0 0 9999px rgba(255, 100, 0, 0.2)';
+    label.textContent = 'Sunset';
+  } else {
+    // Night: Dark blue inset shadow
+    wrap.style.boxShadow = 'inset 0 0 0 9999px rgba(10, 20, 50, 0.6)';
+    label.textContent = 'Night';
+  }
+}
+
 
 // ─── GALLERY ─────────────────────────────────
 
@@ -1361,8 +1510,19 @@ function openWordCard(id) {
 
     <div class="word-card-body">
 
-      <div class="word-card-left">
+            <div class="word-card-left">
         <div class="word-card-tree-bg" id="word-card-tree"></div>
+        
+        <!-- NEW FLOATING TOOLBAR -->
+        ${admin ? `
+          <div class="word-card-floating-actions">
+            <button class="add-btn small" onclick="waterWord('${word.id}')"> Water</button>
+            <button class="add-btn small" onclick="toggleFavorite('${word.id}')">${word.favorite ? '★ Unfav' : '☆ Fav'}</button>
+            <button class="add-btn small" onclick="openAddConnectionForm('${word.id}')"> Connect</button>
+            <button class="add-btn small" onclick="openAddBranchForm('${word.id}')"> Branch</button>
+          </div>
+        ` : ''}
+
         <button class="word-card-show-all hidden" id="word-card-show-all" onclick="toggleAllBranches('${word.id}')">Show all branches</button>
       </div>
 
@@ -1435,9 +1595,6 @@ function openWordCard(id) {
               </span>
             `).join('') : '<span class="word-card-empty">— none yet —</span>'}
           </div>
-          ${admin ? `<div class="word-card-inline-add">
-            <button class="add-btn small" onclick="openAddConnectionForm('${word.id}')">+ Connect</button>
-          </div>` : ''}
 
           <div class="word-card-divider"></div>
           <div class="word-card-section-title">Branches</div>
@@ -1454,17 +1611,6 @@ function openWordCard(id) {
               </div>
             `).join('') : '<span class="word-card-empty">— none yet —</span>'}
           </div>
-          ${admin ? `<div class="word-card-inline-add">
-            <button class="add-btn small" onclick="openAddBranchForm('${word.id}')">+ Branch</button>
-          </div>` : ''}
-
-          ${admin ? `
-            <div class="word-card-actions">
-              <button class="add-btn" onclick="waterWord('${word.id}')">Water +1</button>
-              <button class="add-btn" onclick="toggleFavorite('${word.id}')">${word.favorite ? 'Unfavorite' : 'Favorite'}</button>
-            </div>
-          ` : ''}
-
         </div>
       </div>
 
@@ -2572,86 +2718,6 @@ function hasBranchRelation(aId, bId) {
   return false;
 }
 
-// ═ garden decor// ═══════════════════════════════════════════════
-
-const AMBIENT_SPRITES = [
-  'grass-1.png',
-  'grass-2.png',
-  'grass-3.png',
-  'rock-1.png',
-  'rock-2.png',
-  'flower-1.png',
-  'flower-2.png',
-  'mushroom-1.png',
-  'bush-1.png',
-  'log-1.png'
-];
-
-const AMBIENT_COUNT = 40;               // total sprites scattered
-const AMBIENT_AVOID_RADIUS = 40;        // px — avoid placing near plants
-
-function renderGardenAmbient() {
-  const layer = document.getElementById('garden-ambient-layer');
-  if (!layer) return;
-  layer.innerHTML = '';
-
-  // Generate once per session, deterministic per data snapshot
-  if (!gardenAmbientGenerated) {
-    gardenAmbientSprites = generateAmbientSprites();
-    gardenAmbientGenerated = true;
-  }
-
-  gardenAmbientSprites.forEach(s => {
-    const img = document.createElement('img');
-    img.src = `assets/garden/ambient/${s.src}`;
-    img.className = 'garden-ambient-sprite';
-    img.style.left = s.x + 'px';
-    img.style.top = s.y + 'px';
-    img.style.transform = `rotate(${s.rot}deg) scale(${s.scale})`;
-    img.style.width = s.size + 'px';
-    img.style.height = s.size + 'px';
-    img.onerror = () => img.remove();  // silently drop missing sprites
-    layer.appendChild(img);
-  });
-}
-
-function generateAmbientSprites() {
-  const CANVAS_W = 2000;
-  const CANVAS_H = 1600;
-  const out = [];
-  const words = DATA.vocabulary || [];
-  let attempts = 0;
-  const MAX_ATTEMPTS = AMBIENT_COUNT * 8;
-
-  // Seeded random for deterministic layout
-  const seed = hashString('garden-ambient-v1');
-  const rng = mulberry32(seed);
-
-  while (out.length < AMBIENT_COUNT && attempts < MAX_ATTEMPTS) {
-    attempts++;
-    const x = rng() * (CANVAS_W - 40) + 20;
-    const y = rng() * (CANVAS_H - 40) + 20;
-
-    // Avoid plants
-    const tooClose = words.some(w => {
-      const dx = (w.gardenX || 0) - x;
-      const dy = (w.gardenY || 0) - y;
-      return dx * dx + dy * dy < AMBIENT_AVOID_RADIUS * AMBIENT_AVOID_RADIUS;
-    });
-    if (tooClose) continue;
-
-    out.push({
-      src: AMBIENT_SPRITES[Math.floor(rng() * AMBIENT_SPRITES.length)],
-      x: Math.round(x),
-      y: Math.round(y),
-      rot: Math.round((rng() - 0.5) * 40),
-      scale: 0.7 + rng() * 0.6,
-      size: 28 + Math.round(rng() * 24)
-    });
-  }
-
-  return out;
-}
 
 // Simple deterministic PRNG
 function hashString(str) {
@@ -2682,61 +2748,61 @@ function toggleGardenEditMode() {
   renderVocabSidebar();     // ← refresh sidebar buttons
   renderGarden();           // ← refresh canvas
 }
-
 function renderGardenRegions() {
   const layer = document.getElementById('garden-regions-layer');
   if (!layer) return;
   layer.innerHTML = '';
 
-  if (!gardenEditMode) {
-    layer.style.display = 'none';
-    return;
-  }
-  layer.style.display = 'block';
+  // Get all themes that actually have words
+  const activeThemes = [...new Set((DATA.vocabulary || []).map(w => w.theme).filter(Boolean))];
+  
+  if (!activeThemes.length) return;
 
-  const regions = DATA.gardenThemeRegions || {};
-  const themeSlugs = Object.keys(regions);
+  // Calculate grid dimensions
+  const cols = Math.ceil(Math.sqrt(activeThemes.length));
+  const rows = Math.ceil(activeThemes.length / cols);
+  
+  const canvasW = 4200; 
+  const canvasH = 3600; 
+  const plotW = Math.floor(canvasW / cols) - 30;
+  const plotH = Math.floor(canvasH / rows) - 30;
 
-  themeSlugs.forEach(slug => {
-    const r = regions[slug];
+  DATA.gardenThemeRegions = {}; // Rebuild the regions object
+
+  activeThemes.forEach((slug, index) => {
     const t = THEME_MAP[slug];
     if (!t) return;
 
+    const col = index % cols;
+    const row = Math.floor(index / cols);
+    
+    const x = (col * (canvasW / cols)) + 20;
+    const y = (row * (canvasH / rows)) + 20;
+
+    // Save the calculated region so autoArrangeGarden knows where to put words
+    DATA.gardenThemeRegions[slug] = { x, y, w: plotW, h: plotH };
+
+    // Draw the plot on the screen
     const el = document.createElement('div');
     el.className = 'garden-region';
     el.dataset.slug = slug;
-    el.style.left = r.x + 'px';
-    el.style.top = r.y + 'px';
-    el.style.width = r.w + 'px';
-    el.style.height = r.h + 'px';
-    el.style.borderColor = hexToRgba(t.color, 0.6);
-    el.style.background = hexToRgba(t.color, 0.12);
+    el.style.left = x + 'px';
+    el.style.top = y + 'px';
+    el.style.width = plotW + 'px';
+    el.style.height = plotH + 'px';
+    
+       // Wooden Plot Styling with Dirt Background
+    el.style.border = '8px solid #6b4522'; // Dark wood
+    el.style.borderRadius = '12px';
+    el.style.background = '#8a6a4a'; // Brown dirt color inside the box
+    el.style.boxShadow = 'inset 0 0 20px rgba(0,0,0,0.5)'; // Depth
 
-    const wordCount = (DATA.vocabulary || []).filter(w => w.theme === slug).length;
-
+    // Add the Label
     el.innerHTML = `
-  <div class="garden-region-label"
-       style="background: ${hexToRgba(t.color, 0.9)}; color: #2a2520;"
-       onclick="event.stopPropagation(); zoomToRegion('${slug}')">
-    <span>${t.icon} ${t.label}</span>
-    <span class="garden-region-count">${wordCount}</span>
-    <button class="garden-region-zoom"
-            onclick="event.stopPropagation(); zoomToRegion('${slug}')"
-            title="Zoom to region">⤢</button>
-    <button class="garden-region-delete"
-            onclick="event.stopPropagation(); deleteGardenRegion('${slug}')"
-            title="Delete region">×</button>
-  </div>
-  <div class="garden-region-resize"
-       onmousedown="event.stopPropagation(); startRegionResize(event, '${slug}')"></div>
-`;
-
-    // Region drag
-    el.addEventListener('mousedown', (e) => {
-      if (e.target.closest('.garden-region-label')) return;
-      if (e.target.closest('.garden-region-resize')) return;
-      startRegionDrag(e, slug);
-    });
+      <div class="garden-region-label" style="background: ${t.color}; color: #fff; border: 2px solid #4a2e1e; padding: 4px 8px; border-radius: 4px; font-weight: bold; position: absolute; top: -15px; left: 10px;">
+        ${t.icon} ${t.label}
+      </div>
+    `;
 
     layer.appendChild(el);
   });
@@ -2744,116 +2810,41 @@ function renderGardenRegions() {
 
 function autoArrangeGarden() {
   if (!isEditable()) return;
-  if (!confirm('Auto-arrange all themed words into their regions? This cannot be undone.')) return;
+  if (!confirm('Auto-arrange all themed words into their plots?')) return;
 
-  const regions = DATA.gardenThemeRegions || {};
+  // 1. Recalculate the regions first
+  renderGardenRegions();
+
   let movedCount = 0;
+  const regions = DATA.gardenThemeRegions || {};
 
   DATA.vocabulary.forEach(w => {
     const region = regions[w.theme];
-    
     if (region) {
-      // If the word has a theme that has a region
-      // Add a small padding (40px) so plants don't sit exactly on the border
-      const padding = 40;
-      const maxX = Math.max(padding, region.w - padding);
-      const maxY = Math.max(padding, region.h - padding);
+      // Keep plants away from the wooden border
+      const padding = 30; 
+      const maxX = region.w - (padding * 2);
+      const maxY = region.h - (padding * 2);
 
-      // Generate a random X/Y inside the region bounds
-      w.gardenX = region.x + padding + Math.random() * (maxX - padding);
-      w.gardenY = region.y + padding + Math.random() * (maxY - padding);
+      w.gardenX = region.x + padding + Math.random() * maxX;
+      w.gardenY = region.y + padding + Math.random() * maxY;
       
       movedCount++;
     }
   });
 
   if (movedCount === 0) {
-    alert('No words have a theme with a drawn region. Draw some regions in Edit Mode first!');
+    alert('No words have a theme. Assign themes in the Gallery view first!');
     return;
   }
 
   saveData(DATA);
   renderGarden();
-  alert(`🌱 Arranged ${movedCount} words into their theme regions!`);
+  alert(`🌱 Planted ${movedCount} words into their themed plots!`);
 }
 
 function initGardenRegionDrag() {
   // Drag is handled per-element on mousedown; nothing global needed
-}
-
-function startRegionDrag(e, slug) {
-  if (!gardenEditMode || !isEditable()) return;
-  e.preventDefault();
-  const r = DATA.gardenThemeRegions[slug];
-  if (!r) return;
-
-  gardenRegionDrag = {
-    slug,
-    startX: e.clientX,
-    startY: e.clientY,
-    origX: r.x,
-    origY: r.y,
-    mode: 'move'
-  };
-
-  document.addEventListener('mousemove', onRegionDragMove);
-  document.addEventListener('mouseup', onRegionDragEnd);
-}
-
-function startRegionResize(e, slug) {
-  if (!gardenEditMode || !isEditable()) return;
-  e.preventDefault();
-  const r = DATA.gardenThemeRegions[slug];
-  if (!r) return;
-
-  gardenRegionDrag = {
-    slug,
-    startX: e.clientX,
-    startY: e.clientY,
-    origX: r.x,
-    origY: r.y,
-    origW: r.w,
-    origH: r.h,
-    mode: 'resize'
-  };
-
-  document.addEventListener('mousemove', onRegionDragMove);
-  document.addEventListener('mouseup', onRegionDragEnd);
-}
-
-function onRegionDragMove(e) {
-  if (!gardenRegionDrag) return;
-  const d = gardenRegionDrag;
-  const r = DATA.gardenThemeRegions[d.slug];
-  if (!r) return;
-
-  const scale = currentZoom || 1;
-  const dx = (e.clientX - d.startX) / scale;
-  const dy = (e.clientY - d.startY) / scale;
-
-  if (d.mode === 'move') {
-    r.x = Math.round(d.origX + dx);
-    r.y = Math.round(d.origY + dy);
-  } else {
-    r.w = Math.max(120, Math.round(d.origW + dx));
-    r.h = Math.max(100, Math.round(d.origH + dy));
-  }
-
-  const el = document.querySelector(`.garden-region[data-slug="${d.slug}"]`);
-  if (el) {
-    el.style.left = r.x + 'px';
-    el.style.top = r.y + 'px';
-    el.style.width = r.w + 'px';
-    el.style.height = r.h + 'px';
-  }
-}
-
-function onRegionDragEnd() {
-  if (!gardenRegionDrag) return;
-  saveData(DATA);
-  gardenRegionDrag = null;
-  document.removeEventListener('mousemove', onRegionDragMove);
-  document.removeEventListener('mouseup', onRegionDragEnd);
 }
 
 function zoomToRegion(slug) {
@@ -2902,35 +2893,27 @@ function startGardenPlacement(wordId) {
 }
 
 function onGardenPlacementClick(e) {
-  if (!gardenPendingPlacement) {
-    const canvas = document.getElementById('garden-canvas');
-    if (canvas) canvas.removeEventListener('click', onGardenPlacementClick);
-    return;
-  }
-  // Ignore clicks inside existing plants or region labels
-  if (e.target.closest('.garden-plant')) return;
-  if (e.target.closest('.garden-region-label')) return;
-  if (e.target.closest('.garden-region-resize')) return;
-
   const canvas = document.getElementById('garden-canvas');
   if (!canvas) return;
+
   const rect = canvas.getBoundingClientRect();
   const scale = currentZoom || 1;
   const x = (e.clientX - rect.left) / scale;
   const y = (e.clientY - rect.top) / scale;
 
+
+  // 1. Handle WORD placement
+  if (!gardenPendingPlacement) return;
+  
+  if (e.target.closest('.garden-plant')) return;
+  if (e.target.closest('.garden-region-label')) return;
+
   const word = DATA.vocabulary.find(w => w.id === gardenPendingPlacement.wordId);
   if (word) {
     word.gardenX = Math.round(x);
     word.gardenY = Math.round(y);
-
-    // Check if this point is inside a theme region
     const regionTheme = findRegionAt(x, y);
-    if (regionTheme) {
-      word.theme = regionTheme;
-    }
-    // If outside all regions, we do nothing to the theme (per D1 = A)
-
+    if (regionTheme) word.theme = regionTheme;
     saveData(DATA);
   }
 
@@ -2991,166 +2974,6 @@ function renderUnthemedWordsList() {
 
 let gardenRegionDrawing = null;   // {startX, startY, el}
 
-function openNewRegionFlow() {
-  if (!isEditable()) return;
-  const available = THEMES.filter(t => !DATA.gardenThemeRegions[t.slug]);
-
-  if (!available.length) {
-    alert('All themes already have regions. Delete one first.');
-    return;
-  }
-
-  const options = available.map((t, i) => `${i + 1}. ${t.icon} ${t.label}`).join('\n');
-  const input = prompt(
-    `Which theme?\n\n${options}\n\nEnter the number:`,
-    '1'
-  );
-  if (!input) return;
-
-  const idx = parseInt(input) - 1;
-  if (isNaN(idx) || idx < 0 || idx >= available.length) {
-    alert('Invalid choice.');
-    return;
-  }
-
-  const themeSlug = available[idx].slug;
-  startRegionDrawing(themeSlug);
-}
-
-function startRegionDrawing(slug) {
-  gardenPendingRegionSlug = slug;
-
-  const layer = document.getElementById('garden-regions-layer');
-  if (!layer) return;
-
-  layer.style.pointerEvents = 'auto';
-  layer.style.cursor = 'crosshair';
-
-  const canvas = document.getElementById('garden-canvas');
-  if (canvas) canvas.style.cursor = 'crosshair';
-
-  // Listen for mousedown on the layer
-  layer.addEventListener('mousedown', onRegionDrawStart);
-  layer.addEventListener('mousemove', onRegionDrawMove);
-  document.addEventListener('mouseup', onRegionDrawEnd);
-}
-
-function onRegionDrawStart(e) {
-  if (!gardenPendingRegionSlug) return;
-  if (e.target.closest('.garden-region')) return;
-
-  const canvas = document.getElementById('garden-canvas');
-  if (!canvas) return;
-  const rect = canvas.getBoundingClientRect();
-  const scale = currentZoom || 1;
-  const x = (e.clientX - rect.left) / scale;
-  const y = (e.clientY - rect.top) / scale;
-
-  gardenRegionDrawing = {
-    startX: x,
-    startY: y,
-    el: document.createElement('div')
-  };
-
-  gardenRegionDrawing.el.className = 'garden-region drawing';
-  gardenRegionDrawing.el.style.left = x + 'px';
-  gardenRegionDrawing.el.style.top = y + 'px';
-  gardenRegionDrawing.el.style.width = '0px';
-  gardenRegionDrawing.el.style.height = '0px';
-
-  const themeColor = (THEME_MAP[gardenPendingRegionSlug]?.color) || '#c8c8c8';
-  gardenRegionDrawing.el.style.borderColor = hexToRgba(themeColor, 0.6);
-  gardenRegionDrawing.el.style.background = hexToRgba(themeColor, 0.12);
-
-  const layer = document.getElementById('garden-regions-layer');
-  layer.appendChild(gardenRegionDrawing.el);
-}
-
-function onRegionDrawMove(e) {
-  if (!gardenRegionDrawing) return;
-  const canvas = document.getElementById('garden-canvas');
-  if (!canvas) return;
-
-  const rect = canvas.getBoundingClientRect();
-  const scale = currentZoom || 1;
-  const x = (e.clientX - rect.left) / scale;
-  const y = (e.clientY - rect.top) / scale;
-
-  const x1 = Math.min(gardenRegionDrawing.startX, x);
-  const y1 = Math.min(gardenRegionDrawing.startY, y);
-  const w = Math.abs(x - gardenRegionDrawing.startX);
-  const h = Math.abs(y - gardenRegionDrawing.startY);
-
-  gardenRegionDrawing.el.style.left = x1 + 'px';
-  gardenRegionDrawing.el.style.top = y1 + 'px';
-  gardenRegionDrawing.el.style.width = w + 'px';
-  gardenRegionDrawing.el.style.height = h + 'px';
-}
-
-function onRegionDrawEnd(e) {
-  if (!gardenRegionDrawing) return;
-
-  const canvas = document.getElementById('garden-canvas');
-  if (!canvas) return;
-  const rect = canvas.getBoundingClientRect();
-  const scale = currentZoom || 1;
-  const x = (e.clientX - rect.left) / scale;
-  const y = (e.clientY - rect.top) / scale;
-
-  const x1 = Math.min(gardenRegionDrawing.startX, x);
-  const y1 = Math.min(gardenRegionDrawing.startY, y);
-  const w = Math.abs(x - gardenRegionDrawing.startX);
-  const h = Math.abs(y - gardenRegionDrawing.startY);
-
-  const MIN_W = 100;
-  const MIN_H = 80;
-
-  if (w < MIN_W || h < MIN_H) {
-    // Too small — discard and clean up
-    gardenRegionDrawing.el.remove();
-    gardenRegionDrawing = null;
-    cleanupRegionDrawing();
-    return;
-  }
-
-  // Commit the region
-  DATA.gardenThemeRegions[gardenPendingRegionSlug] = {
-    x: Math.round(x1),
-    y: Math.round(y1),
-    w: Math.round(w),
-    h: Math.round(h)
-  };
-  saveData(DATA);
-
-  gardenRegionDrawing = null;
-  cleanupRegionDrawing();
-  renderGarden();
-}
-
-function cleanupRegionDrawing() {
-  gardenPendingRegionSlug = null;
-
-  const layer = document.getElementById('garden-regions-layer');
-  if (layer) {
-    layer.removeEventListener('mousedown', onRegionDrawStart);
-    layer.removeEventListener('mousemove', onRegionDrawMove);
-    layer.style.pointerEvents = 'none';
-    layer.style.cursor = '';
-  }
-  document.removeEventListener('mouseup', onRegionDrawEnd);
-
-  const canvas = document.getElementById('garden-canvas');
-  if (canvas) canvas.style.cursor = '';
-}
-
-function cancelRegionDrawing() {
-  if (gardenRegionDrawing) {
-    gardenRegionDrawing.el.remove();
-    gardenRegionDrawing = null;
-  }
-  cleanupRegionDrawing();
-  renderGarden();
-}
 
 // ─── REGION DELETION ────────────────────────
 function deleteGardenRegion(slug) {
