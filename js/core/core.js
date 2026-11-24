@@ -1332,6 +1332,13 @@ function goToSection(section) {
       return;
     }
   }
+  if (section === 'graphs') {
+    if (typeof renderGraphsPage === 'function') {
+      renderGraphsPage();
+      showPage('graphs-page');
+      return;
+    }
+  }
   showPage(section + '-page');
 }
 
