@@ -320,7 +320,8 @@ const STAGE_THRESHOLDS = {
   seedling: 3,
   sapling: 6,
   trunk: 12,
-  flowering: 20
+  flowering: 20,
+  mature: 30
 };
 
 const DEFAULT_WORD_TYPES = [
@@ -330,6 +331,40 @@ const DEFAULT_WORD_TYPES = [
   'Idiom / Expression', 'Filler word', 'Counter',
   'Number', 'Phrase / Sentence', 'Other'
 ];
+
+const PLANT_IMAGES = {
+  leafy: [
+    'assets/garden/plants/leafy-1.png', // Seed
+    'assets/garden/plants/leafy-2.png', // Sprout
+    'assets/garden/plants/leafy-3.png', // Seedling
+    'assets/garden/plants/leafy-4.png', // Sapling
+    'assets/garden/plants/leafy-5.png', // Trunk
+    'assets/garden/plants/leafy-6.png',  // Flowering
+    'assets/garden/plants/leafy-7.png'  // Mature
+  ],
+  pine: [
+    'assets/garden/plants/pine-1.png',
+    'assets/garden/plants/pine-2.png',
+    'assets/garden/plants/pine-3.png',
+    'assets/garden/plants/pine-4.png',
+    'assets/garden/plants/pine-5.png',
+    'assets/garden/plants/pine-6.png',
+    'assets/garden/plants/pine-7.png'
+  ],
+  flowering: [
+    'assets/garden/plants/flower-1.png', 
+    'assets/garden/plants/flower-2.png',
+    'assets/garden/plants/flower-3.png',
+    'assets/garden/plants/flower-4.png',
+    'assets/garden/plants/flower-5.png',
+    'assets/garden/plants/flower-6.png',
+    'assets/garden/plants/flower-7.png'
+  ]
+};
+
+const STAGE_INDEX = {
+  seed: 0, sprout: 1, seedling: 2, sapling: 3, trunk: 4, flowering: 5, mature: 6
+};
 
 // ═══════════════════════════════════════════════
 // MAIN RENDER
@@ -572,6 +607,7 @@ function renderGardenView() {
     applyZoom();
     renderGardenRegions();
     renderGardenPlants();
+    renderGardenBranches();
     if (typeof renderGardenBranches === 'function') renderGardenBranches();
     if (typeof initGardenZoom === 'function') initGardenZoom();
     if (typeof initGardenDrag === 'function') initGardenDrag();
@@ -1024,11 +1060,35 @@ function createPlantElement(w, admin) {
   el.style.top = (w.gardenY || 100) + 'px';
   el.style.width = size + 'px';
 
+    // Get the correct image based on plant type and stage
+  const type = w.plantType || 'leafy';
+  const stageName = w.stage || 'seed';
+  const stageIndex = STAGE_INDEX[stageName] || 0;
+  const imgSrc = PLANT_IMAGES[type][stageIndex];
+
+  // Calculate dynamic font size (shrinks as plant grows)
+  const labelSize = stageIndex === 0 ? '1.2rem' : 
+                    stageIndex === 1 ? '1rem' : 
+                    stageIndex === 2 ? '0.9rem' : 
+                    stageIndex === 3 ? '0.75rem' : '0.65rem';
+
+    // Calculate filter based on flowerColor
+  let colorFilter = 'none';
+  if (type === 'flowering' && w.flowerColor) {
+    // This is a rough estimation. You might need to tweak the hue-rotate values 
+    // to match your specific Canva images.
+    const colorMap = {
+      '#f0a8c0': 'hue-rotate(0deg)',      // Pink (Default)
+      '#d94b4b': 'hue-rotate(-30deg)',    // Red
+      '#f5d878': 'hue-rotate(45deg)',     // Yellow
+      '#7bb6e8': 'hue-rotate(180deg)'     // Blue
+    };
+    colorFilter = colorMap[w.flowerColor] || 'none';
+  }
+
   el.innerHTML = `
-    <svg class="garden-plant-svg" viewBox="0 0 ${size} ${size}" width="${size}" height="${size}">
-${renderPlantSVG(stage, size, plantType, w.flowerColor)}
-    </svg>
-    <div class="garden-plant-label">${escapeHtml(formatClusterShort(w) || w.word)}</div>
+    <img src="${imgSrc}" class="garden-plant-img" style="width: 100%; height: 100%; object-fit: contain; filter: ${colorFilter};" draggable="false">
+    <div class="garden-plant-label" style="font-size: ${labelSize};">${escapeHtml(formatClusterShort(w) || w.word)}</div>
   `;
 
   el.addEventListener('click', () => {
@@ -1053,113 +1113,6 @@ function getPlantSize(stage) {
   }
 }
 
-function renderPlantSVG(stage, size, plantType = 'leafy') {
-  const fn = {
-    flowering: renderFloweringPlant,
-    pine: renderPineTree,
-    leafy: renderLeafyTree
-  }[plantType] || renderLeafyTree;
-  return fn(stage, size);
-}
-
-// ─── SHARED PALETTE ──────────────────────────
-const PLANT_PALETTE = {
-  soilDark:   '#4a2e1e',
-  trunkDark:  '#6b4522',
-  trunkMid:   '#a07850',
-  trunkLight: '#c19a68',
-  leafDark:   '#3d6b2a',
-  leafMid:    '#5a8d3a',
-  leafLight:  '#7aad52',
-  pineDark:   '#2e4d24',
-  pineMid:    '#4a7238',
-  pineLight:  '#6a9248',
-  blossom1:   '#f0a8c0',
-  blossom2:   '#e888a8',
-  blossom3:   '#ffffff',
-  blossomCtr: '#f5d878'
-};
-
-// ═══ PLANT SILHOUETTES & FLOWER COLORS ═══
-function renderFloweringPlant(stage, size, flowerColor) {
-  const c = size / 2;
-  const P = PLANT_PALETTE;
-  const F = flowerColor || '#f0a8c0'; // Default pink
-
-  switch (stage) {
-    case 'seed':
-      return `<circle cx="${c}" cy="${c}" r="${size * 0.1}" fill="${P.soilDark}"/>`;
-    case 'sprout':
-      return `
-        <rect x="${c - 1}" y="${c}" width="2" height="${size * 0.2}" fill="${P.leafMid}"/>
-        <ellipse cx="${c - size * 0.08}" cy="${c}" rx="${size * 0.08}" ry="${size * 0.04}" fill="${P.leafLight}"/>
-        <ellipse cx="${c + size * 0.08}" cy="${c}" rx="${size * 0.08}" ry="${size * 0.04}" fill="${P.leafLight}"/>
-      `;
-    case 'seedling':
-      return `
-        <rect x="${c - 1.5}" y="${c - size * 0.1}" width="3" height="${size * 0.3}" fill="${P.leafMid}"/>
-        <ellipse cx="${c - size * 0.12}" cy="${c - size * 0.1}" rx="${size * 0.1}" ry="${size * 0.06}" fill="${P.leafLight}"/>
-        <ellipse cx="${c + size * 0.12}" cy="${c - size * 0.2}" rx="${size * 0.1}" ry="${size * 0.06}" fill="${P.leafLight}"/>
-        <circle cx="${c}" cy="${c - size * 0.15}" r="${size * 0.05}" fill="${F}"/>
-      `;
-    default: // sapling, trunk, flowering
-      return `
-        <rect x="${c - size * 0.04}" y="${c - size * 0.3}" width="${size * 0.08}" height="${size * 0.6}" fill="${P.trunkMid}"/>
-        <ellipse cx="${c - size * 0.2}" cy="${c - size * 0.2}" rx="${size * 0.12}" ry="${size * 0.08}" fill="${P.leafMid}"/>
-        <ellipse cx="${c + size * 0.2}" cy="${c - size * 0.35}" rx="${size * 0.12}" ry="${size * 0.08}" fill="${P.leafMid}"/>
-        <circle cx="${c}" cy="${c - size * 0.4}" r="${size * 0.15}" fill="${F}"/>
-        <circle cx="${c - size * 0.15}" cy="${c - size * 0.15}" r="${size * 0.08}" fill="${F}"/>
-        <circle cx="${c + size * 0.18}" cy="${c - size * 0.25}" r="${size * 0.06}" fill="${F}"/>
-      `;
-  }
-}
-
-function renderPineTree(stage, size) {
-  const c = size / 2;
-  const P = PLANT_PALETTE;
-
-  switch (stage) {
-    case 'seed':
-      return `<circle cx="${c}" cy="${c}" r="${size * 0.1}" fill="${P.soilDark}"/>`;
-    case 'sprout':
-    case 'seedling':
-      return `
-        <rect x="${c - 1}" y="${c}" width="2" height="${size * 0.15}" fill="${P.trunkMid}"/>
-        <polygon points="${c},${c - size * 0.25} ${c - size * 0.15},${c} ${c + size * 0.15},${c}" fill="${P.pineDark}"/>
-        <polygon points="${c},${c - size * 0.4} ${c - size * 0.1},${c - size * 0.2} ${c + size * 0.1},${c - size * 0.2}" fill="${P.pineMid}"/>
-      `;
-    default: // sapling, trunk, flowering
-      return `
-        <rect x="${c - size * 0.05}" y="${c - size * 0.1}" width="${size * 0.1}" height="${size * 0.4}" fill="${P.trunkMid}"/>
-        <polygon points="${c},${c - size * 0.5} ${c - size * 0.25},${c - size * 0.1} ${c + size * 0.25},${c - size * 0.1}" fill="${P.pineDark}"/>
-        <polygon points="${c},${c - size * 0.7} ${c - size * 0.18},${c - size * 0.35} ${c + size * 0.18},${c - size * 0.35}" fill="${P.pineMid}"/>
-        <polygon points="${c},${c - size * 0.9} ${c - size * 0.12},${c - size * 0.6} ${c + size * 0.12},${c - size * 0.6}" fill="${P.pineLight}"/>
-      `;
-  }
-}
-
-function renderLeafyTree(stage, size) {
-  const c = size / 2;
-  const P = PLANT_PALETTE;
-
-  switch (stage) {
-    case 'seed':
-      return `<circle cx="${c}" cy="${c}" r="${size * 0.1}" fill="${P.soilDark}"/>`;
-    case 'sprout':
-    case 'seedling':
-      return `
-        <rect x="${c - 2}" y="${c - size * 0.05}" width="4" height="${size * 0.2}" fill="${P.trunkMid}"/>
-        <circle cx="${c}" cy="${c - size * 0.15}" r="${size * 0.2}" fill="${P.leafMid}"/>
-      `;
-    default: // sapling, trunk, flowering
-      return `
-        <rect x="${c - size * 0.06}" y="${c - size * 0.2}" width="${size * 0.12}" height="${size * 0.5}" fill="${P.trunkMid}"/>
-        <circle cx="${c}" cy="${c - size * 0.35}" r="${size * 0.25}" fill="${P.leafDark}"/>
-        <circle cx="${c - size * 0.15}" cy="${c - size * 0.25}" r="${size * 0.18}" fill="${P.leafMid}"/>
-        <circle cx="${c + size * 0.15}" cy="${c - size * 0.25}" r="${size * 0.18}" fill="${P.leafLight}"/>
-      `;
-  }
-}
 
 // ═══════════════════════════════════════════════
 // ROTATE PROMPT
@@ -1424,7 +1377,8 @@ function generateUUID() {
 
 function updateWordStage(w) {
   const waters = w.waters || 0;
-  if (waters >= STAGE_THRESHOLDS.flowering) w.stage = 'flowering';
+  if (waters >= STAGE_THRESHOLDS.mature) w.stage = 'mature';
+  else if (waters >= STAGE_THRESHOLDS.flowering) w.stage = 'flowering';
   else if (waters >= STAGE_THRESHOLDS.trunk) w.stage = 'trunk';
   else if (waters >= STAGE_THRESHOLDS.sapling) w.stage = 'sapling';
   else if (waters >= STAGE_THRESHOLDS.seedling) w.stage = 'seedling';
@@ -1454,10 +1408,6 @@ function restoreGardenPlacement() {
   saveData(DATA);
   renderGarden();
 }
-
-// ═══════════════════════════════════════════════
-// WORD CARD — Phase 5.2.5 redesign
-// ═══════════════════════════════════════════════
 
 function getWordTypeOptions() {
   const custom = (DATA.settings && DATA.settings.customWordTypes) || [];
@@ -1494,7 +1444,45 @@ function openWordCard(id) {
   const editing = wordCardEditMode && admin;
   const cluster = renderWordCluster(word);
   const headerTitle = formatClusterInline(word) || word.word;
+  // Add this logic inside openWordCard before content.innerHTML
+  let cardColorFilter = 'none';
+  if ((word.plantType === 'flowering' || !word.plantType) && word.flowerColor) {
+    const colorMap = {
+      '#f0a8c0': 'hue-rotate(0deg)',
+      '#d94b4b': 'hue-rotate(-30deg)',
+      '#f5d878': 'hue-rotate(45deg)',
+      '#7bb6e8': 'hue-rotate(180deg)'
+    };
+    cardColorFilter = colorMap[word.flowerColor] || 'none';
+  }
+    // Calculate the fade progress for the next stage
+  let nextStageImgSrc = '';
+  let nextStageOpacity = 0;
 
+  const type = word.plantType || 'leafy';
+  const currentStageIndex = STAGE_INDEX[word.stage || 'seed'];
+  const nextStageIndex = Math.min(currentStageIndex + 1, 6); // Max index is 6 (mature)
+  
+  if (nextStageIndex > currentStageIndex) {
+    nextStageImgSrc = PLANT_IMAGES[type][nextStageIndex];
+    
+    // Get the water thresholds for current and next stage
+    const stageKeys = Object.keys(STAGE_THRESHOLDS);
+    const currentThreshold = STAGE_THRESHOLDS[stageKeys[currentStageIndex]];
+    const nextThreshold = STAGE_THRESHOLDS[stageKeys[nextStageIndex]];
+    
+    // How many waters do you need to go from current to next?
+    const watersNeeded = nextThreshold - currentThreshold;
+    // How many waters have you put into this current stage?
+    const watersIntoStage = (word.waters || 0) - currentThreshold;
+    
+    // Calculate percentage (clamped between 0.2 and 1.0 so it's always somewhat visible)
+    let rawOpacity = watersIntoStage / watersNeeded;
+    nextStageOpacity = Math.max(0.2, Math.min(1, rawOpacity));
+  }
+
+  // Then in the HTML string:
+  
   content.innerHTML = `
     <div class="word-card-header">
       <div class="word-card-header-title">${meta.flag} ${escapeHtml(headerTitle)}</div>
@@ -1510,8 +1498,23 @@ function openWordCard(id) {
 
     <div class="word-card-body">
 
-            <div class="word-card-left">
-        <div class="word-card-tree-bg" id="word-card-tree"></div>
+       <div class="word-card-left">
+        <img src="assets/garden/plants/watering-can.png" id="watering-can" class="watering-can-anim" />
+        <div id="water-drops-container" style="position:absolute; inset:0; pointer-events:none; z-index:49;"></div>
+
+        <!-- FLOATING PULSE WORD -->
+        <div id="plant-pulse-word" style="position: absolute; top: 40%; left: 50%; transform: translateX(-50%); font-size: 2rem; font-weight: bold; color: #fff; text-shadow: 0 2px 4px rgba(0,0,0,0.8); opacity: 0; pointer-events: none; z-index: 50; transition: opacity 0.3s;">
+          ${escapeHtml(headerTitle)}
+        </div>
+
+          <!-- 1. THE PLANT IMAGES (Background) -->
+        <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; padding: 2rem; opacity: 0.5; position: absolute; inset: 0; z-index: 1;">
+          
+          <!-- Current Stage -->
+          <img id="word-card-plant-img" src="${PLANT_IMAGES[word.plantType || 'leafy'][STAGE_INDEX[word.stage || 'seed']]}" style="max-width: 100%; max-height: 100%; object-fit: contain;" />
+          
+          <!-- Next Stage (Starts invisible) -->
+          <img id="word-card-next-img" src="${nextStageImgSrc}" style="max-width: 100%; max-height: 100%; object-fit: contain; position: absolute; opacity: ${nextStageOpacity}; transition: opacity 1s ease-in-out;" />        </div>
         
         <!-- NEW FLOATING TOOLBAR -->
         ${admin ? `
@@ -1537,25 +1540,27 @@ function openWordCard(id) {
           ${renderWordCardField(word, editing, 'Meaning', 'meaning', escapeHtml(word.meaning || '—'))}
           ${renderWordCardSelect(word, editing, 'Type', 'wordType', typeOptions, word.wordType)}
          
-<div class="word-card-field">
-  <label>Plant type:</label>
-  <div class="plant-type-picker">
-    <button class="plant-type-btn ${(word.plantType || 'leafy') === 'flowering' ? 'active' : ''}" onclick="updatePlantType('${word.id}', 'flowering')">🌸 Flowering</button>
-    <button class="plant-type-btn ${word.plantType === 'pine' ? 'active' : ''}" onclick="updatePlantType('${word.id}', 'pine')">🌲 Pine</button>
-    <button class="plant-type-btn ${(word.plantType || 'leafy') === 'leafy' ? 'active' : ''}" onclick="updatePlantType('${word.id}', 'leafy')">🌳 Leafy</button>
-  </div>
-  ${(word.plantType === 'flowering' || !word.plantType) ? `
-    <div style="margin-top: 0.5rem;">
-      <label style="font-size:0.65rem; color:var(--paper-ink-soft);">Flower Color:</label>
-      <div style="display:flex; gap:0.3rem; margin-top:0.2rem;">
-        ${['#f0a8c0', '#d94b4b', '#f5d878', '#7bb6e8'].map(c => `
-          <button style="width:20px; height:20px; border-radius:50%; background:${c}; border:2px solid ${word.flowerColor === c ? 'var(--text-main)' : 'transparent'};" 
-                  onclick="updateFlowerColor('${word.id}', '${c}')"></button>
-        `).join('')}
-      </div>
-    </div>
-  ` : ''}
-</div>
+          ${admin ? `
+            <div class="word-card-field">
+              <label>Plant type:</label>
+              <div class="plant-type-picker">
+                <button class="plant-type-btn ${(word.plantType || 'leafy') === 'flowering' ? 'active' : ''}" onclick="updatePlantType('${word.id}', 'flowering')">🌸 Flowering</button>
+                <button class="plant-type-btn ${word.plantType === 'pine' ? 'active' : ''}" onclick="updatePlantType('${word.id}', 'pine')">🌲 Pine</button>
+                <button class="plant-type-btn ${(word.plantType || 'leafy') === 'leafy' ? 'active' : ''}" onclick="updatePlantType('${word.id}', 'leafy')">🌳 Leafy</button>
+              </div>
+              ${(word.plantType === 'flowering' || !word.plantType) ? `
+                <div style="margin-top: 0.5rem;">
+                  <label style="font-size:0.65rem; color:var(--paper-ink-soft);">Flower Color:</label>
+                  <div style="display:flex; gap:0.3rem; margin-top:0.2rem;">
+                    ${['#f0a8c0', '#d94b4b', '#f5d878', '#7bb6e8'].map(c => `
+                      <button style="width:20px; height:20px; border-radius:50%; background:${c}; border:2px solid ${word.flowerColor === c ? 'var(--text-main)' : 'transparent'};" 
+                              onclick="updateFlowerColor('${word.id}', '${c}')"></button>
+                    `).join('')}
+                  </div>
+                </div>
+              ` : ''}
+            </div>
+          ` : ''}
           ${renderWordCardThemeSelect(word, editing, word.theme)}
           ${renderWordCardField(word, editing, 'Reading', 'reading', escapeHtml(word.reading || '—'))}
           ${renderWordCardTextarea(word, editing, 'Notes', 'notes', escapeHtml(word.notes || ''))}
@@ -1617,8 +1622,52 @@ function openWordCard(id) {
     </div>
   `;
 
-  modal.classList.remove('hidden');
+   modal.classList.remove('hidden');
   setTimeout(() => drawWordCardTree(word, parent), 60);
+}
+function drawWordCardTree(word, parent) {
+  const container = document.getElementById('word-card-tree');
+  if (!container) return;
+
+  const w = container.clientWidth;
+  const h = container.clientHeight;
+  if (!w || !h) return;
+
+  let children = (word.childIds || []).map(id => DATA.vocabulary.find(x => x.id === id)).filter(Boolean);
+  const visibleChildren = children.slice(0, 8); // Simplified cap
+
+  const centerX = w / 2;
+  const baseY = h - 60;
+
+  let svg = '';
+
+  // Trunk (current word)
+  svg += `<circle cx="${centerX}" cy="${baseY}" r="20" fill="var(--accent-ink)" opacity="0.8"/>`;
+  svg += `<text x="${centerX}" y="${baseY+5}" text-anchor="middle" font-size="10" fill="#fff" font-weight="bold">YOU</text>`;
+
+  // Parent
+  if (parent) {
+    const px = centerX - 80;
+    const py = baseY - 20;
+    svg += `<path d="M ${px} ${py} Q ${(px+centerX)/2} ${(py+baseY)/2 + 10} ${centerX} ${baseY}" stroke="#b8906a" stroke-width="3" fill="none"/>`;
+    svg += `<g style="cursor:pointer; pointer-events: auto;" onclick="openWordCard('${parent.id}')">
+      <circle cx="${px}" cy="${py}" r="15" fill="var(--warning)" />
+      <text x="${px}" y="${py+4}" text-anchor="middle" font-size="9" fill="#000" font-weight="bold">PARENT</text>
+    </g>`;
+  }
+
+  // Children
+  visibleChildren.forEach((child, i) => {
+    const cx = 40 + (i * (w - 80) / Math.max(1, visibleChildren.length - 1));
+    const cy = 40;
+    svg += `<path d="M ${cx} ${cy} Q ${(cx+centerX)/2} ${(cy+baseY)/2 + 10} ${centerX} ${baseY}" stroke="#b8906a" stroke-width="3" fill="none"/>`;
+    svg += `<g style="cursor:pointer; pointer-events: auto;" onclick="openWordCard('${child.id}')">
+      <circle cx="${cx}" cy="${cy}" r="15" fill="var(--success)" />
+      <text x="${cx}" y="${cy+12}" text-anchor="middle" font-size="8" fill="#000" font-weight="bold">${escapeHtml((child.word||'').slice(0,6))}</text>
+    </g>`;
+  });
+
+  container.innerHTML = `<svg width="100%" height="100%" style="pointer-events: none;">${svg}</svg>`;
 }
 
 function updatePlantType(wordId, type) {
@@ -1868,141 +1917,6 @@ function updateFlowerColor(id, color) {
   openWordCard(id);
 }
 // ═══════════════════════════════════════════════
-// TREE DRAWING
-// ═══════════════════════════════════════════════
-
-function drawWordCardTree(word, parent) {
-  const container = document.getElementById('word-card-tree');
-  if (!container) return;
-
-  const w = container.clientWidth;
-  const h = container.clientHeight;
-  if (!w || !h) return;
-
-  // Gather children (direct branches)
-  let children = (word.childIds || []).map(id => DATA.vocabulary.find(x => x.id === id)).filter(Boolean);
-  const showAll = window._showAllBranches;
-  const capped = !showAll && children.length > 8;
-  const visibleChildren = capped ? children.slice(0, 8) : children;
-
-  // Show "Show all" button if capped
-  const showAllBtn = document.getElementById('word-card-show-all');
-  if (showAllBtn) {
-    if (capped) {
-      showAllBtn.classList.remove('hidden');
-      showAllBtn.textContent = `Show all ${children.length} branches`;
-    } else if (showAll && children.length > 8) {
-      showAllBtn.classList.remove('hidden');
-      showAllBtn.textContent = 'Show fewer';
-    } else {
-      showAllBtn.classList.add('hidden');
-    }
-  }
-
-  // Node sizes by stage
-  const sizeFor = (stage) => {
-    switch (stage) {
-      case 'flowering': return 44;
-      case 'trunk': return 38;
-      case 'sapling': return 30;
-      case 'seedling': return 24;
-      case 'sprout': return 20;
-      default: return 16;
-    }
-  };
-
-  // Layout — trunk at bottom center, children higher up in tiers
-  const centerX = w / 2;
-  const baseY = h - 60;
-  const tierHeight = 80;
-
-  // Store positions
-  const positions = {};
-
-  // Trunk (current word) at bottom
-  positions[word.id] = { x: centerX, y: baseY, size: sizeFor(word.stage), isCurrent: true };
-
-  // Parent below (if any) — offset down and slightly to the side
-  if (parent) {
-    positions[parent.id] = { x: centerX + 100, y: baseY + 55, size: sizeFor(parent.stage), isParent: true };
-  }
-
-  // Distribute children in tiers (upward)
-  // Simple approach: 1 tier if ≤ 4 children, 2 tiers if more
-  const tiers = visibleChildren.length <= 4 ? 1 : 2;
-  visibleChildren.forEach((child, i) => {
-    const tierIndex = tiers === 1 ? 0 : Math.floor(i / Math.ceil(visibleChildren.length / 2));
-    const indexInTier = tiers === 1 ? i : (i % Math.ceil(visibleChildren.length / 2));
-    const tierCount = tiers === 1 ? visibleChildren.length : Math.ceil(visibleChildren.length / 2);
-    
-    const tierWidth = w * 0.8;
-    const spacing = tierWidth / (tierCount + 1);
-    const x = (w - tierWidth) / 2 + spacing * (indexInTier + 1);
-    const y = baseY - 40 - (tierIndex + 1) * tierHeight;
-
-    positions[child.id] = { x, y, size: sizeFor(child.stage) };
-  });
-
-  // Build SVG
-  let svg = '';
-
-  // Branch lines (parent → trunk, trunk → children)
-  if (parent) {
-    const p1 = positions[parent.id];
-    const t = positions[word.id];
-    const mx = (p1.x + t.x) / 2;
-    const my = (p1.y + t.y) / 2 + 15;
-    svg += `<path d="M ${p1.x} ${p1.y - p1.size/2} Q ${mx} ${my} ${t.x} ${t.y + t.size/2}" stroke="#b8906a" stroke-width="3" fill="none"/>`;
-  }
-  visibleChildren.forEach(child => {
-    const c = positions[child.id];
-    const t = positions[word.id];
-    const mx = (c.x + t.x) / 2;
-    const my = (c.y + t.y) / 2 + 20;
-    svg += `<path d="M ${c.x} ${c.y + c.size/2} Q ${mx} ${my} ${t.x} ${t.y - t.size/2}" stroke="#b8906a" stroke-width="3" fill="none"/>`;
-  });
-
-  // Nodes — use plant sprites instead of circles
-Object.entries(positions).forEach(([id, pos]) => {
-  const nodeWord = id === word.id ? word : (id === parent?.id ? parent : visibleChildren.find(c => c.id === id));
-  if (!nodeWord) return;
-
-  const nodeStage = nodeWord.stage || 'seed';
-  const nodeType = nodeWord.plantType || 'leafy';
-  const nodeSize = pos.size;
-
-  // Wrap the plant SVG in a foreignObject so it renders inside the tree SVG
-  svg += `
-    <g style="cursor:pointer" onclick="openWordCard('${nodeWord.id}')">
-      <foreignObject x="${pos.x - nodeSize / 2}" y="${pos.y - nodeSize / 2}"
-                     width="${nodeSize}" height="${nodeSize}">
-        <div xmlns="http://www.w3.org/1999/xhtml"
-             style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;">
-          <svg viewBox="0 0 ${nodeSize} ${nodeSize}" width="${nodeSize}" height="${nodeSize}">
-            ${renderPlantSVG(nodeStage, nodeSize, nodeType)}
-          </svg>
-        </div>
-      </foreignObject>
-      <text x="${pos.x}" y="${pos.y + nodeSize / 2 + 12}"
-            text-anchor="middle"
-            font-size="10"
-            fill="#3a2520"
-            font-family="Courier New, monospace"
-            font-weight="bold">
-        ${escapeHtml((nodeWord.word || '').slice(0, 8))}
-      </text>
-    </g>
-  `;
-});
-
-  container.innerHTML = `
-    <svg width="100%" height="100%" viewBox="0 0 ${w} ${h}" preserveAspectRatio="xMidYMid meet">
-      ${svg}
-    </svg>
-  `;
-}
-
-// ═══════════════════════════════════════════════
 // ACTIONS
 // ═══════════════════════════════════════════════
 
@@ -2048,12 +1962,71 @@ function waterWord(id) {
   if (!isEditable()) return;
   const word = DATA.vocabulary.find(w => w.id === id);
   if (!word) return;
+
+  // 1. Disable button temporarily to prevent spam
+  const waterBtn = document.querySelector('.word-card-floating-actions button');
+  if (waterBtn) waterBtn.disabled = true;
+
+  // 2. Play the watering can animation
+  const can = document.getElementById('watering-can');
+  if (can) can.classList.add('pouring');
+
+  // 3. Create water drops
+  const dropContainer = document.getElementById('water-drops-container');
+  if (dropContainer) {
+    dropContainer.innerHTML = ''; // clear old drops
+    for (let i = 0; i < 5; i++) {
+      const drop = document.createElement('div');
+      drop.className = 'water-drop';
+      drop.style.left = `${20 + Math.random() * 20}%`; // Random X near the can
+      drop.style.top = `30%`;
+      drop.style.animation = `drop-fall 1s ease-in ${i * 0.1}s forwards`;
+      dropContainer.appendChild(drop);
+    }
+  }
+
+   // 4. Pulse the Word over the plant
+  const floatingWord = document.getElementById('plant-pulse-word');
+  if (floatingWord) {
+    floatingWord.style.opacity = '1';
+    floatingWord.classList.add('pulse-animation');
+  }
+
+  // 5. Update the Data
   word.waters = (word.waters || 0) + 1;
-  word.lastWatered = new Date().toISOString().slice(0, 10);
+  word.lastWatered = localDateStr();
   updateWordStage(word);
   saveData(DATA);
-  closeModal('word-card-modal');
-  renderGarden();
+
+  // 6. Fade the Image and refresh card after animation
+  setTimeout(() => {
+    // Refresh the whole card to show new stats
+    openWordCard(id); 
+
+    // Flash the image to simulate the 'fade' 
+    const newImg = document.getElementById('word-card-plant-img');
+    if (newImg) {
+      newImg.style.opacity = '0';
+      setTimeout(() => {
+        newImg.style.opacity = '1';
+        newImg.classList.add('plant-img-fading');
+      }, 50);
+    }
+
+    // Update the garden canvas in the background
+    const plantEl = document.querySelector(`.garden-plant[data-id="${id}"]`);
+    if (plantEl) {
+      const type = word.plantType || 'leafy';
+      const stageIndex = STAGE_INDEX[word.stage] || 0;
+      const imgEl = plantEl.querySelector('.garden-plant-img');
+      if (imgEl) imgEl.src = PLANT_IMAGES[type][stageIndex];
+    }
+    
+    // Clean up animation classes
+    if (can) can.classList.remove('pouring');
+    if (label) label.classList.remove('pulse-animation');
+
+  }, 2000); // Wait 2 seconds for the water to fall and word to pulse
 }
 
 function toggleFavorite(id) {
@@ -3183,8 +3156,11 @@ function renderGardenBranches() {
     const mx = (x1 + x2) / 2;
     const my = (y1 + y2) / 2 - 20;
 
-    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+       const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
     path.setAttribute('d', `M ${x1} ${y1} Q ${mx} ${my} ${x2} ${y2}`);
+    path.setAttribute('stroke', '#8a5a44'); // Brown vine color
+    path.setAttribute('stroke-width', '3');
+    path.setAttribute('fill', 'none');
     svg.appendChild(path);
   });
 

@@ -253,11 +253,6 @@
   z-index: 100;
 }
 
-.garden-plant-svg {
-  display: block;
-  image-rendering: pixelated;
-  pointer-events: none;
-}
 
 .garden-plant-label {
   font-size: 0.6rem;
@@ -273,23 +268,6 @@
   pointer-events: none;
 }
 
-/* ═══ BRANCH SVG LAYER ═══ */
-.garden-branches-svg {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-  z-index: 1;
-}
-
-.garden-branches-svg path {
-  fill: none;
-  stroke: #b8906a;
-  stroke-width: 3;
-  shape-rendering: geometricPrecision;
-}
 
 .garden-branches-svg path.vine {
   stroke-dasharray: 4 4;
@@ -1066,30 +1044,7 @@
   height: auto !important;
   align-self: center !important;
 }
-/* ═══ PLANT SWAY ANIMATION ═══ */
-.garden-plant-sway .garden-plant-svg {
-  transform-origin: center bottom;
-  animation: plant-sway 3.6s ease-in-out infinite;
-}
 
-@keyframes plant-sway {
-  0%, 100% {
-    transform: rotate(0deg) translateY(0);
-  }
-  25% {
-    transform: rotate(-0.8deg) translateY(-0.5px);
-  }
-  75% {
-    transform: rotate(0.8deg) translateY(-0.5px);
-  }
-}
-
-/* Pine trees stay still — no sway class applied in JS */
-
-/* Hub words get a subtle glow to draw attention */
-.garden-plant[data-hub="true"] .garden-plant-svg {
-  filter: drop-shadow(0 0 2px rgba(240, 168, 192, 0.4));
-}
 
 /* ═══ THEME REGIONS LAYER ═══ */
 .garden-regions-layer {
@@ -1235,4 +1190,129 @@
 }
 .garden-fab-menu button:hover { 
   background: var(--accent-ice); 
+}
+
+.garden-plant {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end; /* Anchors the image to the bottom */
+  cursor: pointer;
+  transition: transform 0.15s;
+  z-index: 5;
+  user-select: none;
+  width: 120px; /* Base width for the image container */
+  height: 120px; /* Base height */
+}
+
+.garden-plant-img {
+  width: 100%;
+  height: 100%;
+  pointer-events: none; /* Let clicks pass through to the div */
+  /* Remove pixelation for these watercolor images */
+  image-rendering: auto; 
+}
+
+/* Keep the label styles you already have, just remove the max-width */
+.garden-plant-label {
+  font-size: 0.75rem; /* Default, JS overrides this */
+  color: #ffffff;
+  background: rgba(0,0,0,0.6);
+  padding: 0.1rem 0.4rem;
+  border-radius: 4px;
+  letter-spacing: 0.5px;
+  margin-top: -10px; /* Pulls the label slightly into the dirt area */
+  white-space: nowrap;
+  pointer-events: none;
+  transition: font-size 0.3s ease, transform 0.3s ease;
+  z-index: 2;
+}
+/* ═══ BRANCH SVG LAYER ═══ */
+.garden-branches-svg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none; 
+  z-index: 1; /* Behind the plants, in front of the dirt */
+}
+
+.garden-branches-svg path {
+  fill: none;
+  stroke: #8a5a44; /* A nice earthy vine brown color */
+  stroke-width: 4;
+  stroke-linecap: round;
+}
+
+/* ═══ WATERING & PULSE ANIMATIONS ═══ */
+
+/* 1. The Word Pulse */
+@keyframes word-pulse {
+  0% { transform: scale(1); color: #fff; text-shadow: none; }
+  50% { transform: scale(1.6); color: #ffdd4a; text-shadow: 0 0 10px rgba(255, 221, 74, 0.8); }
+  100% { transform: scale(1); color: #fff; text-shadow: none; }
+}
+
+.pulse-animation {
+  animation: word-pulse 1s ease-in-out 3; /* Pulses 3 times over 3 seconds */
+  z-index: 100;
+  position: relative;
+}
+
+/* 2. The Watering Can */
+.watering-can-anim {
+  position: absolute;
+  top: 20%;
+  left: 10%;
+  width: 120px;
+  opacity: 0;
+  z-index: 50;
+  transform-origin: bottom right;
+  transition: opacity 0.5s;
+}
+
+.watering-can-anim.pouring {
+  opacity: 1;
+  animation: tilt-can 2s ease-in-out forwards;
+}
+
+@keyframes tilt-can {
+  0% { transform: rotate(0deg); }
+  20% { transform: rotate(-45deg); }
+  80% { transform: rotate(-45deg); }
+  100% { transform: rotate(0deg); opacity: 0; }
+}
+
+/* 3. Water Drops */
+.water-drop {
+  position: absolute;
+  background: #4ab8ff;
+  border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%; /* Tear drop shape */
+  width: 8px;
+  height: 12px;
+  opacity: 0;
+  z-index: 49;
+}
+
+@keyframes drop-fall {
+  0% { transform: translateY(0) scaleY(1); opacity: 1; }
+  100% { transform: translateY(150px) scaleY(2); opacity: 0; }
+}
+
+/* 4. The Fade In/Out for the Plant */
+.plant-img-fading {
+  transition: opacity 1.5s ease-in-out;
+}
+.watering-can-anim {
+  position: absolute;
+  top: 1%; 
+  left: 65%;
+  width: 120px;
+  opacity: 0;
+  z-index: 60; /* HIGHER than the plant */
+  transform-origin: bottom right;
+  transition: opacity 0.5s;
+  filter: drop-shadow(0 0 10px rgba(0,0,0,0.5)); /* Makes it pop */
 }
