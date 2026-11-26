@@ -1508,7 +1508,7 @@ function openWordCard(id) {
         </div>
 
           <!-- 1. THE PLANT IMAGES (Background) -->
-        <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; padding: 2rem; opacity: 0.5; position: absolute; inset: 0; z-index: 1;">
+        <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; padding: 2rem; opacity: 1; position: absolute; inset: 0; z-index: 1;">
           
           <!-- Current Stage -->
           <img id="word-card-plant-img" src="${PLANT_IMAGES[word.plantType || 'leafy'][STAGE_INDEX[word.stage || 'seed']]}" style="max-width: 100%; max-height: 100%; object-fit: contain;" />
