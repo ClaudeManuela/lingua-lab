@@ -43,7 +43,7 @@ function decideAvatarState(latestLog) {
   if ((phys.eveningEnergy || 5) >= 8) return 'energetic';
   if ((phys.morningEnergy || 5) <= 3) return 'slouch';
   if ((output.newWords || 0) >= 20) return 'excited';
-  if ((phys.motivation || 3) >= 4 && (phys.eveningEnergy || 5) >= 6) return 'focused';
+  if ((phys.motivation || 3) >= 4 ) return 'focused';
 
   return 'idle';
 }

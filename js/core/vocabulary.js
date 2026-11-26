@@ -1974,22 +1974,22 @@ function waterWord(id) {
   // 3. Create water drops
   const dropContainer = document.getElementById('water-drops-container');
   if (dropContainer) {
-    dropContainer.innerHTML = ''; // clear old drops
+    dropContainer.innerHTML = ''; 
     for (let i = 0; i < 5; i++) {
       const drop = document.createElement('div');
       drop.className = 'water-drop';
-      drop.style.left = `${20 + Math.random() * 20}%`; // Random X near the can
+      drop.style.left = `${20 + Math.random() * 20}%`; 
       drop.style.top = `30%`;
       drop.style.animation = `drop-fall 1s ease-in ${i * 0.1}s forwards`;
       dropContainer.appendChild(drop);
     }
   }
 
-   // 4. Pulse the Word over the plant
+  // 4. Pulse the Word over the plant
   const floatingWord = document.getElementById('plant-pulse-word');
   if (floatingWord) {
-    floatingWord.style.opacity = '1';
     floatingWord.classList.add('pulse-animation');
+    floatingWord.style.opacity = '1';
   }
 
   // 5. Update the Data
@@ -1998,12 +1998,10 @@ function waterWord(id) {
   updateWordStage(word);
   saveData(DATA);
 
-  // 6. Fade the Image and refresh card after animation
+  // 6. Cleanup and refresh the card after animation
   setTimeout(() => {
-    // Refresh the whole card to show new stats
     openWordCard(id); 
 
-    // Flash the image to simulate the 'fade' 
     const newImg = document.getElementById('word-card-plant-img');
     if (newImg) {
       newImg.style.opacity = '0';
@@ -2022,11 +2020,15 @@ function waterWord(id) {
       if (imgEl) imgEl.src = PLANT_IMAGES[type][stageIndex];
     }
     
-    // Clean up animation classes
+    // --- THIS IS THE PART THAT WAS CAUSING THE ERROR ---
     if (can) can.classList.remove('pouring');
-    if (label) label.classList.remove('pulse-animation');
-
-  }, 2000); // Wait 2 seconds for the water to fall and word to pulse
+    
+    const currentFloatingWord = document.getElementById('plant-pulse-word');
+    if (currentFloatingWord) {
+      currentFloatingWord.classList.remove('pulse-animation');
+      currentFloatingWord.style.opacity = '0';
+    }
+  }, 2000); 
 }
 
 function toggleFavorite(id) {
@@ -2735,8 +2737,8 @@ function renderGardenRegions() {
   const cols = Math.ceil(Math.sqrt(activeThemes.length));
   const rows = Math.ceil(activeThemes.length / cols);
   
-  const canvasW = 4200; 
-  const canvasH = 3600; 
+  const canvasW = 4500; 
+  const canvasH = 4000; 
   const plotW = Math.floor(canvasW / cols) - 30;
   const plotH = Math.floor(canvasH / rows) - 30;
 
