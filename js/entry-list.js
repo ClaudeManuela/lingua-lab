@@ -19,7 +19,8 @@ const LANGUAGE_META = {
   'Japanese':   { order: 5,  css: 'japanese',   flag: '🇯🇵' },
   'Spanish':    { order: 6,  css: 'spanish',    flag: '🇪🇸' },
   'French':     { order: 7,  css: 'french',     flag: '🇫🇷' },
-  'English':    { order: 8,  css: 'english',    flag: '🇬🇧' }
+  'English':    { order: 8,  css: 'english',    flag: '🇬🇧' },
+    'Mixed':      { order: 9,  css: 'mixed',      flag: '🌍' }
 };
 
 // ─── RENDER LOGS LANDING ─────────────────────
@@ -189,8 +190,7 @@ function renderEntryCard(log) {
   const maxMinutes = Math.max(...Object.values(langMinutes), 1);
   const sortedLangs = Object.keys(langMinutes)
     .filter(l => langMinutes[l] > 0)
-    .sort((a, b) => LANGUAGE_META[a].order - LANGUAGE_META[b].order);
-
+.sort((a, b) => (LANGUAGE_META[a]?.order || 99) - (LANGUAGE_META[b]?.order || 99));
   const langRows = sortedLangs.map(lang => `
     <div class="entry-lang-row ${LANGUAGE_META[lang].css}">
       <span class="entry-lang-name">${LANGUAGE_META[lang].flag} ${lang}</span>

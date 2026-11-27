@@ -29,9 +29,9 @@ function renderVocabulary() {
             <button class="vocab-pill pill-garden ${vocabTab === 'garden' ? 'active' : ''}"
                     onclick="setVocabTab('garden')">Garden</button>
                     <button class="vocab-pill pill-palace ${vocabTab === 'palace' ? 'active' : ''}"
-                    onclick="setVocabTab('palace')">
-            Memory Palace
-            </button>
+                    onclick="setVocabTab('palace')"> Memory Palace</button>
+                    <button class="vocab-pill pill-orchard ${vocabTab === 'orchard' ? 'active' : ''}"
+                    onclick="setVocabTab('orchard')">Orchard</button>
           </div>
         </div>
         <div class="vocab-content" id="vocab-content"></div>
@@ -103,16 +103,30 @@ function renderVocabContent() {
     if (typeof renderStudySetup === 'function') {
       renderStudySetup('vocab-content');
     }
-  } else if (vocabTab === 'garden') {
+    } else if (vocabTab === 'garden') {
     if (typeof renderGarden === 'function') {
       renderGarden('vocab-content');
+      
+      // Ask to start a session (only if admin and not already active)
+      if (isEditable() && !gardenSessionActive) {
+        // Small delay to let the garden render first
+        setTimeout(() => {
+           const modal = document.getElementById('tending-setup-modal');
+           if (modal) modal.classList.remove('hidden');
+        }, 500);
+      }
     }
-        } else if (vocabTab === 'palace') {
-        if (typeof renderPalace === 'function') {
+  
+  } else if (vocabTab === 'palace') {
+     if (typeof renderPalace === 'function') {
             renderPalace('vocab-content');
         }
-        }
-}
+          } else if (vocabTab === 'orchard') {
+    renderOrchard();
+  }
+ }
+        
+
 
 let showFullHistory = false;
 
@@ -272,22 +286,30 @@ function jumpToTheme(slug) {
 }
 // Section 2: Garden
 /* ============================================
-   Tree-visual word card, fuzzy search, garden canvas
+   Tree-visual word card, fuzzy search, garden canvas, lowkey beautiful
    ============================================ */
 
 let gardenTab = 'all';
 let gardenView = 'garden';
 let currentZoom = 1.0;
+let gardenSearchQuery = '';
+let gardenStageFilter = 'all';
 
 let gardenThemeFilter = null;
 let gardenGallerySort = 'newest';
 let gardenThemesHidden = (typeof DATA !== 'undefined' && DATA?.settings?.galleryThemesHidden) || false;
 let wordCardEditMode = false;
+let collapsedStages = {}; 
 
 let gardenEditMode = false;
 let gardenRegionDrag = null;            // {slug, startX, startY, origX, origY}
 let gardenPendingPlacement = null;      // {wordId} — user clicked "Place" and is choosing a point
 let gardenPendingRegionSlug = null;
+
+let gardenSessionActive = false;
+let gardenSessionStartTime = null;
+let gardenSessionStats = { added: 0, watered: 0, matured: 0 };
+let gardenTimerInterval = null;
 
 // ─── INCOMPLETE-WORD HELPERS ─────────────────
 // Returns array of missing fields for a word:
@@ -379,10 +401,10 @@ function renderGarden(targetId = 'vocab-content') {
 
   container.innerHTML = `
     <div class="garden-main-inner">
-      <div class="garden-view-toggle">
+       <div class="garden-view-toggle">
         <button class="${gardenView === 'garden' ? 'active' : ''}" onclick="setGardenView('garden')">Garden</button>
-        <button class="${gardenView === 'list' ? 'active' : ''}" onclick="setGardenView('list')">List</button>
         <button class="${gardenView === 'gallery' ? 'active' : ''}" onclick="setGardenView('gallery')">Gallery</button>
+           <button class="${gardenView === 'list' ? 'active' : ''}" onclick="setGardenView('list')">Database</button>
       </div>
       <div class="garden-tabs" id="garden-tabs"></div>
       <div id="garden-view-container"></div>
@@ -469,6 +491,22 @@ function mountGardenModals(admin) {
           </form>
         </div>
       </div>
+            <!-- GARDEN TENDING SETUP MODAL -->
+      <div id="tending-setup-modal" class="modal-overlay hidden" style="z-index: 9998;">
+        <div class="modal-box" style="max-width: 400px; text-align: center;">
+          <div class="modal-header">
+            <h2>🌱 Tend the Garden</h2>
+            <button onclick="closeModal('tending-setup-modal')" class="remove-btn">X</button>
+          </div>
+          <div class="modal-body" style="padding: 2rem 1rem;">
+            <p style="margin-bottom: 1.5rem;">Are you just strolling, or are you doing a dedicated study session?</p>
+            <div style="display: flex; flex-direction: column; gap: 1rem;">
+              <button class="save-btn" onclick="startGardenSession()">Start Study Session (Timer)</button>
+              <button class="cancel-btn" onclick="closeModal('tending-setup-modal')">Casual Stroll</button>
+            </div>
+          </div>
+        </div>
+      </div>
 
       <!-- WORD CARD MODAL -->
       <div id="word-card-modal" class="modal-overlay hidden">
@@ -510,6 +548,68 @@ function mountRotatePrompt() {
   `);
 }
 
+//garden study sessions
+function startGardenSession() {
+  closeModal('tending-setup-modal');
+  gardenSessionActive = true;
+  gardenSessionStartTime = Date.now();
+  gardenSessionStats = { added: 0, watered: 0, matured: 0 };
+
+  // Create the floating timer badge
+  let badge = document.getElementById('garden-timer-badge');
+  if (!badge) {
+    badge = document.createElement('div');
+    badge.id = 'garden-timer-badge';
+    badge.style.cssText = 'position: fixed; bottom: 20px; left: 20px; background: var(--paper-bg); border: 3px solid var(--border-main); padding: 1rem; z-index: 999; box-shadow: 4px 4px 0 rgba(0,0,0,0.3); font-family: var(--font-pixel); font-size: 0.8rem; display: flex; flex-direction: column; gap: 0.5rem;';
+    document.body.appendChild(badge);
+  }
+
+  // Update timer every second
+  gardenTimerInterval = setInterval(() => {
+    const elapsed = Math.floor((Date.now() - gardenSessionStartTime) / 1000);
+    const m = Math.floor(elapsed / 60).toString().padStart(2, '0');
+    const s = (elapsed % 60).toString().padStart(2, '0');
+    
+    badge.innerHTML = `
+      <div style="font-size: 1.2rem; font-weight: bold; color: var(--accent-ink);">⏱️ ${m}:${s}</div>
+      <div>🌱 Added: ${gardenSessionStats.added}</div>
+      <div>💧 Watered: ${gardenSessionStats.watered}</div>
+      <div>🌳 Matured: ${gardenSessionStats.matured}</div>
+      <button class="save-btn small" onclick="endGardenSession()" style="margin-top: 0.5rem;">End Session</button>
+    `;
+  }, 1000);
+}
+
+function endGardenSession() {
+  if (!gardenSessionActive) return;
+  gardenSessionActive = false;
+  clearInterval(gardenTimerInterval);
+
+  const badge = document.getElementById('garden-timer-badge');
+  if (badge) badge.remove();
+
+  const elapsedMins = Math.max(1, Math.round((Date.now() - gardenSessionStartTime) / 60000));
+  
+  // Save to Daily Log
+  const today = localDateStr();
+  let log = DATA.dailyLogs.find(l => l.date === today);
+  if (!log) {
+    log = { date: today, day: daysBetween(DATA.metadata.experimentStartDate, today) + 1, sessions: [], mediaConsumed: [], physiological: {}, koreanOutput: {} };
+    DATA.dailyLogs.push(log);
+  }
+
+  log.sessions = log.sessions || [];
+  log.sessions.push({
+    startTime: new Date(gardenSessionStartTime).toTimeString().slice(0, 5),
+    durationMinutes: elapsedMins,
+    language: 'Mixed',
+    activity: 'Garden Tending',
+    notes: `Added: ${gardenSessionStats.added}, Watered: ${gardenSessionStats.watered}, Matured: ${gardenSessionStats.matured}`
+  });
+
+  saveData(DATA);
+  alert(`✅ Session saved! ${elapsedMins} minutes added to your Daily Log.`);
+}
 // ═══════════════════════════════════════════════
 // TABS + VIEW
 // ═══════════════════════════════════════════════
@@ -563,7 +663,6 @@ function renderGardenView() {
         <button onclick="resetZoom()">⟲</button>
         <span class="garden-zoom-label" id="zoom-label">100%</span>
         
-        <!-- FAB MOVED HERE -->
         <div style="position: relative; margin-left: 0.5rem; display: inline-block;">
           <button class="garden-fab-main" onclick="toggleFabMenu()" style="width: 32px; height: 32px; font-size: 16px; border-width: 2px;">⚙️</button>
           
@@ -736,7 +835,13 @@ function toggleGardenThemes() {
   gardenThemesHidden = !gardenThemesHidden;
   DATA.settings.galleryThemesHidden = gardenThemesHidden;
   saveData(DATA);
-  renderGardenGallery();
+  
+  // Refresh the correct view
+  if (gardenView === 'gallery') {
+    renderGardenGallery();
+  } else if (gardenView === 'list') {
+    renderGardenList();
+  }
 }
 
 function setGallerySort(val) {
@@ -889,6 +994,8 @@ function resetZoom() { currentZoom = 1.0; applyZoom(); }
 
 function getFilteredWords() {
   let words = [...(DATA.vocabulary || [])];
+  
+  // 1. Language Tab Filter
   if (GARDEN_LANGUAGES.includes(gardenTab)) {
     words = words.filter(w => w.language === gardenTab);
   } else if (gardenTab === 'favorites') {
@@ -897,26 +1004,60 @@ function getFilteredWords() {
     words = words.sort((a, b) => new Date(b.dateAdded) - new Date(a.dateAdded)).slice(0, 100);
   }
 
-  // Theme filter applies everywhere (canvas, list, gallery).
-  // Special slug '__incomplete__' shows words missing theme/meaning/type.
+  // 2. Theme Filter (Chips)
   if (gardenThemeFilter === INCOMPLETE_SLUG) {
     words = words.filter(isIncompleteWord);
   } else if (gardenThemeFilter) {
     words = words.filter(w => w.theme === gardenThemeFilter);
   }
 
+  // 3. NEW: Search Query Filter
+  if (gardenSearchQuery && gardenSearchQuery.trim() !== '') {
+    // We use your existing fuzzy search function!
+    words = fuzzySearch(gardenSearchQuery, words);
+  }
+
+  // 4. NEW: Stage Filter
+  if (gardenStageFilter !== 'all') {
+    words = words.filter(w => w.stage === gardenStageFilter);
+  }
+
   return words;
 }
-
 // ═══════════════════════════════════════════════
-// LIST VIEW
+// LIST VIEW - NOW THE DATABASE LETS GOOOOOOOOOOO
 // ═══════════════════════════════════════════════
 
 function renderGardenList() {
   const container = document.getElementById('garden-list-view');
   if (!container) return;
 
-  // Chips computed from the pool BEFORE theme filtering
+  // 1. RENDER THE SEARCH BAR FIRST (So it never disappears)
+  const filterBarHtml = `
+    <div style="display: flex; gap: 1rem; margin-bottom: 1rem; flex-wrap: wrap;">
+      <input type="text" id="garden-search-input" placeholder="Search words, meanings..." 
+             value="${gardenSearchQuery}" oninput="handleGardenSearch(this.value)"
+             style="flex: 1; min-width: 200px; padding: 0.5rem; border: 2px solid var(--border-main); background: var(--bg-input); color: var(--text-main);">
+      
+      <select id="garden-stage-filter" onchange="handleStageFilter(this.value)" 
+              style="padding: 0.5rem; border: 2px solid var(--border-main); background: var(--bg-input); color: var(--text-main);">
+        <option value="all" ${gardenStageFilter === 'all' ? 'selected' : ''}>All Stages</option>
+        <option value="seed" ${gardenStageFilter === 'seed' ? 'selected' : ''}>Seeds (0)</option>
+        <option value="sprout" ${gardenStageFilter === 'sprout' ? 'selected' : ''}>Sprouts (1-2)</option>
+        <option value="seedling" ${gardenStageFilter === 'seedling' ? 'selected' : ''}>Seedlings (3-5)</option>
+        <option value="sapling" ${gardenStageFilter === 'sapling' ? 'selected' : ''}>Saplings (6-11)</option>
+        <option value="trunk" ${gardenStageFilter === 'trunk' ? 'selected' : ''}>Trunks (12-19)</option>
+        <option value="flowering" ${gardenStageFilter === 'flowering' ? 'selected' : ''}>Flowering (20-29)</option>
+        <option value="mature" ${gardenStageFilter === 'mature' ? 'selected' : ''}>Mature (30+)</option>
+      </select>
+
+      <button class="add-btn small" onclick="toggleGardenThemes()" style="white-space: nowrap;">
+        ${gardenThemesHidden ? 'Show Themes' : 'Hide Themes'}
+      </button>
+    </div>
+  `;
+
+  // 2. Calculate Themes
   const poolForChips = [...(DATA.vocabulary || [])].filter(w => {
     if (GARDEN_LANGUAGES.includes(gardenTab)) return w.language === gardenTab;
     if (gardenTab === 'favorites') return w.favorite;
@@ -928,11 +1069,10 @@ function renderGardenList() {
     if (w.theme) themeCounts[w.theme] = (themeCounts[w.theme] || 0) + 1;
   });
   const themesPresent = Object.keys(themeCounts).sort((a, b) => themeCounts[b] - themeCounts[a]);
-
   const incompleteCount = poolForChips.filter(isIncompleteWord).length;
   const showIncomplete = gardenThemeFilter === INCOMPLETE_SLUG;
 
-  const chipRow = (themesPresent.length || incompleteCount) ? `
+  const chipRow = (!gardenThemesHidden && (themesPresent.length || incompleteCount)) ? `
     <div class="gallery-theme-chips">
       <button class="theme-chip ${!gardenThemeFilter ? 'active' : ''}"
               onclick="setGalleryThemeFilter(null)">All</button>
@@ -953,45 +1093,85 @@ function renderGardenList() {
     </div>
   ` : '';
 
-  const words = getFilteredWords();  // already theme/incomplete-filtered
+  // 3. Get Filtered Words
+  const words = getFilteredWords();
 
   if (!words.length) {
-    container.innerHTML = `
-      ${chipRow}
-      <div class="lang-empty">${gardenThemeFilter ? 'No words match this filter.' : 'No words in this garden yet'}</div>
-    `;
+    // Show empty state BUT keep the search bar and themes
+    container.innerHTML = filterBarHtml + chipRow + `<div class="lang-empty">No words match this filter.</div>`;
     return;
   }
 
-  const stages = ['flowering', 'trunk', 'sapling', 'seedling', 'sprout', 'seed'];
+  // 4. Group by Stage
+  const stages = ['mature', 'flowering', 'trunk', 'sapling', 'seedling', 'sprout', 'seed'];
   const groups = {};
   stages.forEach(s => groups[s] = []);
   words.forEach(w => {
     const stage = w.stage || 'seed';
     if (groups[stage]) groups[stage].push(w);
   });
+  
   const stageLabels = {
-    flowering: 'Flowering (20+ waters)',
-    trunk: 'Trunk (12+ waters)',
+    mature: 'Mature (30+ waters)',
+    flowering: 'Flowering (20-29)',
+    trunk: 'Trunk (12-19)',
     sapling: 'Sapling (6-11)',
     seedling: 'Seedling (3-5)',
     sprout: 'Sprout (1-2)',
     seed: 'Seed (0)'
   };
 
-  const groupsHtml = stages.map(stage => {
+    const groupsHtml = stages.map(stage => {
     if (!groups[stage].length) return '';
+    
+    // Check if this stage is collapsed
+    const isCollapsed = collapsedStages[stage] === true;
+    
     return `
-      <div class="garden-stage-group">
-        <div class="garden-stage-label">${stageLabels[stage]} (${groups[stage].length})</div>
-        <div class="garden-word-rows">
+      <div class="garden-stage-group" style="margin-bottom: 0.5rem;">
+        <!-- Clickable Header -->
+        <div class="garden-stage-label" 
+             onclick="toggleStageCollapse('${stage}')"
+             style="cursor: pointer; display: flex; justify-content: space-between; align-items: center; user-select: none; border-bottom: 2px solid var(--border-main); padding: 0.5rem; background: var(--paper-bg);">
+          <span>${stageLabels[stage]} (${groups[stage].length})</span>
+          <span style="font-size: 0.8rem;">${isCollapsed ? '▼ Expand' : '▲ Collapse'}</span>
+        </div>
+        
+        <!-- The Words (Hidden if collapsed) -->
+        <div class="garden-word-rows" style="display: ${isCollapsed ? 'none' : 'flex'}; margin-top: 0.5rem;">
           ${groups[stage].map(w => renderWordRow(w)).join('')}
         </div>
       </div>
     `;
   }).join('');
 
-  container.innerHTML = chipRow + groupsHtml;
+  // 5. Render Everything
+  container.innerHTML = filterBarHtml + chipRow + groupsHtml;
+}
+
+function toggleStageCollapse(stage) {
+  collapsedStages[stage] = !collapsedStages[stage];
+  renderGardenList();
+}
+
+function handleGardenSearch(query) {
+  gardenSearchQuery = query;
+  renderGardenList(); 
+  
+  // Keep focus on the search input so typing isn't interrupted
+  const input = document.getElementById('garden-search-input');
+  if (input) {
+    input.focus();
+    // Move cursor to the end of the text
+    input.setSelectionRange(input.value.length, input.value.length);
+  }
+}
+
+function handleStageFilter(stage) {
+  gardenStageFilter = stage;
+  
+  // Re-render the list, but pass a flag to NOT reset the focus
+  renderGardenList();
 }
 
 function renderWordRow(w) {
@@ -1199,9 +1379,9 @@ function addWordsToGarden(language, wordsText, meaningsText, date, backlog) {
         meaning: meanings[i] || '',
         language: language,
         dateAdded: date,
-        waters: 1,
+        waters: 0,
         lastWatered: date,
-        stage: 'sprout',
+        stage: 'seed',
         parentId: null,
         childIds: [],
         connections: [],
@@ -1218,6 +1398,7 @@ function addWordsToGarden(language, wordsText, meaningsText, date, backlog) {
     }
   });
   saveData(DATA);
+      if (gardenSessionActive) gardenSessionStats.added++;
 }
 
 // ═══════════════════════════════════════════════
@@ -1994,8 +2175,18 @@ function waterWord(id) {
 
   // 5. Update the Data
   word.waters = (word.waters || 0) + 1;
+      if (gardenSessionActive) gardenSessionStats.watered++;
   word.lastWatered = localDateStr();
   updateWordStage(word);
+    // Check if it just hit 30 waters (Mastery Time)
+  if (word.waters === 30) {
+    // We still save the water count, but trigger the modal
+    saveData(DATA);
+    setTimeout(() => {
+      openMasteryTest(word.id);
+    }, 2500); // Wait for the pulse/watering animation to finish
+    return; 
+  }
   saveData(DATA);
 
   // 6. Cleanup and refresh the card after animation
@@ -4042,7 +4233,7 @@ function setStudyThemeFilter(slug) {
   renderStudySetup('vocab-content');
 }
 
-// Section5 : Memory Palace
+// Section 5 : Memory Palace
 // The memory palace - maybe my best work yet to practice and remember vocabulary
 /* ============================================
    MEMORY PALACE — consolidated
@@ -6040,4 +6231,131 @@ function palaceBackToRoom() {
   palaceTick = 0;
   palaceEditMode = isEditable();
   renderPalace();
+}
+
+// Section 6: The Orchard, man i love this metaphor
+function renderOrchard() {
+  const container = document.getElementById('vocab-content');
+  if (!container) return;
+
+  const matureWords = (DATA.vocabulary || []).filter(w => w.stage === 'mature');
+
+  container.innerHTML = `
+    <div class="garden-main-inner" style="padding: 2rem;">
+      <h2 style="font-family: var(--font-pixel); color: var(--accent-ink); margin-bottom: 1rem;">🌳 The Orchard</h2>
+      <p style="font-size: 0.8rem; color: var(--text-dim); margin-bottom: 2rem;">
+        Congratulations! These are the words you have completely mastered.
+      </p>
+      
+      ${matureWords.length ? `
+        <div class="gallery-grid">
+          ${matureWords.map(w => `
+            <div class="gallery-card" onclick="openWordCard('${w.id}')" style="border-top: 6px solid #4a9d6e;">
+              <div class="gallery-card-flag">${LANGUAGES[w.language].flag}</div>
+              <div class="gallery-card-word">${escapeHtml(formatClusterInline(w) || w.word)}</div>
+              <div class="gallery-card-meaning">${escapeHtml(w.meaning || '—')}</div>
+              <div class="gallery-card-stage" style="color: #4a9d6e; font-weight: bold;">MASTERED (${w.waters} waters)</div>
+            </div>
+          `).join('')}
+        </div>
+      ` : `
+        <div class="lang-empty">Your Orchard is empty. Keep watering your plants in the Garden to master them!</div>
+      `}
+    </div>
+  `;
+}
+
+function openMasteryTest(wordId) {
+  const word = DATA.vocabulary.find(w => w.id === wordId);
+  if (!word) return;
+
+  const descendants = (word.childIds || []).map(id => DATA.vocabulary.find(w => w.id === id)).filter(Boolean);
+  const displayWord = formatClusterInline(word) || word.word;
+
+  const modalHtml = `
+    <div class="modal-overlay" id="mastery-modal" style="z-index: 10000; display: flex; background: rgba(0,0,0,0.8);">
+      <div class="modal-box" style="max-width: 500px; text-align: center; padding: 2rem;">
+        <h2 style="font-family: var(--font-pixel); color: var(--warning); margin-bottom: 1rem;">🏆 Mastery Achieved!</h2>
+        <p style="margin-bottom: 1rem;">You have studied this word 30 times!</p>
+        
+        <div style="font-size: 4rem; margin: 1rem 0;">🌳</div>
+
+        <p style="margin-bottom: 1.5rem; font-weight: bold;">
+          Write the translation on paper from memory, then reveal the answer.
+        </p>
+
+        <div style="background: var(--bg-input); padding: 1.5rem; border: 2px solid var(--border-main); margin-bottom: 1.5rem;">
+          <div style="font-size: 0.8rem; text-transform: uppercase; color: var(--text-dim); margin-bottom: 0.5rem;">Prompt</div>
+          <div style="font-size: 1.5rem; font-weight: bold; margin-bottom: 1rem;">${escapeHtml(word.meaning)}</div>
+          
+          <!-- HIDDEN ANSWER -->
+          <div id="mastery-answer-reveal" style="display: none; padding-top: 1rem; border-top: 1px dashed var(--border-soft);">
+            <div style="font-size: 0.8rem; text-transform: uppercase; color: var(--text-dim); margin-bottom: 0.5rem;">Answer</div>
+            <div style="font-size: 2rem; font-weight: bold; color: var(--accent-ink);">${escapeHtml(displayWord)}</div>
+          </div>
+        </div>
+
+        ${descendants.length ? `
+          <p style="color: var(--danger); font-size: 0.8rem; margin-bottom: 1rem;">
+            ⚠️ This word has ${descendants.length} branch(es). If you pass, they will also move to the Orchard.
+          </p>
+        ` : ''}
+
+        <!-- REVEAL BUTTON (Shows first) -->
+        <div id="mastery-reveal-btn-container">
+          <button class="save-btn" style="width: 100%;" onclick="document.getElementById('mastery-answer-reveal').style.display='block'; document.getElementById('mastery-reveal-btn-container').style.display='none'; document.getElementById('mastery-grade-btns').style.display='flex';">
+            Reveal Answer
+          </button>
+        </div>
+
+        <!-- GRADING BUTTONS (Hidden initially) -->
+        <div id="mastery-grade-btns" style="display: none; flex-direction: column; gap: 0.5rem;">
+          <button class="save-btn" onclick="gradeMastery('${wordId}', 100)">Spelt perfectly (100%)</button>
+          <button class="add-btn" onclick="gradeMastery('${wordId}', 50)" style="background: var(--warning);">Few minor mistakes (50%)</button>
+          <button class="delete-btn" onclick="gradeMastery('${wordId}', 20)">Many mistakes (20%)</button>
+        </div>
+      </div>
+    </div>
+  `;
+
+  document.body.insertAdjacentHTML('beforeend', modalHtml);
+}
+
+function gradeMastery(wordId, score) {
+  const word = DATA.vocabulary.find(w => w.id === wordId);
+  if (!word) return;
+
+  const modal = document.getElementById('mastery-modal');
+  if (modal) modal.remove();
+
+  if (score === 100) {
+        if (gardenSessionActive) gardenSessionStats.matured++;
+    word.stage = 'mature';
+    
+    // Move descendants too
+    (word.childIds || []).forEach(id => {
+      const child = DATA.vocabulary.find(w => w.id === id);
+      if (child) child.stage = 'mature';
+    });
+
+    alert("🌳 Moved to the Orchard!");
+
+  } else if (score === 50) {
+    // MINOR MISTAKES: Drop one stage (Trunk = 12)
+    word.waters = 12; 
+    updateWordStage(word);
+    alert("Dropped back to Trunk. Keep practicing!");
+
+  } else {
+    // MANY MISTAKES: Drop two stages (Sapling = 6)
+    word.waters = 6;
+    updateWordStage(word);
+    alert("Dropped back to Sapling. Review the basics!");
+  }
+
+  saveData(DATA);
+  
+  // Refresh UI
+  if (typeof renderGarden === 'function') renderGarden();
+  if (typeof openWordCard === 'function') openWordCard(wordId);
 }

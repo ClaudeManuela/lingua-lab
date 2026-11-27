@@ -391,8 +391,10 @@ function scoreField(query, field) {
   if (words.includes(q)) return 1;
 
   // Fuzzy — edit distance against the whole field
+  // Stricter threshold: 1 mistake for words < 5 chars, 2 mistakes for longer words
   const fullDist = levenshtein(q, f);
-  if (fullDist <= 2) return 3 + fullDist;
+  const allowedMistakes = q.length <= 4 ? 1 : 2;
+  if (fullDist <= allowedMistakes) return 3 + fullDist;
 
   // Fuzzy — against prefix of similar length
   const prefix = f.slice(0, q.length + 1);
@@ -417,8 +419,7 @@ function scoreField(query, field) {
     const d = levenshtein(q, w);
     if (d < bestWord) bestWord = d;
   }
-  if (bestWord <= 2) return 9 + bestWord;
-
+  if (bestWord <= allowedMistakes) return 9 + bestWord;
   return Infinity;
 }
 

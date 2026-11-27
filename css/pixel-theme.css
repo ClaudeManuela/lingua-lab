@@ -190,19 +190,23 @@ body {
 /* ═══ EDIT BANNER ═══ */
 .edit-banner {
   position: fixed;
-  top: 48px;
-  left: 0;
-  right: 0;
+  top: 50px; /* Keep it below the top bar */
+  left: 50%;
+  transform: translateX(-50%); /* This is the magic centering trick */
   background: var(--danger);
   color: white;
   padding: 0.4rem 1rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 1rem;
   z-index: 999;
   font-weight: bold;
   letter-spacing: 1px;
   font-size: 0.8rem;
+  border: 2px solid var(--border-main);
+  border-radius: 4px;
+  box-shadow: 4px 4px 0 rgba(0,0,0,0.2);
 }
 
 .edit-banner button {
