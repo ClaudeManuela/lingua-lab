@@ -3579,7 +3579,7 @@ function onGardenWheel(e) {
 //Section 4: study and Flashcards
 
 /* ============================================
-   FLASHCARD STUDY MODE — Phase 5.3b / 5.3c
+   FLASHCARD STUDY MODE — 
    ============================================ */
 
 // ─── STATE ───────────────────────────────────
@@ -3587,6 +3587,7 @@ let studySession = null;
 let studyTimerInterval = null;
 let studyTick = 0;
 let studyFlipped = false;
+
 
 const STAGE_LABELS = {
   seed: 'Seed', sprout: 'Sprout', seedling: 'Seedling',
@@ -3650,13 +3651,15 @@ function selectStudyCards() {
   const settings = DATA.settings.study;
   const filter = settings.languageFilter;
   const themeFilter = settings.themeFilter;
+    const stageFilter = settings.stageFilter || 'all'; 
   const threshold = settings.dueThreshold;
   const size = settings.sessionSize;
   const today = new Date().toISOString().slice(0, 10);
 
-  let pool = DATA.vocabulary.filter(w =>
+    let pool = DATA.vocabulary.filter(w =>
     (filter === 'all' || w.language === filter) &&
-    (!themeFilter || w.theme === themeFilter)
+    (!themeFilter || w.theme === themeFilter) &&
+    (stageFilter === 'all' || w.stage === stageFilter)
   );
 
   const daysSince = w => {
@@ -3701,7 +3704,7 @@ function shuffle(arr) {
 }
 
 // ─── SETUP SCREEN ────────────────────────────
-// ← 5.3c: takes optional target container ID
+
 function renderStudySetup(targetId = 'vocab-content') {
   const container = document.getElementById(targetId);
   if (!container) return;
@@ -3762,51 +3765,79 @@ const themesPresent = Object.keys(themeCounts).sort((a, b) => themeCounts[b] - t
     </div>
   ` : ''}
 `
-
   container.innerHTML = `
     <div class="study-setup-wrap">
-      <div class="study-setup-card">
+      <div class="study-setup-card" style="max-width: 700px; width: 100%;">
         <h2>Study Session</h2>
         ${resume}
-        <div class="study-setup-stats">
-          <div><span>Words due:</span><strong>${due}</strong></div>
-          <div><span>Never studied:</span><strong>${never}</strong></div>
-          <div><span>Overdue (&gt;${s.dueThreshold}d):</span><strong>${overdue}</strong></div>
+        
+        <div class="study-setup-stats" style="display: flex; justify-content: space-between; margin-bottom: 1rem;">
+          <div style="text-align: center; flex: 1;"><span>Words due:</span><br><strong>${due}</strong></div>
+          <div style="text-align: center; flex: 1;"><span>Never studied:</span><br><strong>${never}</strong></div>
+          <div style="text-align: center; flex: 1;"><span>Overdue (&gt;${s.dueThreshold}d):</span><br><strong>${overdue}</strong></div>
         </div>
-        <div class="study-setup-form">
+
+        <!-- 2-COLUMN GRID -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+          
+          <!-- LEFT COLUMN -->
+          <div style="display: flex; flex-direction: column; gap: 0.5rem;">
             <label>Mode:
-            <select id="study-mode" onchange="toggleStudyModeUI(this.value)">
-              <option value="flashcard" selected>Flashcards (Vocab)</option>
-              <option value="grammar">Grammar Drill (Forms)</option>
-            </select>
-          </label>
-          <label>Session size:
-            <input type="number" id="study-size" min="1" max="100" value="${s.sessionSize}">
-          </label>
-          <label>Language:
-            <select id="study-lang">${langOptions}</select>
-          </label>
-                    <label>Theme Filter:
-            <select id="study-theme">
-              <option value="">All Themes</option>
-              ${Object.keys(THEME_MAP).map(slug => {
-                const count = themeCounts[slug] || 0;
-                return `<option value="${slug}">${THEME_MAP[slug].icon} ${THEME_MAP[slug].label} (${count})</option>`;
-              }).join('')}
-            </select>
-          </label>
-          <label class="study-reverse-label">
-            <input type="checkbox" id="study-reverse" ${s.reverseMode ? 'checked' : ''}>
-            Reverse mode (show meaning, guess word)
-          </label>
+              <select id="study-mode" onchange="toggleStudyModeUI(this.value)">
+                <option value="flashcard" selected>Flashcards (Vocab)</option>
+                <option value="grammar">Grammar Drill (Forms)</option>
+              </select>
+            </label>
+            
+            <label>Session size:
+              <input type="number" id="study-size" min="1" max="100" value="${s.sessionSize}">
+            </label>
+            
+            <label>Language:
+              <select id="study-lang">${langOptions}</select>
+            </label>
+          </div>
+
+          <!-- RIGHT COLUMN -->
+          <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+            <label>Theme Filter:
+              <select id="study-theme">
+                <option value="">All Themes</option>
+                ${Object.keys(THEME_MAP).map(slug => {
+                  const count = themeCounts[slug] || 0;
+                  return `<option value="${slug}" ${s.themeFilter === slug ? 'selected' : ''}>${THEME_MAP[slug].icon} ${THEME_MAP[slug].label} (${count})</option>`;
+                }).join('')}
+              </select>
+            </label>
+
+            <!-- NEW STAGE FILTER -->
+            <label>Plant Stage:
+              <select id="study-stage">
+                <option value="all" ${s.stageFilter === 'all' ? 'selected' : ''}>All Stages</option>
+                <option value="seed" ${s.stageFilter === 'seed' ? 'selected' : ''}>Seeds (0)</option>
+                <option value="sprout" ${s.stageFilter === 'sprout' ? 'selected' : ''}>Sprouts (1-2)</option>
+                <option value="seedling" ${s.stageFilter === 'seedling' ? 'selected' : ''}>Seedlings (3-5)</option>
+                <option value="sapling" ${s.stageFilter === 'sapling' ? 'selected' : ''}>Saplings (6-11)</option>
+                <option value="trunk" ${s.stageFilter === 'trunk' ? 'selected' : ''}>Trunks (12-19)</option>
+                <option value="flowering" ${s.stageFilter === 'flowering' ? 'selected' : ''}>Flowering (20+)</option>
+              </select>
+            </label>
+
+            <label class="study-reverse-label" style="margin-top: 0.5rem; flex-direction: row; align-items: center; gap: 0.5rem; display: flex;">
+              <input type="checkbox" id="study-reverse" ${s.reverseMode ? 'checked' : ''}>
+              Reverse mode
+            </label>
+          </div>
         </div>
-        <div class="study-setup-actions">
-          <button class="save-btn" onclick="startStudySession()">Start Session</button>
-          <button class="cancel-btn" onclick="closeStudyMode()">Cancel</button>
+
+        <div class="study-setup-actions" style="display: flex; gap: 1rem; margin-top: 1rem;">
+          <button class="save-btn" style="flex: 1;" onclick="startStudySession()">Start Session</button>
+          <button class="cancel-btn" style="flex: 1;" onclick="closeStudyMode()">Cancel</button>
         </div>
       </div>
     </div>
   `;
+  
 }
 
 function startStudySession() {
@@ -3814,13 +3845,16 @@ function startStudySession() {
   const size = Math.max(1, Math.min(100, parseInt(document.getElementById('study-size').value) || 25));
   const lang = document.getElementById('study-lang').value;
   const reverse = document.getElementById('study-reverse').checked;
-  const theme = document.getElementById('study-theme').value;
+   const theme = document.getElementById('study-theme').value;
+  const stage = document.getElementById('study-stage').value; 
+  
   DATA.settings.study.themeFilter = theme || null;
-
+  DATA.settings.study.stageFilter = stage; 
   DATA.settings.study.sessionSize = size;
   DATA.settings.study.languageFilter = lang;
   DATA.settings.study.reverseMode = reverse;
 
+  
   let words = selectStudyCards();
   
   // If grammar mode, ONLY keep words that have alt forms
