@@ -549,7 +549,48 @@ const PALACE_ROOMS = [
     icon: '🎨',
     background: 'assets/palace/colors.png',
     placeholderColor: '#d9a8c5',
-  }
+  },
+  {
+    id: 'art',
+    name: 'Art',
+    theme: 'Art',
+    icon: '🖌️',
+    background: 'assets/palace/art.png',
+    placeholderColor: '#f9a2c2',
+  },
+  {
+    id: 'body',
+    name: 'Body',
+    theme: 'Body',
+    icon: '🤸‍♀️​',
+    background: 'assets/palace/body.png',
+    placeholderColor: '#994229'
+  },
+  {
+    id: 'animals',
+    name: 'Animals',
+    theme: 'Animals',
+    icon: '🐱',
+    background: 'assets/palace/animals.png',
+    placeholderColor: '#f2a82a'
+  },
+  {
+    id: 'nature',
+    name: 'Nature',
+    theme: 'Nature',
+    icon: '🍀',
+    background: 'assets/palace/animals.png',
+    placeholderColor: '#097738'
+  },
+{
+  id: 'events',
+  name: 'Events',
+  theme: 'Events',
+  icon: '🗓️',
+  background: 'assets/palace/events.png',
+  placeholderColor: '#f7d0eb'
+}
+  
 ];
 
 const PALACE_ROOM_MAP = Object.fromEntries(PALACE_ROOMS.map(r => [r.id, r]));

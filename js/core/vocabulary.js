@@ -4309,7 +4309,7 @@ function setStudyThemeFilter(slug) {
 // Section 5 : Memory Palace
 // The memory palace - maybe my best work yet to practice and remember vocabulary
 /* ============================================
-   MEMORY PALACE — consolidated
+   MEMORY PALACE
    Room picker · slot editing · word assignment
    Learn · Test · Sprint study modes
    ============================================ */
