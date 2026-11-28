@@ -553,7 +553,7 @@ const PALACE_ROOMS = [
   {
     id: 'art',
     name: 'Art',
-    theme: 'Art',
+    theme: 'art',
     icon: '🖌️',
     background: 'assets/palace/art.png',
     placeholderColor: '#f9a2c2',
@@ -561,7 +561,7 @@ const PALACE_ROOMS = [
   {
     id: 'body',
     name: 'Body',
-    theme: 'Body',
+    theme: 'body',
     icon: '🤸‍♀️​',
     background: 'assets/palace/body.png',
     placeholderColor: '#994229'
@@ -569,24 +569,24 @@ const PALACE_ROOMS = [
   {
     id: 'animals',
     name: 'Animals',
-    theme: 'Animals',
-    icon: '🐱',
+    theme: 'animals',
+    icon: '🐈',
     background: 'assets/palace/animals.png',
     placeholderColor: '#f2a82a'
   },
   {
     id: 'nature',
     name: 'Nature',
-    theme: 'Nature',
+    theme: 'nature',
     icon: '🍀',
-    background: 'assets/palace/animals.png',
+    background: 'assets/palace/nature.png',
     placeholderColor: '#097738'
   },
 {
   id: 'events',
   name: 'Events',
-  theme: 'Events',
-  icon: '🗓️',
+  theme: 'events',
+  icon: '📅',
   background: 'assets/palace/events.png',
   placeholderColor: '#f7d0eb'
 }
