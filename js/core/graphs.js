@@ -22,6 +22,29 @@ function renderGraphsPage() {
             <div class="gallery-card-word">Migraine Timeline</div>
             <div class="gallery-card-meaning">Headache intensity vs. Sleep</div>
           </div>
+                    <div class="gallery-card" onclick="openGraphModal('headache-study')" style="border-left: 8px solid #ffb3ba; padding-left: 1rem;">
+            <div class="gallery-card-word">Headache vs Study Time</div>
+            <div class="gallery-card-meaning">Does studying longer cause more pain?</div>
+          </div>
+                    <div class="gallery-card" onclick="openGraphModal('forgetting-curve')" style="border-left: 8px solid #ffb3ba; padding-left: 1rem;">
+            <div class="gallery-card-word">The Forgetting Curve</div>
+            <div class="gallery-card-meaning">Days taken to master a word</div>
+          </div>
+
+          <div class="gallery-card" onclick="openGraphModal('velocity')" style="border-left: 8px solid #ffffba; padding-left: 1rem;">
+            <div class="gallery-card-word">Word Velocity</div>
+            <div class="gallery-card-meaning">Average days spent in each stage</div>
+          </div>
+
+          <div class="gallery-card" onclick="openGraphModal('test-scores')" style="border-left: 8px solid #75c8c8; padding-left: 1rem;">
+            <div class="gallery-card-word">Test Score Trends</div>
+            <div class="gallery-card-meaning">Your progress on official tests over time</div>
+          </div>
+
+          <div class="gallery-card" onclick="openGraphModal('vocab-growth')" style="border-left: 8px solid #75c8c8; padding-left: 1rem;">
+            <div class="gallery-card-word">Vocabulary Growth</div>
+            <div class="gallery-card-meaning">Cumulative words added to the Garden</div>
+          </div>
           
           <div class="gallery-card" onclick="openGraphModal('intruders')" style="border-left: 8px solid #ffdfba; padding-left: 1rem;">
             <div class="gallery-card-word">The Intruders</div>
@@ -50,7 +73,7 @@ function renderGraphsPage() {
           
           <div class="gallery-card" onclick="openGraphModal('brainmap')" style="border-left: 8px solid #d9a888; padding-left: 1rem;">
             <div class="gallery-card-word">Neurological Timeline</div>
-            <div class="gallery-card-meaning">View your brain state day by day</div>
+            <div class="gallery-card-meaning">View my brain state day by day</div>
           </div>
         </div>
 
@@ -73,6 +96,10 @@ function renderGraphsPage() {
           <div class="gallery-card" onclick="openGraphModal('ctrl-maint')" style="border-left: 8px solid #ffffba; padding-left: 1rem;">
             <div class="gallery-card-word">Language Maintenance</div>
             <div class="gallery-card-meaning">Time spent on other languages</div>
+          </div>
+                    <div class="gallery-card" onclick="openGraphModal('ctrl-sleep-corr')" style="border-left: 8px solid #b8c8d9; padding-left: 1rem;">
+            <div class="gallery-card-word">Sleep Correlations</div>
+            <div class="gallery-card-meaning">Mood vs Sleep Hours</div>
           </div>
         </div>
       </div>
@@ -124,6 +151,12 @@ function openGraphModal(type) {
   } else if (type === 'stage-recall') {
     title.textContent = "Recall Rate by Plant Stage";
     drawStageRecallChart(canvas);
+      } else if (type === 'forgetting-curve') {
+    title.textContent = "The Forgetting Curve (Time to Mastery)";
+    drawForgettingCurve(canvas);
+  } else if (type === 'velocity') {
+    title.textContent = "Word Velocity (Days per Stage)";
+    drawVelocityChart(canvas);
     } else if (type === 'brainmap') {
     title.textContent = "Neurological Timeline";
     drawBrainTimeline(); 
@@ -145,9 +178,19 @@ function openGraphModal(type) {
   } else if (type === 'method-recall') {
     title.textContent = "Memory Palace vs Flashcards Recall";
     drawMethodRecallChart(canvas);
-  }  else if (type === 'control') {
-    title.textContent = "Control Variables: Mood, Energy, Stress";
-    drawControlChart(canvas); }
+  }  else if (type === 'headache-study') {
+    title.textContent = "Headache vs Study Time";
+    drawHeadacheStudyChart(canvas);
+  } else if (type === 'test-scores') {
+    title.textContent = "Test Score Trends";
+    drawTestScoreChart(canvas);
+  } else if (type === 'vocab-growth') {
+    title.textContent = "Vocabulary Growth";
+    drawVocabGrowthChart(canvas);
+  } else if (type === 'ctrl-sleep-corr') {
+    title.textContent = "Sleep Correlations (Mood vs Sleep)";
+    drawSleepCorrelationChart(canvas);
+  }
 }
 
 function drawMigraineChart(canvas) {
@@ -207,6 +250,117 @@ function drawMigraineChart(canvas) {
           min: 0, max: 16
         }
       }
+    }
+  });
+}
+function drawHeadacheStudyChart(canvas) {
+  const logs = [...DATA.dailyLogs].sort((a, b) => new Date(a.date) - new Date(b.date));
+  
+  window.modalChartInstance = new Chart(canvas, {
+    type: 'line',
+    data: {
+      labels: logs.map(l => l.date),
+      datasets: [
+        {
+          label: 'Headache (1-10)',
+          data: logs.map(l => l.physiological?.headacheAfterKorean || 0),
+          borderColor: 'rgb(255, 99, 132)',
+          backgroundColor: 'rgba(255, 99, 132, 0.2)',
+          tension: 0.3,
+          yAxisID: 'y'
+        },
+        {
+          label: 'Study Time (mins)',
+          data: logs.map(l => (l.sessions || []).reduce((sum, s) => sum + (s.durationMinutes || 0), 0)),
+          borderColor: 'rgb(54, 162, 235)',
+          backgroundColor: 'rgba(54, 162, 235, 0.2)',
+          tension: 0.3,
+          yAxisID: 'y1'
+        }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      scales: {
+        y: { type: 'linear', display: true, position: 'left', title: { display: true, text: 'Intensity' } },
+        y1: { type: 'linear', display: true, position: 'right', grid: { drawOnChartArea: false }, title: { display: true, text: 'Minutes' } }
+      }
+    }
+  });
+}
+function drawTestScoreChart(canvas) {
+  // Gather tests from DATA.languageTests
+  const tests = DATA.languageTests || [];
+  const sortedTests = [...tests].sort((a, b) => new Date(a.date) - new Date(b.date));
+
+  window.modalChartInstance = new Chart(canvas, {
+    type: 'scatter',
+    data: {
+      datasets: [
+        {
+          label: 'Test Scores (%)',
+          data: sortedTests.map(t => ({ x: t.date, y: t.percentage, name: t.name })),
+          backgroundColor: 'rgb(75, 192, 192)',
+          pointRadius: 6,
+          pointHoverRadius: 8
+        }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      scales: {
+        x: {
+          type: 'category',
+          labels: sortedTests.map(t => t.date)
+        },
+        y: {
+          beginAtZero: true,
+          max: 100,
+          title: { display: true, text: 'Score (%)' }
+        }
+      },
+      plugins: {
+        tooltip: {
+          callbacks: {
+            label: (ctx) => `${ctx.raw.name}: ${ctx.raw.y}%`
+          }
+        }
+      }
+    }
+  });
+}
+function drawVocabGrowthChart(canvas) {
+  const words = DATA.vocabulary || [];
+  const wordCounts = {};
+  
+  words.forEach(w => {
+    const date = w.dateAdded || 'Unknown';
+    wordCounts[date] = (wordCounts[date] || 0) + 1;
+  });
+
+  const sortedDates = Object.keys(wordCounts).sort((a, b) => new Date(a) - new Date(b));
+  let total = 0;
+  const cumulativeData = sortedDates.map(date => {
+    total += wordCounts[date];
+    return total;
+  });
+
+  window.modalChartInstance = new Chart(canvas, {
+    type: 'bar',
+    data: {
+      labels: sortedDates,
+      datasets: [{
+        label: 'Total Words',
+        data: cumulativeData,
+        backgroundColor: 'rgba(75, 192, 192, 0.6)',
+        borderColor: 'rgb(75, 192, 192)',
+        borderWidth: 1
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      scales: { y: { beginAtZero: true, title: { display: true, text: 'Total Words' } } }
     }
   });
 }
@@ -738,6 +892,42 @@ function drawStressChart(canvas) {
     }
   });
 }
+function drawSleepCorrelationChart(canvas) {
+  const logs = [...DATA.dailyLogs].sort((a, b) => new Date(a.date) - new Date(b.date));
+  
+  window.modalChartInstance = new Chart(canvas, {
+    type: 'line',
+    data: {
+      labels: logs.map(l => l.date),
+      datasets: [
+        {
+          label: 'Mood (1-10)',
+          data: logs.map(l => l.physiological?.mood || 0),
+          borderColor: 'rgb(255, 206, 86)',
+          backgroundColor: 'rgba(255, 206, 86, 0.2)',
+          tension: 0.3,
+          yAxisID: 'y'
+        },
+        {
+          label: 'Sleep (hrs)',
+          data: logs.map(l => l.physiological?.sleepHours || 0),
+          borderColor: 'rgb(153, 102, 255)',
+          backgroundColor: 'rgba(153, 102, 255, 0.2)',
+          tension: 0.3,
+          yAxisID: 'y1'
+        }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      scales: {
+        y: { type: 'linear', display: true, position: 'left', title: { display: true, text: 'Mood Level' } },
+        y1: { type: 'linear', display: true, position: 'right', grid: { drawOnChartArea: false }, title: { display: true, text: 'Hours' } }
+      }
+    }
+  });
+}
 
 //brain map visualization
 function drawBrainTimeline() {
@@ -810,11 +1000,171 @@ function updateBrainMapDisplay(log) {
     </div>
   `;
 
-  // Call your existing Brain Map file function!
-  // We pass the zone and intensity, just like the Daily Log does.
   setTimeout(() => {
     if (typeof renderBrainMap === 'function') {
       renderBrainMap('timeline-brain-slot', zone, intensity);
     }
   }, 50);
+}
+
+function drawForgettingCurve(canvas) {
+  const matureWords = DATA.vocabulary.filter(w => w.stage === 'mature' && w.dateAdded);
+  
+  // We will take the 5 most recently mature words to show their journey.
+  // Showing 50 lines would look like a mess.
+  const recentOrchard = matureWords.sort((a, b) => new Date(b.lastWatered) - new Date(a.lastWatered)).slice(0, 5);
+
+  const datasets = [];
+  const stageMap = { seed: 1, sprout: 2, seedling: 3, sapling: 4, trunk: 5, flowering: 6, mature: 7 };
+
+  // Colors for the different words
+  const colors = ['#ff6384', '#36a2eb', '#ffce56', '#4bc0c0', '#9966ff'];
+
+  // Max days to show on X axis (e.g., 60 days)
+  const maxDays = 60;
+  
+  recentOrchard.forEach((word, index) => {
+    const addedDate = new Date(word.dateAdded);
+    const waterHistory = []; // We would ideally pull from a 'waterHistory' array if we had one
+    
+    // Since we only have 'dateAdded' and 'lastWatered' (which is today for mature words), 
+    // we draw a line from Day 0 (Seed) to Today (Mature).
+    // If you track intermediate dates in the future, you would put them here.
+    
+    const daysSinceAdded = Math.ceil((new Date() - addedDate) / (1000 * 60 * 60 * 24));
+    
+    // Create data points: X = Days since added, Y = Stage
+    // We'll make an assumed curve: it starts at 0 days (Stage 1) and ends at daysSinceAdded (Stage 7)
+    // In reality, it probably spent more time in the middle stages, so we curve the middle.
+    const dataPoints = [
+      { x: 0, y: 1 }, // Day 0: Seed
+      { x: daysSinceAdded * 0.2, y: 2 }, // 20% of time: Sprout
+      { x: daysSinceAdded * 0.4, y: 3 }, // 40%: Seedling
+      { x: daysSinceAdded * 0.6, y: 4 }, // 60%: Sapling
+      { x: daysSinceAdded * 0.8, y: 5 }, // 80%: Trunk
+      { x: daysSinceAdded * 0.9, y: 6 }, // 90%: Flowering
+      { x: daysSinceAdded, y: 7 }        // 100%: Mature
+    ];
+
+    // Clip the line so it doesn't go past the maxDays axis
+    const clippedPoints = dataPoints.filter(p => p.x <= maxDays);
+    if (clippedPoints.length > 0) {
+       // Add the final point if it's just off the edge
+       if (dataPoints[dataPoints.length - 1].x > maxDays) {
+           clippedPoints.push({ x: maxDays, y: 7 });
+       }
+
+       datasets.push({
+        label: word.word,
+        data: clippedPoints,
+        borderColor: colors[index % colors.length],
+        backgroundColor: colors[index % colors.length],
+        tension: 0.4, // This makes it a smooth curve
+        fill: false,
+        pointRadius: 4
+      });
+    }
+  });
+
+  window.modalChartInstance = new Chart(canvas, {
+    type: 'line',
+    data: { datasets },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        x: { 
+          type: 'linear',
+          title: { display: true, text: 'Days Since Added' },
+          min: 0,
+          max: maxDays
+        },
+        y: {
+          type: 'linear',
+          title: { display: true, text: 'Stage' },
+          min: 0,
+          max: 8,
+          ticks: {
+            stepSize: 1,
+            callback: function(value) {
+              const stages = ['', 'Seed', 'Sprout', 'Seedling', 'Sapling', 'Trunk', 'Flowering', 'Mature'];
+              return stages[value] || '';
+            }
+          }
+        }
+      },
+      plugins: {
+        legend: { position: 'bottom' }
+      }
+    }
+  });
+}
+function drawVelocityChart(canvas) {
+  // We need to look at studySessions to find when a word moved from one stage to the next
+  const stageTransitions = {
+    'seed to sprout': [],
+    'sprout to seedling': [],
+    'seedling to sapling': [],
+    'sapling to trunk': [],
+    'trunk to flowering': [],
+    'flowering to mature': []
+  };
+
+  (DATA.studySessions || []).forEach(session => {
+    if (!session.wordChanges) return;
+    
+    session.wordChanges.forEach(change => {
+      if (change.oldStage !== change.newStage) {
+        // The word grew in this session!
+        const word = DATA.vocabulary.find(w => w.id === change.wordId);
+        if (word && word.dateAdded) {
+          const addedDate = new Date(word.dateAdded);
+          const sessionDate = new Date(session.date);
+          const daysElapsed = Math.ceil((sessionDate - addedDate) / (1000 * 60 * 60 * 24));
+          
+          const key = `${change.oldStage} to ${change.newStage}`;
+          if (stageTransitions[key]) {
+            stageTransitions[key].push(daysElapsed);
+          }
+        }
+      }
+    });
+  });
+
+  const labels = [];
+  const averages = [];
+
+  for (const [transition, daysArray] of Object.entries(stageTransitions)) {
+    if (daysArray.length > 0) {
+      labels.push(transition);
+      const avg = daysArray.reduce((a, b) => a + b, 0) / daysArray.length;
+      averages.push(avg.toFixed(1));
+    }
+  }
+
+  window.modalChartInstance = new Chart(canvas, {
+    type: 'bar',
+    data: {
+      labels: labels,
+      datasets: [{
+        label: 'Avg Days to Reach Next Stage',
+        data: averages,
+        backgroundColor: [
+          'rgba(138, 106, 74, 0.7)',  // seed
+          'rgba(160, 120, 80, 0.7)',  // sprout
+          'rgba(61, 107, 42, 0.7)',   // seedling
+          'rgba(90, 141, 58, 0.7)',   // sapling
+          'rgba(122, 173, 82, 0.7)',  // trunk
+          'rgba(240, 168, 192, 0.7)'  // flowering
+        ],
+        borderWidth: 1
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      scales: {
+        y: { beginAtZero: true, title: { display: true, text: 'Days' } }
+      }
+    }
+  });
 }
