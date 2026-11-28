@@ -305,6 +305,7 @@ let gardenEditMode = false;
 let gardenRegionDrag = null;            // {slug, startX, startY, origX, origY}
 let gardenPendingPlacement = null;      // {wordId} — user clicked "Place" and is choosing a point
 let gardenPendingRegionSlug = null;
+let currentWordCardList = []; // Tracks the list of words currently visible
 
 let gardenSessionActive = false;
 let gardenSessionStartTime = null;
@@ -1606,6 +1607,14 @@ function toggleWordCardEdit() {
 }
 
 function openWordCard(id) {
+    // Get the current filtered list based on what view the user is in
+  if (vocabTab === 'garden' && gardenView === 'garden') {
+    currentWordCardList = getFilteredWords(); // Garden view
+  } else if (gardenView === 'gallery' || gardenView === 'list') {
+    currentWordCardList = getFilteredWords(); // Gallery/Database view
+  } else {
+    currentWordCardList = DATA.vocabulary; // Fallback
+  }
   const word = DATA.vocabulary.find(w => w.id === id);
   if (!word) return;
 
@@ -1679,12 +1688,24 @@ function openWordCard(id) {
 
     <div class="word-card-body">
 
+    <div class="word-card-body" style="position: relative;"> <!-- Make sure position: relative is here -->
+      
+      <!-- LEFT ARROW -->
+      <button class="gallery-nav-btn left" onclick="navigateWordCard(-1)" title="Previous word">
+        ‹
+      </button>
+
+      <!-- RIGHT ARROW -->
+      <button class="gallery-nav-btn right" onclick="navigateWordCard(1)" title="Next word">
+        ›
+      </button>
+
        <div class="word-card-left">
         <img src="assets/garden/plants/watering-can.png" id="watering-can" class="watering-can-anim" />
         <div id="water-drops-container" style="position:absolute; inset:0; pointer-events:none; z-index:49;"></div>
 
         <!-- FLOATING PULSE WORD -->
-        <div id="plant-pulse-word" style="position: absolute; top: 40%; left: 50%; transform: translateX(-50%); font-size: 2rem; font-weight: bold; color: #fff; text-shadow: 0 2px 4px rgba(0,0,0,0.8); opacity: 0; pointer-events: none; z-index: 50; transition: opacity 0.3s;">
+       <div id="plant-pulse-word">
           ${escapeHtml(headerTitle)}
         </div>
 
@@ -1806,6 +1827,25 @@ function openWordCard(id) {
    modal.classList.remove('hidden');
   setTimeout(() => drawWordCardTree(word, parent), 60);
 }
+
+function navigateWordCard(direction) {
+  if (!currentWordCardList || currentWordCardList.length === 0) return;
+  
+  // Find current index
+  const currentId = document.getElementById('word-card-modal').dataset.wordId;
+  const currentIndex = currentWordCardList.findIndex(w => w.id === currentId);
+  
+  if (currentIndex === -1) return;
+  
+  // Calculate next index (wrap around)
+  let nextIndex = currentIndex + direction;
+  if (nextIndex < 0) nextIndex = currentWordCardList.length - 1;
+  if (nextIndex >= currentWordCardList.length) nextIndex = 0;
+  
+  // Open the next word
+  openWordCard(currentWordCardList[nextIndex].id);
+}
+
 function drawWordCardTree(word, parent) {
   const container = document.getElementById('word-card-tree');
   if (!container) return;
@@ -2167,10 +2207,9 @@ function waterWord(id) {
   }
 
   // 4. Pulse the Word over the plant
-  const floatingWord = document.getElementById('plant-pulse-word');
+    const floatingWord = document.getElementById('plant-pulse-word');
   if (floatingWord) {
     floatingWord.classList.add('pulse-animation');
-    floatingWord.style.opacity = '1';
   }
 
   // 5. Update the Data

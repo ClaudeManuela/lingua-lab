@@ -18,6 +18,7 @@
   <link rel="stylesheet" href="css/notes.css">
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.6.2/dist/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/vis-network/9.1.9/dist/vis-network.min.js"></script>
 </head>
 <body>
 
@@ -318,6 +319,31 @@
 <script src="js/notes.js"></script>
 <script src="js/results.js"></script>
 <script src="js/core/graphs.js"></script>
+
+    <div id="graph-modal" class="modal-overlay hidden" style="z-index: 9999;">
+    <div class="modal-box" style="max-width: 900px; width: 95vw; height: 85vh; display: flex; flex-direction: column;">
+      <div class="modal-header">
+        <h2 id="graph-modal-title">Chart Title</h2>
+        <button onclick="closeModal('graph-modal')" class="remove-btn">X</button>
+      </div>
+      <div class="modal-body" style="flex: 1; position: relative; padding: 1rem; overflow-y: auto;">
+        
+        <!-- Standard Chart Canvas -->
+        <canvas id="modal-chart-canvas"></canvas>
+        
+        <!-- Brain Map Container (Hidden by default) -->
+        <div id="brain-map-timeline-container" style="display: none; flex-direction: column; gap: 1rem;">
+          <div style="position: relative; height: 250px; width: 100%;">
+            <canvas id="brain-timeline-chart"></canvas>
+          </div>
+          <div id="brain-map-day-display" style="text-align: center; border: 2px solid var(--border-main); padding: 1rem; background: var(--paper-bg);">
+             <!-- The Brain Map will render here -->
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
 
 </body>
 </html>
